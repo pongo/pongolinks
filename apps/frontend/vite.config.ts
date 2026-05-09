@@ -2,7 +2,10 @@ import vue from "@vitejs/plugin-vue";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 
+const appBasePath = "/pongolinks";
+
 export default defineConfig({
+  base: `${appBasePath}/`,
   plugins: [vue()],
   resolve: {
     alias: {
@@ -11,7 +14,7 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      "/api": "http://localhost:3000",
+      [`${appBasePath}/api`]: "http://localhost:3000",
     },
   },
 });

@@ -11,6 +11,9 @@ export type CreateAppOptions = {
   serveFrontend?: boolean;
 };
 
+export const APP_BASE_PATH = "/pongolinks";
+export const apiRoutes = new Elysia().group("/api", (api) => api.use(healthRoutes));
+
 const shouldServeFrontend = (options: CreateAppOptions) =>
   options.serveFrontend ??
   (typeof Bun === "undefined"
@@ -33,7 +36,7 @@ const serveIndexHtml = (frontendDistPath: string) => {
 
 export const createApp = (options: CreateAppOptions = {}) => {
   const frontendDistPath = options.frontendDistPath ?? config.frontendDistPath;
-  const app = new Elysia().group("/api", (api) => api.use(healthRoutes));
+  const app = new Elysia().group(APP_BASE_PATH, (base) => base.use(apiRoutes));
 
   if (!shouldServeFrontend(options)) {
     return app;
@@ -43,13 +46,14 @@ export const createApp = (options: CreateAppOptions = {}) => {
     .use(
       staticPlugin({
         assets: frontendDistPath,
-        prefix: "/",
+        prefix: APP_BASE_PATH,
       }),
     )
-    .get("*", ({ request, set }) => {
+    .get(APP_BASE_PATH, () => serveIndexHtml(frontendDistPath))
+    .get(`${APP_BASE_PATH}/*`, ({ request, set }) => {
       const pathname = new URL(request.url).pathname;
 
-      if (pathname.startsWith("/api/")) {
+      if (pathname.startsWith(`${APP_BASE_PATH}/api/`)) {
         set.status = 404;
         return { error: "Not Found" };
       }
@@ -61,3 +65,4 @@ export const createApp = (options: CreateAppOptions = {}) => {
 export const app = createApp();
 
 export type App = typeof app;
+export type ApiRoutes = typeof apiRoutes;
