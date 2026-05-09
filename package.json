@@ -7,7 +7,8 @@
   ],
   "type": "module",
   "scripts": {
-    "dev": "turbo dev --parallel",
+    "dev": "turbo dev --filter=@pongolinks/frontend --filter=@pongolinks/backend",
+    "dev:tui": "turbo dev --filter=@pongolinks/frontend --filter=@pongolinks/backend --ui=tui",
     "build": "turbo build",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
