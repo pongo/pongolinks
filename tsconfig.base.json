@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "allowImportingTsExtensions": true,
-    "baseUrl": ".",
     "composite": true,
     "declaration": true,
     "declarationMap": true,
@@ -16,9 +15,9 @@
     "noImplicitOverride": true,
     "noUncheckedIndexedAccess": true,
     "paths": {
-      "@pongolinks/backend": ["apps/backend/src/index.ts"],
-      "@pongolinks/db": ["packages/db/src/index.ts"],
-      "@pongolinks/shared": ["packages/shared/src/index.ts"]
+      "@pongolinks/backend": ["./apps/backend/src/index.ts"],
+      "@pongolinks/db": ["./packages/db/src/index.ts"],
+      "@pongolinks/shared": ["./packages/shared/src/index.ts"]
     },
     "resolveJsonModule": true,
     "skipLibCheck": true,

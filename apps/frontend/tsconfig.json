@@ -1,11 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "jsx": "preserve",
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "paths": {
-      "@/*": ["src/*"],
+      "@/*": ["./src/*"],
       "@pongolinks/backend": ["../backend/src/index.ts"]
     }
   },

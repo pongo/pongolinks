@@ -2,4 +2,6 @@ import { treaty } from "@elysiajs/eden";
 
 import type { App } from "@pongolinks/backend";
 
-export const api = treaty<App>(window.location.origin);
+type ApiClient = ReturnType<typeof treaty<App>>;
+
+export const api: ApiClient = treaty<App>(window.location.origin);
