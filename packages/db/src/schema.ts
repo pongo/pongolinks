@@ -36,7 +36,11 @@ export const tags = sqliteTable(
   "tags",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
+
+    // Original spelling for display
     name: text("name").notNull(),
+
+    // Normalized value maintained by the app layer for Unicode-friendly lookup
     nameLower: text("name_lower").notNull(),
   },
   (table) => [
