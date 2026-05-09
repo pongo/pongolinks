@@ -1,5 +1,3 @@
-import { mkdirSync } from "node:fs";
-import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { eq } from "drizzle-orm";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
@@ -7,13 +5,9 @@ import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { createDb } from "../src";
 import { bookmarks } from "../src/schema";
 
-const tempDir = fileURLToPath(new URL("../.tmp", import.meta.url));
 const migrationsFolder = fileURLToPath(new URL("../drizzle/migrations", import.meta.url));
 
-mkdirSync(tempDir, { recursive: true });
-
-const databasePath = join(tempDir, `pongolinks-${crypto.randomUUID()}.sqlite`);
-const { db, sqlite } = createDb({ databasePath });
+const { db, sqlite } = createDb({ databasePath: ":memory:" });
 
 try {
   migrate(db, { migrationsFolder });
