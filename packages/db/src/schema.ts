@@ -22,7 +22,8 @@ export const bookmarks = sqliteTable(
       .default(sql`CURRENT_TIMESTAMP`),
     updatedAt: text("updated_at")
       .notNull()
-      .default(sql`CURRENT_TIMESTAMP`),
+      .default(sql`CURRENT_TIMESTAMP`)
+      .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
   },
   (table) => [
     check("bookmarks_url_not_empty", sql`${table.url} <> ''`),
