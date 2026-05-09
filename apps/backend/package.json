@@ -17,8 +17,8 @@
     "format": "oxfmt ."
   },
   "dependencies": {
-    "@elysiajs/static": "^1.3.0",
-    "elysia": "^1.3.2"
+    "@elysiajs/static": "^1.4.10",
+    "elysia": "^1.4.28"
   },
   "devDependencies": {
     "@pongolinks/frontend": "workspace:*"
