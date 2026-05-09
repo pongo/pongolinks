@@ -18,9 +18,9 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
-    "drizzle-orm": "^0.43.1"
+    "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {
-    "@libsql/client": "^0.15.15"
+    "@libsql/client": "^0.17.3"
   }
 }
