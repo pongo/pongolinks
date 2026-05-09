@@ -6,7 +6,6 @@ import {
   primaryKey,
   sqliteTable,
   text,
-  uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 
 export const bookmarks = sqliteTable(
@@ -42,12 +41,11 @@ export const tags = sqliteTable(
     name: text("name").notNull(),
 
     // Normalized value maintained by the app layer for Unicode-friendly lookup
-    nameLower: text("name_lower").notNull(),
+    nameLower: text("name_lower").notNull().unique(),
   },
   (table) => [
     check("tags_name_not_empty", sql`${table.name} <> ''`),
     check("tags_name_lower_not_empty", sql`${table.nameLower} <> ''`),
-    uniqueIndex("tags_name_lower_unique").on(table.nameLower),
   ],
 );
 
