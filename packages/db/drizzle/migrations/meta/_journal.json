@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1778348910377,
+      "tag": "0000_orange_puff_adder",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1778348926009,
+      "tag": "0001_bookmarks_fts",
+      "breakpoints": true
+    }
+  ]
+}

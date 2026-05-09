@@ -1,0 +1,23 @@
+{
+  "name": "@pongolinks/frontend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --passWithNoTests",
+    "format": "oxfmt ."
+  },
+  "dependencies": {
+    "@elysiajs/eden": "^1.3.0",
+    "@vitejs/plugin-vue": "^5.2.3",
+    "elysia": "^1.3.2",
+    "vite": "^6.3.5",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.1"
+  },
+  "devDependencies": {
+    "vue-tsc": "^2.2.10"
+  }
+}
