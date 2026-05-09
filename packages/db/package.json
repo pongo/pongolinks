@@ -12,6 +12,7 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
+    "agent:test": "vitest run --no-color --reporter=agent",
     "format": "oxfmt .",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate"

@@ -12,6 +12,7 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run --passWithNoTests",
+    "agent:test": "vitest run --passWithNoTests --no-color --reporter=agent",
     "format": "oxfmt ."
   }
 }

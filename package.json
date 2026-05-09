@@ -12,6 +12,7 @@
     "build": "turbo build",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
+    "agent:test": "turbo agent:test",
     "format": "oxfmt package.json turbo.json tsconfig.base.json scripts apps packages",
     "db:migrate": "bun scripts/ensure-data-dir.ts && bun run --filter @pongolinks/db db:migrate"
   },

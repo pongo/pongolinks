@@ -21,6 +21,7 @@
     },
     "typecheck": {},
     "test": {},
+    "agent:test": {},
     "format": {
       "cache": false
     }

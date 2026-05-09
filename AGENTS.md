@@ -1,3 +1,10 @@
+- никогда не запускай dev сервер. никогда не делай deploy. никогда не делай git commit
+- для проверки типов: bun run typecheck
+- для тестов: bun run agent:test
+- для форматирования: bun run format
+
+- пользовательский интерфейс на английском языке
+
 ## Agent skills
 
 ### Issue tracker
