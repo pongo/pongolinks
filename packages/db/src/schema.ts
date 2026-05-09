@@ -1,12 +1,5 @@
 import { desc, sql } from "drizzle-orm";
-import {
-  check,
-  index,
-  integer,
-  primaryKey,
-  sqliteTable,
-  text,
-} from "drizzle-orm/sqlite-core";
+import { check, index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const bookmarks = sqliteTable(
   "bookmarks",
