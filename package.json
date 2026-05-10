@@ -7,12 +7,12 @@
   ],
   "type": "module",
   "scripts": {
-    "dev": "turbo dev --filter=@pongolinks/frontend --filter=@pongolinks/backend",
-    "dev:tui": "turbo dev --filter=@pongolinks/frontend --filter=@pongolinks/backend --ui=tui",
-    "build": "turbo build",
-    "typecheck": "turbo typecheck",
-    "test": "turbo test",
-    "agent:test": "turbo agent:test",
+    "dev": "turbo run dev --filter=@pongolinks/frontend --filter=@pongolinks/backend",
+    "dev:tui": "turbo run dev --filter=@pongolinks/frontend --filter=@pongolinks/backend --ui=tui",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "agent:test": "turbo run agent:test",
     "format": "oxfmt package.json turbo.json tsconfig.base.json scripts apps packages",
     "db:migrate": "bun scripts/ensure-data-dir.ts && bun run --filter @pongolinks/db db:migrate"
   },
