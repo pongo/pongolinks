@@ -11,8 +11,9 @@
     "dev:tui": "turbo run dev --filter=@pongolinks/frontend --filter=@pongolinks/backend --ui=tui",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run test",
-    "agent:test": "turbo run agent:test",
+    "test": "vitest run",
+    "test:watch": "vitest --watch",
+    "agent:test": "vitest run --no-color --reporter=agent",
     "format": "oxfmt package.json turbo.json tsconfig.base.json scripts apps packages",
     "db:migrate": "bun scripts/ensure-data-dir.ts && bun run --filter @pongolinks/db db:migrate"
   },
