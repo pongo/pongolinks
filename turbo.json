@@ -1,0 +1,29 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "@pongolinks/backend#build": {
+      "dependsOn": ["@pongolinks/frontend#build", "^build"],
+      "outputs": ["dist/**"]
+    },
+    "@pongolinks/db#build": {
+      "outputs": []
+    },
+    "@pongolinks/shared#build": {
+      "outputs": []
+    },
+    "typecheck": {},
+    "test": {},
+    "agent:test": {},
+    "format": {
+      "cache": false
+    }
+  }
+}
