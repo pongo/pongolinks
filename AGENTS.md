@@ -1,3 +1,10 @@
+- проект использует архитектуру вертикальных срезов
+- монорепа bun workspaces и turborepo
+
+- apps/backend — Bun/Elysia server
+- apps/frontend — Vue SPA with Elysia Eden
+- packages/db — drizzle orm (sqlite)
+
 - никогда не запускай dev сервер. никогда не делай deploy. никогда не делай git commit
 - для проверки типов: bun run typecheck
 - для тестов: bun run agent:test
