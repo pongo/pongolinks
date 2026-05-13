@@ -6,10 +6,7 @@
     "#/*": "./src/*"
   },
   "exports": {
-    ".": {
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
-    }
+    ".": "./src/index.ts"
   },
   "scripts": {
     "dev": "bun --watch src/index.ts",
