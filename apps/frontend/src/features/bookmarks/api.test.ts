@@ -7,14 +7,36 @@ describe("bookmark API envelope parsing", () => {
     const result = parseApiEnvelope({
       ok: true,
       data: {
-        bookmarks: [],
+        bookmarks: [
+          {
+            id: 1,
+            url: "https://example.com",
+            title: "Example",
+            description: "",
+            isPrivate: false,
+            createdAt: "2026-01-01 00:00:00",
+            updatedAt: "2026-01-01 00:00:00",
+            tags: [{ id: 1, name: "Article", nameLower: "article" }],
+          },
+        ],
       },
     });
 
     expect(result).toEqual({
       ok: true,
       data: {
-        bookmarks: [],
+        bookmarks: [
+          {
+            id: 1,
+            url: "https://example.com",
+            title: "Example",
+            description: "",
+            isPrivate: false,
+            createdAt: "2026-01-01 00:00:00",
+            updatedAt: "2026-01-01 00:00:00",
+            tags: [{ id: 1, name: "Article", nameLower: "article" }],
+          },
+        ],
       },
     });
   });
@@ -49,6 +71,23 @@ describe("bookmark API envelope parsing", () => {
       ok: false,
       errors: {
         form: "Bookmark was not found",
+      },
+    });
+  });
+
+  it("maps invalid tag input to a form error", () => {
+    const result = parseApiEnvelope({
+      ok: false,
+      error: {
+        message: "Tags must be non-empty names without whitespace",
+        code: "bookmark.tags_invalid",
+      },
+    });
+
+    expect(result).toMatchObject({
+      ok: false,
+      errors: {
+        form: "Tags must be non-empty names without whitespace",
       },
     });
   });

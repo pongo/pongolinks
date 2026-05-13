@@ -19,6 +19,7 @@ const form = reactive<EditableBookmarkPayload>({
   title: "",
   description: "",
   isPrivate: false,
+  tagsText: "",
 });
 
 watch(
@@ -28,6 +29,7 @@ watch(
     form.title = bookmark?.title ?? "";
     form.description = bookmark?.description ?? "";
     form.isPrivate = bookmark?.isPrivate ?? false;
+    form.tagsText = bookmark?.tags.map((tag) => tag.name).join(" ") ?? "";
   },
   { immediate: true },
 );
@@ -40,6 +42,7 @@ function submitForm() {
     title: form.title,
     description: form.description,
     isPrivate: form.isPrivate,
+    tagsText: form.tagsText,
   });
 }
 </script>
@@ -90,6 +93,18 @@ function submitForm() {
         class="min-h-28 w-full resize-y border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 transition outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
         rows="4"
       />
+    </label>
+
+    <label class="block">
+      <span class="mb-2 block text-sm font-semibold text-slate-800">Tags</span>
+      <input
+        v-model="form.tagsText"
+        class="w-full border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 transition outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
+        type="text"
+        autocomplete="off"
+        placeholder="article lang-ru learning"
+      />
+      <span class="mt-2 block text-sm text-slate-600">Separate tags with spaces.</span>
     </label>
 
     <label class="flex items-center gap-3 text-sm font-semibold text-slate-800">

@@ -1,3 +1,9 @@
+export type TagDTO = {
+  id: number;
+  name: string;
+  nameLower: string;
+};
+
 export type BookmarkDTO = {
   id: number;
   url: string;
@@ -6,6 +12,7 @@ export type BookmarkDTO = {
   isPrivate: boolean;
   createdAt: string;
   updatedAt: string;
+  tags: TagDTO[];
 };
 
 export type EditableBookmarkRequest = {
@@ -13,4 +20,5 @@ export type EditableBookmarkRequest = {
   title: string;
   description: string;
   isPrivate: boolean;
+  tagsText: string;
 };

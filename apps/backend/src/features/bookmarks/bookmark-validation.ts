@@ -21,6 +21,7 @@ export function validateEditableBookmarkInput(
     title,
     description: typeof payload.description === "string" ? payload.description.trim() : "",
     isPrivate: payload.isPrivate === true,
+    tagsText: typeof payload.tagsText === "string" ? payload.tagsText : "",
   });
 }
 

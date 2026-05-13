@@ -1,4 +1,4 @@
-import { bookmarks } from "@pongolinks/db/schema";
+import { bookmarks, bookmarkTags, tags } from "@pongolinks/db/schema";
 import { eq } from "drizzle-orm";
 
 import { APP_BASE_PATH, createApp } from "../src/app";
@@ -28,6 +28,7 @@ function bookmarkPayload(overrides: Record<string, unknown> = {}) {
     title: "Example",
     description: "A useful reference",
     isPrivate: false,
+    tagsText: "",
     ...overrides,
   };
 }
@@ -59,6 +60,48 @@ await withApp(async ({ app }) => {
   assert(response.status === 200, "create should return 200");
   assert(body.ok === true, "create should return success envelope");
   assert(body.data.url === "https://example.com", "create should return BookmarkDTO url");
+  assert(Array.isArray(body.data.tags), "create should return BookmarkDTO tags");
+  assert(body.data.tags.length === 0, "create should return empty tags by default");
+});
+
+await withApp(async ({ app }) => {
+  const response = await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify(bookmarkPayload({ tagsText: "article lang-ru article" })),
+    }),
+  );
+  const body = await response.json();
+
+  assert(response.status === 200, "create with tags should return 200");
+  assert(body.data.tags.length === 2, "create should return unique tags");
+  assert(body.data.tags[0].nameLower === "article", "create should sort tags by nameLower");
+  assert(body.data.tags[1].nameLower === "lang-ru", "create should include the second tag");
+});
+
+await withApp(async ({ app }) => {
+  await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify(bookmarkPayload({ tagsText: "Article" })),
+    }),
+  );
+  const response = await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify(
+        bookmarkPayload({
+          url: "https://example.com/second",
+          title: "Second",
+          tagsText: "article",
+        }),
+      ),
+    }),
+  );
+  const body = await response.json();
+
+  assert(response.status === 200, "create should reuse existing tags");
+  assert(body.data.tags[0].name === "Article", "reuse should preserve display casing");
 });
 
 await withApp(async ({ app }) => {
@@ -159,6 +202,7 @@ await withApp(async ({ app, db }) => {
 
   assert(response.status === 200, "list should return 200");
   assert(body.data.bookmarks[0].title === "New", "list should order by updatedAt descending");
+  assert(Array.isArray(body.data.bookmarks[0].tags), "list should include tags");
 });
 
 await withApp(async ({ app }) => {
@@ -167,6 +211,35 @@ await withApp(async ({ app }) => {
 
   assert(response.status === 404, "missing bookmark should return 404");
   assert(body.error.code === "bookmark.not_found", "missing bookmark should return not found code");
+});
+
+await withApp(async ({ app, db }) => {
+  const bookmark = db
+    .insert(bookmarks)
+    .values({
+      url: "https://example.com/tagged",
+      title: "Tagged",
+    })
+    .returning({ id: bookmarks.id })
+    .get();
+  const insertedTags = db
+    .insert(tags)
+    .values([
+      { name: "Zed", nameLower: "zed" },
+      { name: "Alpha", nameLower: "alpha" },
+    ])
+    .returning({ id: tags.id })
+    .all();
+  db.insert(bookmarkTags)
+    .values(insertedTags.map((tag) => ({ bookmarkId: bookmark.id, tagId: tag.id })))
+    .run();
+
+  const response = await app.handle(request(`/api/bookmarks/${bookmark.id}`));
+  const body = await response.json();
+
+  assert(response.status === 200, "get with tags should return 200");
+  assert(body.data.tags[0].nameLower === "alpha", "get should sort tags by nameLower");
+  assert(body.data.tags[1].nameLower === "zed", "get should return all tags");
 });
 
 await withApp(async ({ app }) => {
@@ -194,6 +267,37 @@ await withApp(async ({ app }) => {
   assert(response.status === 200, "update should return 200");
   assert(body.data.title === "Updated", "update should return changed title");
   assert(body.data.isPrivate === true, "update should return changed privacy flag");
+});
+
+await withApp(async ({ app }) => {
+  await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify(bookmarkPayload({ tagsText: "alpha beta" })),
+    }),
+  );
+  const replaceResponse = await app.handle(
+    request("/api/bookmarks/1", {
+      method: "PATCH",
+      body: JSON.stringify(bookmarkPayload({ tagsText: "gamma" })),
+    }),
+  );
+  const replaceBody = await replaceResponse.json();
+
+  assert(replaceResponse.status === 200, "tag replace update should return 200");
+  assert(replaceBody.data.tags.length === 1, "update should replace all tag links");
+  assert(replaceBody.data.tags[0].nameLower === "gamma", "update should return final tags");
+
+  const clearResponse = await app.handle(
+    request("/api/bookmarks/1", {
+      method: "PATCH",
+      body: JSON.stringify(bookmarkPayload({ tagsText: "" })),
+    }),
+  );
+  const clearBody = await clearResponse.json();
+
+  assert(clearResponse.status === 200, "tag clear update should return 200");
+  assert(clearBody.data.tags.length === 0, "empty tagsText should clear tag links");
 });
 
 await withApp(async ({ app }) => {

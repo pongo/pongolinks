@@ -8,6 +8,7 @@ import {
   validateEditableBookmarkInput,
 } from "./bookmark-validation";
 import { BookmarksRepository, type AppDb, type EditableBookmarkData } from "./bookmarks-repository";
+import { parseTagNames } from "./tag-name";
 
 export type BookmarkRoutesOptions = {
   db: AppDb;
@@ -43,6 +44,7 @@ const editableBookmarkBodySchema = t.Object({
   title: t.String(),
   description: t.Optional(t.String()),
   isPrivate: t.Optional(t.Boolean()),
+  tagsText: t.Optional(t.Any()),
 });
 
 const bookmarkIdParamsSchema = t.Object({
@@ -83,18 +85,36 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
           return resultResponse(inputResult, set);
         }
         const input = inputResult.value;
+        log.set({
+          bookmark: {
+            title: input.title,
+            description: input.description,
+            isPrivate: input.isPrivate,
+          },
+        });
 
         const urlResult = BookmarkUrl.from(input.url);
         if (urlResult.isErr) {
           logError(log, urlResult.error);
           return resultResponse(urlResult, set);
         }
-
         const url = urlResult.value;
-        const bookmark: EditableBookmarkData = { ...input, url };
-        log.set({ bookmark: { ...bookmark, url: url.value() } });
+        log.set({ bookmark: { url: url.value() } });
 
-        const result = await repository.create(bookmark);
+        const tagsResult = parseTagNames(input.tagsText);
+        if (tagsResult.isErr) {
+          logError(log, tagsResult.error);
+          return resultResponse(tagsResult, set);
+        }
+        const tags = tagsResult.value;
+        log.set({
+          bookmark: {
+            tags: tags.map((tag) => tag.name()),
+          },
+          tags: { count: tags.length },
+        });
+
+        const result = await repository.create({ ...input, url, tags });
         if (result.isErr) {
           logError(log, result.error);
         } else {
@@ -143,29 +163,46 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
           logError(log, id.error);
           return resultResponse(id, set);
         }
+        log.set({ bookmark: { id: id.value.value() } });
 
         const input = validateEditableBookmarkInput(body);
         if (input.isErr) {
-          log.set({ bookmark: { id: id.value.value() } });
           logError(log, input.error);
           return resultResponse(input, set);
         }
-
-        const url = BookmarkUrl.from(input.value.url);
-        if (url.isErr) {
-          log.set({ bookmark: { id: id.value.value() } });
-          logError(log, url.error);
-          return resultResponse(url, set);
-        }
-
         log.set({
           bookmark: {
-            id: id.value.value(),
-            url: url.value.value(),
+            title: input.value.title,
+            description: input.value.description,
+            isPrivate: input.value.isPrivate,
           },
         });
 
-        const result = await repository.update(id.value, { ...input.value, url: url.value });
+        const tagsResult = parseTagNames(input.value.tagsText);
+        if (tagsResult.isErr) {
+          logError(log, tagsResult.error);
+          return resultResponse(tagsResult, set);
+        }
+        const tags = tagsResult.value;
+        log.set({
+          bookmark: {
+            tags: tags.map((tag) => tag.name()),
+          },
+          tags: { count: tags.length },
+        });
+
+        const url = BookmarkUrl.from(input.value.url);
+        if (url.isErr) {
+          logError(log, url.error);
+          return resultResponse(url, set);
+        }
+        log.set({ bookmark: { url: url.value.value() } });
+
+        const result = await repository.update(id.value, {
+          ...input.value,
+          url: url.value,
+          tags,
+        });
         if (result.isErr) {
           logError(log, result.error);
         } else {

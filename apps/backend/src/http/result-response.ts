@@ -7,6 +7,7 @@ export type ApiErrorCode =
   | "bookmark.title_required"
   | "bookmark.id_invalid"
   | "bookmark.not_found"
+  | "bookmark.tags_invalid"
   | "bookmark.validation_invalid"
   | "bookmark.unexpected";
 

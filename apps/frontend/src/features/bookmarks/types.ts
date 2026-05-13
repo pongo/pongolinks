@@ -1,3 +1,9 @@
+export type TagDTO = {
+  id: number;
+  name: string;
+  nameLower: string;
+};
+
 export type BookmarkDTO = {
   id: number;
   url: string;
@@ -6,6 +12,7 @@ export type BookmarkDTO = {
   isPrivate: boolean;
   createdAt: string;
   updatedAt: string;
+  tags: TagDTO[];
 };
 
 export type EditableBookmarkPayload = {
@@ -13,6 +20,7 @@ export type EditableBookmarkPayload = {
   title: string;
   description: string;
   isPrivate: boolean;
+  tagsText: string;
 };
 
 export type ApiErrorCode =
@@ -22,6 +30,7 @@ export type ApiErrorCode =
   | "bookmark.title_required"
   | "bookmark.id_invalid"
   | "bookmark.not_found"
+  | "bookmark.tags_invalid"
   | "bookmark.unexpected";
 
 export type ApiError = {
