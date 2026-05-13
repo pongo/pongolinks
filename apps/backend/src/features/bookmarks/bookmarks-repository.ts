@@ -27,6 +27,20 @@ type BookmarkWithTagsRow = BookmarkRow & {
   bookmarkTags: { tag: TagRow }[];
   relatedLinks: RelatedLinkRow[];
 };
+type BookmarkTagWithTagRow = {
+  bookmarkId: number;
+  tagId: number;
+  tag: TagRow;
+};
+type TagDiffCounts = {
+  submittedCount: number;
+  attachedCount: number;
+  detachedCount: number;
+  retainedCount: number;
+  attachedNames: string[];
+  detachedNames: string[];
+  deletedOrphanNames: string[];
+};
 
 type RepositoryDb = Pick<AppDb, "delete" | "insert" | "query" | "update">;
 type RepositoryLogger = {
@@ -202,6 +216,15 @@ export class BookmarksRepository {
         deletedCount: 0,
         retainedCount: 0,
       };
+      let tagDiffCounts: TagDiffCounts = {
+        submittedCount: input.tags.length,
+        attachedCount: 0,
+        detachedCount: 0,
+        retainedCount: 0,
+        attachedNames: [],
+        detachedNames: [],
+        deletedOrphanNames: [],
+      };
 
       const row = await this.db.transaction(async (tx) => {
         await tx
@@ -216,7 +239,7 @@ export class BookmarksRepository {
           .returning()
           .get();
 
-        await this.replaceBookmarkTags(tx, id.value(), input.tags);
+        tagDiffCounts = await this.syncBookmarkTags(tx, id.value(), input.tags);
         relatedLinkCounts = await this.syncRelatedLinks(tx, id.value(), extractedRelatedLinks);
 
         return this.findBookmarkById(tx, id.value());
@@ -227,6 +250,7 @@ export class BookmarksRepository {
       }
 
       log?.set({
+        tags: tagDiffCounts,
         relatedLinks: relatedLinkCounts,
       });
 
@@ -307,6 +331,90 @@ export class BookmarksRepository {
         })
         .run();
     }
+  }
+
+  private async syncBookmarkTags(
+    db: RepositoryDb,
+    bookmarkId: number,
+    tagNames: TagName[],
+  ): Promise<TagDiffCounts> {
+    const existingRows = await this.findBookmarkTagsWithTags(db, bookmarkId);
+    const submittedTags: TagRow[] = [];
+
+    for (const tagName of tagNames) {
+      submittedTags.push(await this.findOrCreateTag(db, tagName));
+    }
+
+    const submittedNameLowerSet = new Set(submittedTags.map((tag) => tag.nameLower));
+    const existingByNameLower = new Map(existingRows.map((row) => [row.tag.nameLower, row]));
+    const tagsToAttach = submittedTags.filter((tag) => !existingByNameLower.has(tag.nameLower));
+    const rowsToDetach = existingRows.filter(
+      (row) => !submittedNameLowerSet.has(row.tag.nameLower),
+    );
+    const retainedCount = existingRows.length - rowsToDetach.length;
+
+    for (const tag of tagsToAttach) {
+      await db
+        .insert(bookmarkTags)
+        .values({
+          bookmarkId,
+          tagId: tag.id,
+        })
+        .run();
+    }
+
+    for (const row of rowsToDetach) {
+      await db
+        .delete(bookmarkTags)
+        .where(and(eq(bookmarkTags.bookmarkId, bookmarkId), eq(bookmarkTags.tagId, row.tagId)))
+        .run();
+    }
+
+    const deletedOrphanTags = await this.deleteOrphanTags(db, rowsToDetach);
+
+    return {
+      submittedCount: submittedTags.length,
+      attachedCount: tagsToAttach.length,
+      detachedCount: rowsToDetach.length,
+      retainedCount,
+      attachedNames: tagsToAttach.map((tag) => tag.name),
+      detachedNames: rowsToDetach.map((row) => row.tag.name),
+      deletedOrphanNames: deletedOrphanTags.map((tag) => tag.name),
+    };
+  }
+
+  private async findBookmarkTagsWithTags(
+    db: RepositoryDb,
+    bookmarkId: number,
+  ): Promise<BookmarkTagWithTagRow[]> {
+    return db.query.bookmarkTags.findMany({
+      where: eq(bookmarkTags.bookmarkId, bookmarkId),
+      with: {
+        tag: true,
+      },
+    });
+  }
+
+  private async deleteOrphanTags(
+    db: RepositoryDb,
+    detachedRows: BookmarkTagWithTagRow[],
+  ): Promise<TagRow[]> {
+    const deletedTags: TagRow[] = [];
+
+    for (const row of detachedRows) {
+      const remainingLink = await db.query.bookmarkTags.findFirst({
+        where: eq(bookmarkTags.tagId, row.tagId),
+      });
+
+      if (remainingLink) {
+        continue;
+      }
+
+      await db.delete(tags).where(eq(tags.id, row.tagId)).run();
+      deletedTags.push(row.tag);
+    }
+
+    return deletedTags;
   }
 
   private async findOrCreateTag(db: RepositoryDb, tagName: TagName): Promise<TagRow> {
