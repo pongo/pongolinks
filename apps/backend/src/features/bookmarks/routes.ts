@@ -60,7 +60,6 @@ export const createBookmarkRoutes = ({ db }: BookmarkRoutesOptions) => {
     .get("/bookmarks", async (context) => {
       const { set } = context;
       const log = getLogger(context);
-      log.set({ bookmark: { operation: "list" } });
 
       const result = await repository.list();
       if (result.isErr) {
@@ -76,7 +75,6 @@ export const createBookmarkRoutes = ({ db }: BookmarkRoutesOptions) => {
       async (context) => {
         const { body, set } = context;
         const log = getLogger(context);
-        log.set({ bookmark: { operation: "create" } });
 
         const input = validateEditableBookmarkInput(body);
         if (input.isErr) {
@@ -115,7 +113,6 @@ export const createBookmarkRoutes = ({ db }: BookmarkRoutesOptions) => {
       async (context) => {
         const { params, set } = context;
         const log = getLogger(context);
-        log.set({ bookmark: { operation: "get" } });
 
         const id = BookmarkId.from(params.id);
         if (id.isErr) {
@@ -141,7 +138,6 @@ export const createBookmarkRoutes = ({ db }: BookmarkRoutesOptions) => {
       async (context) => {
         const { body, params, set } = context;
         const log = getLogger(context);
-        log.set({ bookmark: { operation: "update" } });
 
         const id = BookmarkId.from(params.id);
         if (id.isErr) {
