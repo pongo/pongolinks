@@ -8,7 +8,6 @@ import { config } from "./config";
 import { createBookmarkRoutes } from "./features/bookmarks/routes";
 import { healthRoutes } from "./features/health/routes";
 import type { AppDb } from "./features/bookmarks/bookmarks-repository";
-import { validationErrorResponse } from "./http/result-response";
 
 export type CreateAppOptions = {
   db?: AppDb;
@@ -46,11 +45,6 @@ const serveIndexHtml = (frontendDistPath: string) => {
 export const createApp = (options: CreateAppOptions = {}) => {
   const frontendDistPath = options.frontendDistPath ?? config.frontendDistPath;
   const app = new Elysia()
-    .onError(({ code, error, set }) => {
-      if (code === "VALIDATION") {
-        return validationErrorResponse(error, set);
-      }
-    })
     .use(
       evlog({
         include: [`${APP_BASE_PATH}/api/**`],

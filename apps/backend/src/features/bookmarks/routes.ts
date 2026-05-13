@@ -3,7 +3,10 @@ import { Elysia, t } from "elysia";
 import { resultResponse } from "../../http/result-response";
 import { BookmarkId } from "./bookmark-id";
 import { BookmarkUrl } from "./bookmark-url";
-import { validateEditableBookmarkInput } from "./bookmark-validation";
+import {
+  bookmarkValidationErrorResponse,
+  validateEditableBookmarkInput,
+} from "./bookmark-validation";
 import { BookmarksRepository, type AppDb } from "./bookmarks-repository";
 
 export type BookmarkRoutesOptions = {
@@ -38,6 +41,11 @@ export const createBookmarkRoutes = ({ db }: BookmarkRoutesOptions) => {
   const repository = new BookmarksRepository(db);
 
   return new Elysia({ name: "bookmark-routes" })
+    .onError(({ code, error, set }) => {
+      if (code === "VALIDATION") {
+        return bookmarkValidationErrorResponse(error, set);
+      }
+    })
     .get("/bookmarks", async (context) => {
       const { set } = context;
       const log = getLogger(context);
