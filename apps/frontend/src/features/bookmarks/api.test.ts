@@ -64,6 +64,22 @@ describe("bookmark API payload parsing", () => {
     });
   });
 
+  it("uses stackless API errors", () => {
+    const result = parseApiPayload({
+      isOk: false,
+      isErr: true,
+      error: {
+        message: "Bookmark URL is required",
+        code: "bookmark.url_required",
+      },
+    });
+
+    expect(result).toMatchObject({ isErr: true });
+    if (result.isErr) {
+      expect(result.error.stack).toBeUndefined();
+    }
+  });
+
   it("maps form error payloads", () => {
     const result = parseApiPayload({
       isOk: false,

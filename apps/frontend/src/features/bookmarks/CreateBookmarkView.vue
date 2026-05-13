@@ -2,11 +2,12 @@
 import { onMounted, ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 
+import type { FormErrors } from "#/shared/api/errors.ts";
 import { listTags } from "../tags/api";
 import type { TagSummaryDTO } from "../tags/types";
 import { createBookmark } from "./api";
 import BookmarkForm from "./BookmarkForm.vue";
-import type { EditableBookmarkPayload, FormErrors } from "./types";
+import type { EditableBookmarkPayload } from "./types";
 
 const router = useRouter();
 const errors = ref<FormErrors>({});

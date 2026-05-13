@@ -1,7 +1,7 @@
 import { Err, Ok, type Result } from "@pongolinks/shared/result";
 
 import { apiClient } from "#/shared/api/client.ts";
-import { ApiError } from "../bookmarks/types";
+import { ApiError } from "#/shared/api/errors.ts";
 import type { TagSummaryDTO } from "./types";
 
 const fallbackError = new ApiError(

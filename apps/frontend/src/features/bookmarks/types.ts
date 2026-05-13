@@ -28,32 +28,3 @@ export type EditableBookmarkPayload = {
   isPrivate: boolean;
   tagsText: string;
 };
-
-export type ApiErrorCode =
-  | "bookmark.url_required"
-  | "bookmark.url_invalid"
-  | "bookmark.url_duplicate"
-  | "bookmark.title_required"
-  | "bookmark.id_invalid"
-  | "bookmark.not_found"
-  | "bookmark.tags_invalid"
-  | "bookmark.validation_invalid"
-  | "bookmark.unexpected";
-
-export type FormErrors = {
-  url?: string;
-  title?: string;
-  form?: string;
-};
-
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    readonly code: ApiErrorCode,
-    readonly data?: Record<string, unknown>,
-    readonly formErrors: FormErrors = { form: message },
-  ) {
-    super(message);
-    this.name = "ApiError";
-  }
-}
