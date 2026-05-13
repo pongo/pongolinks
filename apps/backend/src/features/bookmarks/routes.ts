@@ -114,7 +114,7 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
           tags: { count: tags.length },
         });
 
-        const result = await repository.create({ ...input, url, tags });
+        const result = await repository.create({ ...input, url, tags }, log);
         if (result.isErr) {
           logError(log, result.error);
         } else {
@@ -198,11 +198,15 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
         }
         log.set({ bookmark: { url: url.value.value() } });
 
-        const result = await repository.update(id.value, {
-          ...input.value,
-          url: url.value,
-          tags,
-        });
+        const result = await repository.update(
+          id.value,
+          {
+            ...input.value,
+            url: url.value,
+            tags,
+          },
+          log,
+        );
         if (result.isErr) {
           logError(log, result.error);
         } else {

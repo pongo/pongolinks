@@ -20,6 +20,7 @@
     "@elysiajs/static": "^1.4.10",
     "@pongolinks/db": "workspace:*",
     "@pongolinks/shared": "workspace:*",
+    "autolinker": "^4.1.5",
     "drizzle-orm": "^0.45.2",
     "elysia": "^1.4.28",
     "evlog": "^2.17.0"

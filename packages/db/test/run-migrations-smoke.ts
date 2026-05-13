@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 
 import { createDb } from "../src";
-import { bookmarks } from "../src/schema";
+import { bookmarks, relatedLinks } from "../src/schema";
 
 const migrationsFolder = fileURLToPath(new URL("../drizzle/migrations", import.meta.url));
 
@@ -90,6 +90,30 @@ try {
 
   if (explicitResult !== explicitUpdatedAt) {
     throw new Error("Drizzle update did not respect explicit bookmarks.updated_at");
+  }
+
+  db.insert(relatedLinks)
+    .values({
+      bookmarkId: firstBookmarkId,
+      url: "https://example.com/related",
+    })
+    .run();
+
+  try {
+    db.insert(relatedLinks)
+      .values({
+        bookmarkId: firstBookmarkId,
+        url: "https://example.com/related",
+      })
+      .run();
+    throw new Error("Duplicate related link URL was accepted for one bookmark");
+  } catch (error) {
+    if (
+      !(error instanceof Error) ||
+      !error.message.includes("related_links.bookmark_id, related_links.url")
+    ) {
+      throw error;
+    }
   }
 } finally {
   sqlite.close();

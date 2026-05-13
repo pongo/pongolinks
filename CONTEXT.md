@@ -14,7 +14,7 @@ A Tag name is a single whitespace-free token; spaces separate multiple Tags in t
 _Avoid_: category, folder, label
 
 **Related Link**:
-A secondary URL attached to a bookmark because it provides nearby or supporting context.
+A secondary URL automatically extracted from a Bookmark description because it provides nearby or supporting context.
 _Avoid_: child bookmark, attachment, reference
 
 **Private Bookmark**:
@@ -29,6 +29,10 @@ _Avoid_: secret link, hidden item
 - A **Related Link** belongs to exactly one **Bookmark**
 - A **Private Bookmark** is a specialization of **Bookmark**
 - A URL can identify at most one **Bookmark**
+
+## Rules
+
+- **Related Links** are synchronized from the Bookmark description by adding newly extracted URLs and removing URLs that are no longer present.
 
 ## Example dialogue
 

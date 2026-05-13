@@ -3,6 +3,7 @@ import { LockIcon } from "@lucide/vue";
 import { onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 
+import { autolinkBookmarkDescription } from "./autolink-description";
 import { listBookmarks } from "./api";
 import type { BookmarkDTO } from "./types";
 
@@ -127,9 +128,8 @@ onMounted(async () => {
               <p
                 v-if="bookmark.description"
                 class="mt-2 text-sm leading-6 whitespace-pre-wrap text-slate-700"
-              >
-                {{ bookmark.description }}
-              </p>
+                v-html="autolinkBookmarkDescription(bookmark.description)"
+              ></p>
             </div>
             <div class="shrink-0 text-right">
               <RouterLink
@@ -148,3 +148,16 @@ onMounted(async () => {
     </section>
   </main>
 </template>
+
+<style>
+.bookmark-description-link {
+  color: #1d4ed8;
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.bookmark-description-link:hover {
+  color: #1e40af;
+}
+</style>

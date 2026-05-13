@@ -1,5 +1,13 @@
 import { desc, sql } from "drizzle-orm";
-import { check, index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+  check,
+  index,
+  integer,
+  primaryKey,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
 
 export const bookmarks = sqliteTable(
   "bookmarks",
@@ -69,6 +77,7 @@ export const relatedLinks = sqliteTable(
   },
   (table) => [
     check("related_links_url_not_empty", sql`${table.url} <> ''`),
+    uniqueIndex("related_links_bookmark_id_url_unique").on(table.bookmarkId, table.url),
     index("idx_related_links_bookmark_id").on(table.bookmarkId),
     index("idx_related_links_url").on(table.url),
   ],
