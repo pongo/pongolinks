@@ -13,7 +13,7 @@ import type { BookmarkUrl } from "./bookmark-url";
 import type { BookmarkDTO, EditableBookmarkRequest } from "./contracts";
 
 export type AppDb = BunSQLiteDatabase<typeof schema & typeof relations>;
-type EditableBookmarkData = Omit<EditableBookmarkRequest, "url"> & { url: BookmarkUrl };
+export type EditableBookmarkData = Omit<EditableBookmarkRequest, "url"> & { url: BookmarkUrl };
 
 type BookmarkRow = typeof bookmarks.$inferSelect;
 

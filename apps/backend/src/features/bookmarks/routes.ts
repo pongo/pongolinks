@@ -7,7 +7,7 @@ import {
   bookmarkValidationErrorResponse,
   validateEditableBookmarkInput,
 } from "./bookmark-validation";
-import { BookmarksRepository, type AppDb } from "./bookmarks-repository";
+import { BookmarksRepository, type AppDb, type EditableBookmarkData } from "./bookmarks-repository";
 
 export type BookmarkRoutesOptions = {
   db: AppDb;
@@ -76,26 +76,24 @@ export const createBookmarkRoutes = ({ db }: BookmarkRoutesOptions) => {
         const { body, set } = context;
         const log = getLogger(context);
 
-        const input = validateEditableBookmarkInput(body);
-        if (input.isErr) {
-          logError(log, input.error);
-          return resultResponse(input, set);
+        const inputResult = validateEditableBookmarkInput(body);
+        if (inputResult.isErr) {
+          logError(log, inputResult.error);
+          return resultResponse(inputResult, set);
+        }
+        const input = inputResult.value;
+
+        const urlResult = BookmarkUrl.from(input.url);
+        if (urlResult.isErr) {
+          logError(log, urlResult.error);
+          return resultResponse(urlResult, set);
         }
 
-        const url = BookmarkUrl.from(input.value.url);
-        if (url.isErr) {
-          logError(log, url.error);
-          return resultResponse(url, set);
-        }
+        const url = urlResult.value;
+        const bookmark: EditableBookmarkData = { ...input, url };
+        log.set({ bookmark: { ...bookmark, url: url.value() } });
 
-        log.set({
-          bookmark: {
-            validation: "valid",
-            url: url.value.value(),
-          },
-        });
-
-        const result = await repository.create({ ...input.value, url: url.value });
+        const result = await repository.create(bookmark);
         if (result.isErr) {
           logError(log, result.error);
         } else {
@@ -120,7 +118,7 @@ export const createBookmarkRoutes = ({ db }: BookmarkRoutesOptions) => {
           return resultResponse(id, set);
         }
 
-        log.set({ bookmark: { id: id.value.value(), validation: "valid" } });
+        log.set({ bookmark: { id: id.value.value() } });
 
         const result = await repository.findById(id.value);
         if (result.isErr) {
@@ -162,7 +160,6 @@ export const createBookmarkRoutes = ({ db }: BookmarkRoutesOptions) => {
         log.set({
           bookmark: {
             id: id.value.value(),
-            validation: "valid",
             url: url.value.value(),
           },
         });
