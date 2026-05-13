@@ -42,7 +42,7 @@ onMounted(async () => {
     <section class="mx-auto max-w-3xl">
       <header class="mb-7 flex items-center justify-between gap-4">
         <div>
-          <p class="text-xs font-bold uppercase tracking-normal text-emerald-800">pongolinks</p>
+          <p class="text-xs font-bold tracking-normal text-emerald-800 uppercase">pongolinks</p>
           <h1 class="mt-1 text-2xl font-bold text-slate-950">Bookmarks</h1>
         </div>
         <RouterLink
@@ -81,7 +81,7 @@ onMounted(async () => {
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
                 <a
-                  class="break-words text-base font-semibold text-slate-950 hover:text-emerald-800"
+                  class="text-base font-semibold break-words text-slate-950 hover:text-emerald-800"
                   :href="bookmark.url"
                   rel="noreferrer"
                   target="_blank"
@@ -95,7 +95,7 @@ onMounted(async () => {
                   Private
                 </span>
               </div>
-              <p class="mt-1 break-all text-sm text-slate-600">{{ bookmark.url }}</p>
+              <p class="mt-1 text-sm break-all text-slate-600">{{ bookmark.url }}</p>
               <p v-if="bookmark.description" class="mt-2 text-sm leading-6 text-slate-700">
                 {{ bookmark.description }}
               </p>
