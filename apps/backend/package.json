@@ -2,14 +2,14 @@
   "name": "@pongolinks/backend",
   "private": true,
   "type": "module",
+  "imports": {
+    "#/*": "./src/*"
+  },
   "exports": {
-    ".": {
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
-    }
+    ".": "./src/index.ts"
   },
   "scripts": {
-    "dev": "bun --watch src/index.ts",
+    "dev": "cd ../.. && bun --watch apps/backend/src/index.ts",
     "build": "bun build ./src/index.ts --outdir dist --target bun",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
@@ -18,9 +18,10 @@
   },
   "dependencies": {
     "@elysiajs/static": "^1.4.10",
-    "elysia": "^1.4.28"
-  },
-  "devDependencies": {
-    "@pongolinks/frontend": "workspace:*"
+    "@pongolinks/db": "workspace:*",
+    "@pongolinks/shared": "workspace:*",
+    "drizzle-orm": "^0.45.2",
+    "elysia": "^1.4.28",
+    "evlog": "^2.17.0"
   }
 }

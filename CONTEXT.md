@@ -10,6 +10,7 @@ _Avoid_: link, favorite, item
 
 **Tag**:
 A reusable label attached to bookmarks for organization and filtering.
+A Tag name is a single whitespace-free token; spaces separate multiple Tags in text entry.
 _Avoid_: category, folder, label
 
 **Related Link**:
@@ -27,6 +28,7 @@ _Avoid_: secret link, hidden item
 - A **Bookmark** can have zero or more **Related Links**
 - A **Related Link** belongs to exactly one **Bookmark**
 - A **Private Bookmark** is a specialization of **Bookmark**
+- A URL can identify at most one **Bookmark**
 
 ## Example dialogue
 

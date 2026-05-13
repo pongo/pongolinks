@@ -1,16 +1,14 @@
 {
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "composite": true,
     "isolatedModules": true,
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
     "noEmit": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
     "noUncheckedIndexedAccess": true,
-    "paths": {
-      "@pongolinks/backend": ["./apps/backend/src/index.ts"],
-      "@pongolinks/db": ["./packages/db/src/index.ts"],
-      "@pongolinks/shared": ["./packages/shared/src/index.ts"]
-    },
     "skipLibCheck": true,
     "types": ["bun"],
     "verbatimModuleSyntax": true

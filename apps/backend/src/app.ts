@@ -1,26 +1,42 @@
 import { staticPlugin } from "@elysiajs/static";
 import { Elysia } from "elysia";
+import { evlog } from "evlog/elysia";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { config } from "./config";
+import { createBookmarkRoutes } from "./features/bookmarks/routes";
 import { healthRoutes } from "./features/health/routes";
+import type { AppDb } from "./features/bookmarks/bookmarks-repository";
 
 export type CreateAppOptions = {
+  db?: AppDb;
   frontendDistPath?: string;
   serveFrontend?: boolean;
 };
 
 export const APP_BASE_PATH = "/pongolinks";
-export const apiRoutes = new Elysia().group("/api", (api) => api.use(healthRoutes));
 
-const shouldServeFrontend = (options: CreateAppOptions) =>
-  options.serveFrontend ??
-  (typeof Bun === "undefined"
-    ? process.env.NODE_ENV === "production"
-    : Bun.env.NODE_ENV === "production");
+function createApiRoutes(db: AppDb) {
+  return new Elysia().group("/api", (api) =>
+    api.use(healthRoutes).use(createBookmarkRoutes({ db })),
+  );
+}
 
-const serveIndexHtml = (frontendDistPath: string) => {
+function createHealthOnlyApiRoutes() {
+  return new Elysia().group("/api", (api) => api.use(healthRoutes));
+}
+
+function shouldServeFrontend(options: CreateAppOptions) {
+  return (
+    options.serveFrontend ??
+    (typeof Bun === "undefined"
+      ? process.env.NODE_ENV === "production"
+      : Bun.env.NODE_ENV === "production")
+  );
+}
+
+function serveIndexHtml(frontendDistPath: string) {
   const indexPath = join(frontendDistPath, "index.html");
 
   if (typeof Bun !== "undefined") {
@@ -32,11 +48,20 @@ const serveIndexHtml = (frontendDistPath: string) => {
       "content-type": "text/html; charset=utf-8",
     },
   });
-};
+}
 
-export const createApp = (options: CreateAppOptions = {}) => {
+export function createApp(options: CreateAppOptions = {}) {
   const frontendDistPath = options.frontendDistPath ?? config.frontendDistPath;
-  const app = new Elysia().group(APP_BASE_PATH, (base) => base.use(apiRoutes));
+  const app = new Elysia()
+    .use(
+      evlog({
+        include: [`${APP_BASE_PATH}/api/**`],
+        exclude: [`${APP_BASE_PATH}/api/health`],
+      }),
+    )
+    .group(APP_BASE_PATH, (base) =>
+      base.use(options.db ? createApiRoutes(options.db) : createHealthOnlyApiRoutes()),
+    );
 
   if (!shouldServeFrontend(options)) {
     return app;
@@ -60,9 +85,7 @@ export const createApp = (options: CreateAppOptions = {}) => {
 
       return serveIndexHtml(frontendDistPath);
     });
-};
+}
 
-export const app = createApp();
-
-export type App = typeof app;
-export type ApiRoutes = typeof apiRoutes;
+export type App = ReturnType<typeof createApp>;
+export type ApiRoutes = ReturnType<typeof createApiRoutes>;

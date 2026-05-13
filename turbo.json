@@ -9,10 +9,6 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
-    "@pongolinks/backend#build": {
-      "dependsOn": ["@pongolinks/frontend#build", "^build"],
-      "outputs": ["dist/**"]
-    },
     "@pongolinks/db#build": {
       "outputs": []
     },

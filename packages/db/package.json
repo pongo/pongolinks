@@ -2,11 +2,13 @@
   "name": "@pongolinks/db",
   "private": true,
   "type": "module",
+  "imports": {
+    "#/*": "./src/*"
+  },
   "exports": {
-    ".": {
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
-    }
+    ".": "./src/index.ts",
+    "./relations": "./src/relations.ts",
+    "./schema": "./src/schema.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
