@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { APP_BASE_PATH, createApp } from "@/app";
+import { APP_BASE_PATH, createApp } from "#/app.ts";
 
 describe(`GET ${APP_BASE_PATH}/api/health`, () => {
   it("returns the backend liveness contract", async () => {

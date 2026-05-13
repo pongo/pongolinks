@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { APP_BASE_PATH, createApp } from "@/app";
+import { APP_BASE_PATH, createApp } from "#/app.ts";
 
 const tempDir = fileURLToPath(new URL(".tmp/frontend-dist", import.meta.url));
 

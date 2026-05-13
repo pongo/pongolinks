@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 
-import { api } from "@/features/health/api";
+import { api } from "#/features/health/api.ts";
 
 type HealthState = "checking" | "ok" | "error";
 

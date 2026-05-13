@@ -2,6 +2,9 @@
   "name": "@pongolinks/backend",
   "private": true,
   "type": "module",
+  "imports": {
+    "#/*": "./src/*"
+  },
   "exports": {
     ".": {
       "types": "./src/index.ts",
@@ -19,8 +22,5 @@
   "dependencies": {
     "@elysiajs/static": "^1.4.10",
     "elysia": "^1.4.28"
-  },
-  "devDependencies": {
-    "@pongolinks/frontend": "workspace:*"
   }
 }

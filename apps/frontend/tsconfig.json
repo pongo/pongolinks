@@ -2,11 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "jsx": "preserve",
-    "lib": ["ES2025", "DOM", "DOM.Iterable"],
-    "paths": {
-      "@/*": ["./src/*"],
-      "@pongolinks/backend": ["../backend/src/index.ts"]
-    }
+    "lib": ["ES2025", "DOM", "DOM.Iterable"]
   },
-  "include": ["../backend/src/**/*.ts", "src/**/*.ts", "src/**/*.vue", "vite.config.ts"]
+  "include": ["src/**/*.ts", "src/**/*.vue", "vite.config.ts"]
 }

@@ -19,14 +19,12 @@
         "@elysiajs/static": "^1.4.10",
         "elysia": "^1.4.28",
       },
-      "devDependencies": {
-        "@pongolinks/frontend": "workspace:*",
-      },
     },
     "apps/frontend": {
       "name": "@pongolinks/frontend",
       "dependencies": {
         "@elysiajs/eden": "^1.3.0",
+        "@pongolinks/backend": "workspace:*",
         "@vitejs/plugin-vue": "^6.0.6",
         "elysia": "^1.4.28",
         "vite": "^8.0.11",
