@@ -6,7 +6,9 @@
     "#/*": "./src/*"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./errors": "./src/errors/index.ts",
+    "./result": "./src/result/result.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

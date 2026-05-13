@@ -15,6 +15,12 @@ export default defineConfig({
           root: "./packages/db",
         },
       },
+      {
+        test: {
+          name: "@pongolinks/shared",
+          root: "./packages/shared",
+        },
+      },
     ],
   },
 });

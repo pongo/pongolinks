@@ -11,6 +11,40 @@
 - для форматирования: bun run format
 
 - пользовательский интерфейс на английском языке
+- комментарии в коде пиши на английском языке.
+
+## Error handling
+
+This project uses a Rust-style Result pattern for operational errors.
+
+- Do NOT throw exceptions for operational (expected) errors.
+- Use `Result<T, E>` instead.
+- Throw exceptions for programmer errors, failed invariants, and test assertions.
+
+### Example
+
+```ts
+import { Ok, Err, type Result } from "@pongolinks/shared/result";
+
+async function fetchUser(id: string): Promise<Result<User>> {
+  try {
+    const user = await db.findUser(id);
+    if (!user) return Err("user not found", { id });
+    return Ok(user);
+  } catch (error) {
+    return Err(`fetchUser failed: ${(error as Error).message}`, { error });
+  }
+}
+
+const userResult = await fetchUser(id);
+if (userResult.isErr) {
+  logger.error(userResult.error.message, userResult.error.data);
+  return res.json({ ok: false, error: userResult.error });
+}
+
+const user = userResult.value;
+res.json({ ok: true, user });
+```
 
 ## Agent skills
 
