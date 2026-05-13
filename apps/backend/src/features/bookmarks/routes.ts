@@ -65,7 +65,7 @@ export const createBookmarkRoutes = ({ db }: BookmarkRoutesOptions) => {
       if (result.isErr) {
         logError(log, result.error);
       } else {
-        log.set({ bookmark: { count: result.value.bookmarks.length } });
+        log.set({ bookmarks: { count: result.value.bookmarks.length } });
       }
 
       return resultResponse(result, set);
