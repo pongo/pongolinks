@@ -28,7 +28,7 @@ async function saveBookmark(payload: EditableBookmarkPayload) {
 
 <template>
   <main class="min-h-screen px-4 py-8 text-slate-900 sm:px-6">
-    <section class="mx-auto max-w-2xl">
+    <section class="mx-auto max-w-3xl">
       <RouterLink class="text-sm font-semibold text-blue-800 hover:text-blue-950" to="/">
         Back to bookmarks
       </RouterLink>
