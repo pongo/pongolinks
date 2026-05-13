@@ -1,6 +1,6 @@
 import { Elysia, t } from "elysia";
 
-import { resultResponse } from "../../http/result-response";
+import { resultResponse, type ApiError } from "../../http/result-response";
 import { BookmarkId } from "./bookmark-id";
 import { BookmarkUrl } from "./bookmark-url";
 import {
@@ -25,6 +25,17 @@ const getLogger = (context: unknown): WideEventLogger =>
   typeof context === "object" && context !== null && "log" in context
     ? ((context as { log?: WideEventLogger }).log ?? noopLogger)
     : noopLogger;
+
+const logError = (log: WideEventLogger, error: ApiError) => {
+  log.set({
+    error: {
+      message: error.message,
+      code: error.code,
+      status: error.status,
+      ...(error.data ? { data: error.data } : {}),
+    },
+  });
+};
 
 const editableBookmarkBodySchema = t.Object({
   url: t.String(),
@@ -52,13 +63,11 @@ export const createBookmarkRoutes = ({ db }: BookmarkRoutesOptions) => {
       log.set({ bookmark: { operation: "list" } });
 
       const result = await repository.list();
-      log.set({
-        bookmark: {
-          operation: "list",
-          outcome: result.isOk ? "success" : "error",
-          count: result.isOk ? result.value.bookmarks.length : undefined,
-        },
-      });
+      if (result.isErr) {
+        logError(log, result.error);
+      } else {
+        log.set({ bookmark: { count: result.value.bookmarks.length } });
+      }
 
       return resultResponse(result, set);
     })
@@ -71,37 +80,29 @@ export const createBookmarkRoutes = ({ db }: BookmarkRoutesOptions) => {
 
         const input = validateEditableBookmarkInput(body);
         if (input.isErr) {
-          log.set({
-            bookmark: { operation: "create", validation: "invalid", code: input.error.code },
-          });
+          logError(log, input.error);
           return resultResponse(input, set);
         }
 
         const url = BookmarkUrl.from(input.value.url);
         if (url.isErr) {
-          log.set({
-            bookmark: { operation: "create", validation: "invalid", code: url.error.code },
-          });
+          logError(log, url.error);
           return resultResponse(url, set);
         }
 
         log.set({
           bookmark: {
-            operation: "create",
             validation: "valid",
             url: url.value.value(),
           },
         });
 
         const result = await repository.create({ ...input.value, url: url.value });
-        log.set({
-          bookmark: {
-            operation: "create",
-            outcome: result.isOk ? "created" : "error",
-            duplicate: result.isErr && result.error.code === "bookmark.url_duplicate",
-            id: result.isOk ? result.value.id : undefined,
-          },
-        });
+        if (result.isErr) {
+          logError(log, result.error);
+        } else {
+          log.set({ bookmark: { id: result.value.id } });
+        }
 
         return resultResponse(result, set);
       },
@@ -118,21 +119,16 @@ export const createBookmarkRoutes = ({ db }: BookmarkRoutesOptions) => {
 
         const id = BookmarkId.from(params.id);
         if (id.isErr) {
-          log.set({ bookmark: { operation: "get", validation: "invalid", code: id.error.code } });
+          logError(log, id.error);
           return resultResponse(id, set);
         }
 
-        log.set({ bookmark: { operation: "get", id: id.value.value(), validation: "valid" } });
+        log.set({ bookmark: { id: id.value.value(), validation: "valid" } });
 
         const result = await repository.findById(id.value);
-        log.set({
-          bookmark: {
-            operation: "get",
-            id: id.value.value(),
-            outcome: result.isOk ? "found" : "error",
-            notFound: result.isErr && result.error.code === "bookmark.not_found",
-          },
-        });
+        if (result.isErr) {
+          logError(log, result.error);
+        }
 
         return resultResponse(result, set);
       },
@@ -149,41 +145,26 @@ export const createBookmarkRoutes = ({ db }: BookmarkRoutesOptions) => {
 
         const id = BookmarkId.from(params.id);
         if (id.isErr) {
-          log.set({
-            bookmark: { operation: "update", validation: "invalid", code: id.error.code },
-          });
+          logError(log, id.error);
           return resultResponse(id, set);
         }
 
         const input = validateEditableBookmarkInput(body);
         if (input.isErr) {
-          log.set({
-            bookmark: {
-              operation: "update",
-              id: id.value.value(),
-              validation: "invalid",
-              code: input.error.code,
-            },
-          });
+          log.set({ bookmark: { id: id.value.value() } });
+          logError(log, input.error);
           return resultResponse(input, set);
         }
 
         const url = BookmarkUrl.from(input.value.url);
         if (url.isErr) {
-          log.set({
-            bookmark: {
-              operation: "update",
-              id: id.value.value(),
-              validation: "invalid",
-              code: url.error.code,
-            },
-          });
+          log.set({ bookmark: { id: id.value.value() } });
+          logError(log, url.error);
           return resultResponse(url, set);
         }
 
         log.set({
           bookmark: {
-            operation: "update",
             id: id.value.value(),
             validation: "valid",
             url: url.value.value(),
@@ -191,16 +172,11 @@ export const createBookmarkRoutes = ({ db }: BookmarkRoutesOptions) => {
         });
 
         const result = await repository.update(id.value, { ...input.value, url: url.value });
-        log.set({
-          bookmark: {
-            operation: "update",
-            id: id.value.value(),
-            outcome: result.isOk ? "updated" : "error",
-            duplicate: result.isErr && result.error.code === "bookmark.url_duplicate",
-            notFound: result.isErr && result.error.code === "bookmark.not_found",
-            updatedId: result.isOk ? result.value.id : undefined,
-          },
-        });
+        if (result.isErr) {
+          logError(log, result.error);
+        } else {
+          log.set({ bookmark: { updatedId: result.value.id } });
+        }
 
         return resultResponse(result, set);
       },
