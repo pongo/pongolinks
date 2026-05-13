@@ -57,7 +57,7 @@ function submitForm() {
       <span class="mb-2 block text-sm font-semibold text-slate-800">URL</span>
       <input
         v-model="form.url"
-        class="w-full border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
+        class="w-full border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 transition outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
         type="url"
         autocomplete="url"
         :aria-invalid="Boolean(errors?.url)"
@@ -72,7 +72,7 @@ function submitForm() {
       <span class="mb-2 block text-sm font-semibold text-slate-800">Title</span>
       <input
         v-model="form.title"
-        class="w-full border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
+        class="w-full border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 transition outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
         type="text"
         autocomplete="off"
         :aria-invalid="Boolean(errors?.title)"
@@ -87,7 +87,7 @@ function submitForm() {
       <span class="mb-2 block text-sm font-semibold text-slate-800">Description</span>
       <textarea
         v-model="form.description"
-        class="min-h-28 w-full resize-y border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
+        class="min-h-28 w-full resize-y border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 transition outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
         rows="4"
       />
     </label>
