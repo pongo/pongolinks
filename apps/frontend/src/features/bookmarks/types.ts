@@ -37,6 +37,7 @@ export type ApiErrorCode =
   | "bookmark.id_invalid"
   | "bookmark.not_found"
   | "bookmark.tags_invalid"
+  | "bookmark.validation_invalid"
   | "bookmark.unexpected";
 
 export type ApiError = {

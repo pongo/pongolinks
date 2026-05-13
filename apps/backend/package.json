@@ -6,7 +6,8 @@
     "#/*": "./src/*"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./contract": "./src/app.ts"
   },
   "scripts": {
     "dev": "cd ../.. && bun --watch apps/backend/src/index.ts",

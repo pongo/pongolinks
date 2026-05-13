@@ -1,3 +1,4 @@
+import { apiClient } from "#/shared/api/client.ts";
 import type { ApiError, BookmarkDTO, EditableBookmarkPayload, FormErrors } from "./types";
 
 type SuccessEnvelope<T> = {
@@ -22,8 +23,6 @@ export type ApiResult<T> =
       errors: FormErrors;
       error: ApiError;
     };
-
-const apiBase = "/pongolinks/api";
 
 const unexpectedError: ApiError = {
   message: "Something went wrong. Please try again.",
@@ -61,47 +60,70 @@ export function parseApiEnvelope<T>(envelope: ApiEnvelope<T>): ApiResult<T> {
   };
 }
 
-async function requestJson<T>(path: string, init?: RequestInit): Promise<ApiResult<T>> {
-  try {
-    const response = await fetch(`${apiBase}${path}`, {
-      headers: {
-        "content-type": "application/json",
-        ...init?.headers,
-      },
-      ...init,
-    });
-    const envelope = (await response.json()) as ApiEnvelope<T>;
+type EdenApiResponse = {
+  data: unknown;
+  error: { value?: unknown } | null;
+};
 
-    return parseApiEnvelope(envelope);
+function isApiEnvelope<T>(value: unknown): value is ApiEnvelope<T> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "ok" in value &&
+    typeof (value as { ok: unknown }).ok === "boolean"
+  );
+}
+
+function unexpectedResult<T>(): ApiResult<T> {
+  return {
+    ok: false,
+    error: unexpectedError,
+    errors: {
+      form: unexpectedError.message,
+    },
+  };
+}
+
+function parseEdenResponse<T>(response: EdenApiResponse): ApiResult<T> {
+  if (isApiEnvelope<T>(response.data)) {
+    return parseApiEnvelope(response.data);
+  }
+
+  if (response.error && isApiEnvelope<T>(response.error.value)) {
+    return parseApiEnvelope(response.error.value);
+  }
+
+  return unexpectedResult();
+}
+
+export async function listBookmarks() {
+  try {
+    return parseEdenResponse<{ bookmarks: BookmarkDTO[] }>(await apiClient.api.bookmarks.get());
   } catch {
-    return {
-      ok: false,
-      error: unexpectedError,
-      errors: {
-        form: unexpectedError.message,
-      },
-    };
+    return unexpectedResult<{ bookmarks: BookmarkDTO[] }>();
   }
 }
 
-export function listBookmarks() {
-  return requestJson<{ bookmarks: BookmarkDTO[] }>("/bookmarks");
+export async function getBookmark(id: string) {
+  try {
+    return parseEdenResponse<BookmarkDTO>(await apiClient.api.bookmarks[id]!.get());
+  } catch {
+    return unexpectedResult<BookmarkDTO>();
+  }
 }
 
-export function getBookmark(id: string) {
-  return requestJson<BookmarkDTO>(`/bookmarks/${id}`);
+export async function createBookmark(payload: EditableBookmarkPayload) {
+  try {
+    return parseEdenResponse<BookmarkDTO>(await apiClient.api.bookmarks.post(payload));
+  } catch {
+    return unexpectedResult<BookmarkDTO>();
+  }
 }
 
-export function createBookmark(payload: EditableBookmarkPayload) {
-  return requestJson<BookmarkDTO>("/bookmarks", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
-export function updateBookmark(id: string, payload: EditableBookmarkPayload) {
-  return requestJson<BookmarkDTO>(`/bookmarks/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify(payload),
-  });
+export async function updateBookmark(id: string, payload: EditableBookmarkPayload) {
+  try {
+    return parseEdenResponse<BookmarkDTO>(await apiClient.api.bookmarks[id]!.patch(payload));
+  } catch {
+    return unexpectedResult<BookmarkDTO>();
+  }
 }

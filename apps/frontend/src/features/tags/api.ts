@@ -1,3 +1,4 @@
+import { apiClient } from "#/shared/api/client.ts";
 import type { TagSummaryDTO } from "./types";
 
 type ApiError = {
@@ -26,39 +27,52 @@ type ApiResult<T> =
       error: ApiError;
     };
 
-const apiBase = "/pongolinks/api";
-
 const unexpectedError: ApiError = {
   message: "Something went wrong. Please try again.",
   code: "bookmark.unexpected",
 };
 
+function isApiEnvelope<T>(value: unknown): value is SuccessEnvelope<T> | ErrorEnvelope {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "ok" in value &&
+    typeof (value as { ok: unknown }).ok === "boolean"
+  );
+}
+
+function unexpectedResult<T>(): ApiResult<T> {
+  return {
+    ok: false,
+    error: unexpectedError,
+  };
+}
+
+function parseApiEnvelope<T>(envelope: SuccessEnvelope<T> | ErrorEnvelope): ApiResult<T> {
+  if (envelope.ok) {
+    return {
+      ok: true,
+      data: envelope.data,
+    };
+  }
+
+  return {
+    ok: false,
+    error: envelope.error,
+  };
+}
+
 export async function listTags(): Promise<ApiResult<{ tags: TagSummaryDTO[] }>> {
   try {
-    const response = await fetch(`${apiBase}/tags`, {
-      headers: {
-        "content-type": "application/json",
-      },
-    });
-    const envelope = (await response.json()) as
-      | SuccessEnvelope<{ tags: TagSummaryDTO[] }>
-      | ErrorEnvelope;
+    const response = await apiClient.api.tags.get();
+    const envelope = response.data ?? response.error?.value;
 
-    if (envelope.ok) {
-      return {
-        ok: true,
-        data: envelope.data,
-      };
+    if (isApiEnvelope<{ tags: TagSummaryDTO[] }>(envelope)) {
+      return parseApiEnvelope(envelope);
     }
 
-    return {
-      ok: false,
-      error: envelope.error,
-    };
+    return unexpectedResult<{ tags: TagSummaryDTO[] }>();
   } catch {
-    return {
-      ok: false,
-      error: unexpectedError,
-    };
+    return unexpectedResult<{ tags: TagSummaryDTO[] }>();
   }
 }
