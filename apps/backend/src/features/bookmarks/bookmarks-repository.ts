@@ -276,6 +276,7 @@ export class BookmarksRepository {
     const existingUrlSet = new Set(existingRows.map((row) => row.url));
     const urlsToInsert = nextUrls.filter((url) => !existingUrlSet.has(url));
     const rowsToDelete = existingRows.filter((row) => !nextUrlSet.has(row.url));
+    const urlsToDelete = rowsToDelete.map((row) => row.url);
 
     for (const row of rowsToDelete) {
       await db.delete(relatedLinks).where(eq(relatedLinks.id, row.id)).run();
@@ -287,6 +288,8 @@ export class BookmarksRepository {
       insertedCount: urlsToInsert.length,
       deletedCount: rowsToDelete.length,
       retainedCount: existingRows.length - rowsToDelete.length,
+      urlsToInsert,
+      urlsToDelete,
     };
   }
 
