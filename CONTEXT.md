@@ -10,6 +10,7 @@ _Avoid_: link, favorite, item
 
 **Tag**:
 A reusable label attached to bookmarks for organization and filtering.
+A Tag name is a single whitespace-free token; spaces separate multiple Tags in text entry.
 _Avoid_: category, folder, label
 
 **Related Link**:
