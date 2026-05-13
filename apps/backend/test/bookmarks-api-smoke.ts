@@ -1,4 +1,4 @@
-import { bookmarks, bookmarkTags, tags } from "@pongolinks/db/schema";
+import { bookmarks, bookmarkTags, relatedLinks, tags } from "@pongolinks/db/schema";
 import { eq } from "drizzle-orm";
 
 import { APP_BASE_PATH, createApp } from "../src/app";
@@ -62,6 +62,11 @@ await withApp(async ({ app }) => {
   assert(body.data.url === "https://example.com", "create should return BookmarkDTO url");
   assert(Array.isArray(body.data.tags), "create should return BookmarkDTO tags");
   assert(body.data.tags.length === 0, "create should return empty tags by default");
+  assert(Array.isArray(body.data.relatedLinks), "create should return BookmarkDTO related links");
+  assert(
+    body.data.relatedLinks.length === 0,
+    "create should return empty related links by default",
+  );
 });
 
 await withApp(async ({ app }) => {
@@ -77,6 +82,35 @@ await withApp(async ({ app }) => {
   assert(body.data.tags.length === 2, "create should return unique tags");
   assert(body.data.tags[0].nameLower === "article", "create should sort tags by nameLower");
   assert(body.data.tags[1].nameLower === "lang-ru", "create should include the second tag");
+});
+
+await withApp(async ({ app }) => {
+  const response = await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify(
+        bookmarkPayload({
+          description:
+            "Primary https://example.com and related https://example.com/docs https://example.com/docs",
+        }),
+      ),
+    }),
+  );
+  const body = await response.json();
+
+  assert(response.status === 200, "create with related links should return 200");
+  assert(
+    body.data.relatedLinks.length === 2,
+    "create should persist unique explicit related links",
+  );
+  assert(
+    body.data.relatedLinks[0].url === "https://example.com",
+    "create should allow the bookmark URL as a related link",
+  );
+  assert(
+    body.data.relatedLinks[1].url === "https://example.com/docs",
+    "create should return the second related link",
+  );
 });
 
 await withApp(async ({ app }) => {
@@ -203,6 +237,11 @@ await withApp(async ({ app, db }) => {
   assert(response.status === 200, "list should return 200");
   assert(body.data.bookmarks[0].title === "New", "list should order by updatedAt descending");
   assert(Array.isArray(body.data.bookmarks[0].tags), "list should include tags");
+  assert(Array.isArray(body.data.bookmarks[0].relatedLinks), "list should include related links");
+  assert(
+    body.data.bookmarks[0].relatedLinks.length === 0,
+    "list should return empty related links when none exist",
+  );
 });
 
 await withApp(async ({ app }) => {
@@ -233,6 +272,12 @@ await withApp(async ({ app, db }) => {
   db.insert(bookmarkTags)
     .values(insertedTags.map((tag) => ({ bookmarkId: bookmark.id, tagId: tag.id })))
     .run();
+  db.insert(relatedLinks)
+    .values([
+      { bookmarkId: bookmark.id, url: "https://example.com/second-related" },
+      { bookmarkId: bookmark.id, url: "https://example.com/first-related" },
+    ])
+    .run();
 
   const response = await app.handle(request(`/api/bookmarks/${bookmark.id}`));
   const body = await response.json();
@@ -240,6 +285,14 @@ await withApp(async ({ app, db }) => {
   assert(response.status === 200, "get with tags should return 200");
   assert(body.data.tags[0].nameLower === "alpha", "get should sort tags by nameLower");
   assert(body.data.tags[1].nameLower === "zed", "get should return all tags");
+  assert(
+    body.data.relatedLinks[0].url === "https://example.com/second-related",
+    "get should order related links by id ascending",
+  );
+  assert(
+    body.data.relatedLinks[1].url === "https://example.com/first-related",
+    "get should return all related links",
+  );
 });
 
 await withApp(async ({ app }) => {
@@ -267,6 +320,60 @@ await withApp(async ({ app }) => {
   assert(response.status === 200, "update should return 200");
   assert(body.data.title === "Updated", "update should return changed title");
   assert(body.data.isPrivate === true, "update should return changed privacy flag");
+});
+
+await withApp(async ({ app }) => {
+  await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify(
+        bookmarkPayload({
+          description: "Keep https://example.com/keep and remove https://example.com/remove",
+        }),
+      ),
+    }),
+  );
+  const originalResponse = await app.handle(request("/api/bookmarks/1"));
+  const originalBody = await originalResponse.json();
+  const keptId = originalBody.data.relatedLinks[0].id;
+
+  const updateResponse = await app.handle(
+    request("/api/bookmarks/1", {
+      method: "PATCH",
+      body: JSON.stringify(
+        bookmarkPayload({
+          description: "Keep https://example.com/keep and add https://example.com/add",
+        }),
+      ),
+    }),
+  );
+  const updateBody = await updateResponse.json();
+
+  assert(updateResponse.status === 200, "related link update should return 200");
+  assert(updateBody.data.relatedLinks.length === 2, "update should return final related links");
+  assert(
+    updateBody.data.relatedLinks[0].id === keptId,
+    "update should preserve unchanged related link id",
+  );
+  assert(
+    updateBody.data.relatedLinks[0].url === "https://example.com/keep",
+    "update should retain existing related link URL",
+  );
+  assert(
+    updateBody.data.relatedLinks[1].url === "https://example.com/add",
+    "update should insert new related link URL",
+  );
+
+  const clearResponse = await app.handle(
+    request("/api/bookmarks/1", {
+      method: "PATCH",
+      body: JSON.stringify(bookmarkPayload({ description: "No explicit web links now" })),
+    }),
+  );
+  const clearBody = await clearResponse.json();
+
+  assert(clearResponse.status === 200, "related link clear update should return 200");
+  assert(clearBody.data.relatedLinks.length === 0, "update should clear removed related links");
 });
 
 await withApp(async ({ app }) => {

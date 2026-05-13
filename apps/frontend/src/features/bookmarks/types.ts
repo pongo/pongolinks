@@ -4,6 +4,11 @@ export type TagDTO = {
   nameLower: string;
 };
 
+export type RelatedLinkDTO = {
+  id: number;
+  url: string;
+};
+
 export type BookmarkDTO = {
   id: number;
   url: string;
@@ -13,6 +18,7 @@ export type BookmarkDTO = {
   createdAt: string;
   updatedAt: string;
   tags: TagDTO[];
+  relatedLinks: RelatedLinkDTO[];
 };
 
 export type EditableBookmarkPayload = {
