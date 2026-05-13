@@ -184,12 +184,6 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
           return resultResponse(tagsResult, set);
         }
         const tags = tagsResult.value;
-        log.set({
-          bookmark: {
-            tags: tags.map((tag) => tag.name()),
-          },
-          tags: { count: tags.length },
-        });
 
         const url = BookmarkUrl.from(input.value.url);
         if (url.isErr) {
