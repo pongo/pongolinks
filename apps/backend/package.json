@@ -18,6 +18,8 @@
   },
   "dependencies": {
     "@elysiajs/static": "^1.4.10",
+    "@pongolinks/db": "workspace:*",
+    "@pongolinks/shared": "workspace:*",
     "elysia": "^1.4.28"
   }
 }
