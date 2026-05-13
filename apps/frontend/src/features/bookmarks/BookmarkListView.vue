@@ -96,11 +96,14 @@ onMounted(async () => {
                 </span>
               </div>
               <p class="mt-1 text-sm break-all text-slate-600">{{ bookmark.url }}</p>
-              <p v-if="bookmark.description" class="mt-2 text-sm leading-6 text-slate-700">
+              <p
+                v-if="bookmark.description"
+                class="mt-2 text-sm leading-6 whitespace-pre-wrap text-slate-700"
+              >
                 {{ bookmark.description }}
               </p>
               <p class="mt-2 text-xs font-medium text-slate-500">
-                Updated {{ formatUpdatedAt(bookmark.updatedAt) }}
+                {{ formatUpdatedAt(bookmark.updatedAt) }}
               </p>
             </div>
             <RouterLink
