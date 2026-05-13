@@ -49,35 +49,49 @@ const readElysiaValidationSummary = (error: unknown): string | undefined => {
 
   const valueError = (error as { valueError?: { summary?: unknown; message?: unknown } })
     .valueError;
-  return typeof valueError?.summary === "string"
-    ? valueError.summary
-    : typeof valueError?.message === "string"
-      ? valueError.message
-      : undefined;
+
+  if (typeof valueError?.summary === "string") {
+    return valueError.summary;
+  }
+
+  if (typeof valueError?.message === "string") {
+    return valueError.message;
+  }
+
+  return undefined;
+};
+
+const bookmarkValidationApiError = (error: unknown): ApiError => {
+  const type = readElysiaValidationType(error);
+  const property = readElysiaValidationProperty(error);
+  const summary = readElysiaValidationSummary(error);
+
+  if (type === "params") {
+    return new ApiError("Bookmark id must be a positive safe integer", "bookmark.id_invalid", 400);
+  }
+
+  if (property === "/title") {
+    return new ApiError("Bookmark title is required", "bookmark.title_required", 400);
+  }
+
+  if (property === "/url") {
+    return new ApiError("Bookmark URL is required", "bookmark.url_required", 400);
+  }
+
+  return new ApiError("Bookmark request is invalid", "bookmark.validation_invalid", 400, {
+    validation: {
+      ...(type ? { type } : {}),
+      ...(property ? { property } : {}),
+      ...(summary ? { summary } : {}),
+    },
+  });
 };
 
 export const bookmarkValidationErrorResponse = (
   error: unknown,
   set: { status?: number | string },
 ): ErrorEnvelope => {
-  const type = readElysiaValidationType(error);
-  const property = readElysiaValidationProperty(error);
-  const summary = readElysiaValidationSummary(error);
-
-  const apiError =
-    type === "params"
-      ? new ApiError("Bookmark id must be a positive safe integer", "bookmark.id_invalid", 400)
-      : property === "/title"
-        ? new ApiError("Bookmark title is required", "bookmark.title_required", 400)
-        : property === "/url"
-          ? new ApiError("Bookmark URL is required", "bookmark.url_required", 400)
-          : new ApiError("Bookmark request is invalid", "bookmark.validation_invalid", 400, {
-              validation: {
-                ...(type ? { type } : {}),
-                ...(property ? { property } : {}),
-                ...(summary ? { summary } : {}),
-              },
-            });
+  const apiError = bookmarkValidationApiError(error);
 
   set.status = apiError.status;
   return errorEnvelope(apiError);
