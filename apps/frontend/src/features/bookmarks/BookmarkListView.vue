@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { LockIcon } from "@lucide/vue";
 import { onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 
@@ -97,7 +98,7 @@ onMounted(async () => {
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
                 <a
-                  class="text-base font-semibold break-words text-slate-950 hover:text-blue-800"
+                  class="text-base font-semibold wrap-break-word text-slate-950 hover:text-blue-800"
                   :href="bookmark.url"
                   rel="noreferrer"
                   target="_blank"
@@ -106,9 +107,11 @@ onMounted(async () => {
                 </a>
                 <span
                   v-if="bookmark.isPrivate"
-                  class="border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800"
+                  aria-label="Private bookmark"
+                  title="Private bookmark"
+                  class="inline-flex items-center justify-center pt-px text-slate-500"
                 >
-                  Private
+                  <LockIcon class="size-3.5" aria-hidden="true" />
                 </span>
               </div>
               <p class="mt-1 text-sm break-all text-slate-600">
