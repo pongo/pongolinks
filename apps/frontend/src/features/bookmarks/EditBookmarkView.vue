@@ -2,6 +2,8 @@
 import { onMounted, ref } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
+import { listTags } from "../tags/api";
+import type { TagSummaryDTO } from "../tags/types";
 import { getBookmark, updateBookmark } from "./api";
 import BookmarkForm from "./BookmarkForm.vue";
 import type { BookmarkDTO, EditableBookmarkPayload, FormErrors } from "./types";
@@ -13,14 +15,19 @@ const errors = ref<FormErrors>({});
 const isLoading = ref(true);
 const isSaving = ref(false);
 const bookmarkId = String(route.params.id);
+const tagSuggestions = ref<TagSummaryDTO[]>([]);
 
 onMounted(async () => {
-  const result = await getBookmark(bookmarkId);
+  const [bookmarkResult, tagsResult] = await Promise.all([getBookmark(bookmarkId), listTags()]);
 
-  if (result.ok) {
-    bookmark.value = result.data;
+  if (bookmarkResult.ok) {
+    bookmark.value = bookmarkResult.data;
   } else {
-    errors.value = result.errors;
+    errors.value = bookmarkResult.errors;
+  }
+
+  if (tagsResult.ok) {
+    tagSuggestions.value = tagsResult.data.tags;
   }
 
   isLoading.value = false;
@@ -55,6 +62,7 @@ async function saveBookmark(payload: EditableBookmarkPayload) {
           :bookmark="bookmark"
           :errors="errors"
           :is-saving="isSaving"
+          :tag-suggestions="tagSuggestions"
           submit-label="Save changes"
           @submit="saveBookmark"
         />

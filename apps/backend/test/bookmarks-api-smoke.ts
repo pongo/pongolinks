@@ -611,4 +611,73 @@ await withApp(async ({ app, db }) => {
   assert(row?.updatedAt !== updatedAt, "update should change updatedAt through Drizzle");
 });
 
+await withApp(async ({ app }) => {
+  const response = await app.handle(request("/api/tags"));
+  const body = await response.json();
+
+  assert(response.status === 200, "empty tags list should return 200");
+  assert(body.ok === true, "empty tags list should return success envelope");
+  assert(Array.isArray(body.data.tags), "empty tags list should return tags array");
+  assert(body.data.tags.length === 0, "empty tags list should return no tags");
+});
+
+await withApp(async ({ app, db }) => {
+  await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify(
+        bookmarkPayload({
+          url: "https://example.com/tag-one",
+          title: "Tag One",
+          tagsText: "Shared Alpha",
+        }),
+      ),
+    }),
+  );
+  await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify(
+        bookmarkPayload({
+          url: "https://example.com/tag-two",
+          title: "Tag Two",
+          tagsText: "shared beta",
+        }),
+      ),
+    }),
+  );
+  await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify(
+        bookmarkPayload({
+          url: "https://example.com/tag-three",
+          title: "Tag Three",
+          tagsText: "gamma",
+        }),
+      ),
+    }),
+  );
+
+  const gamma = await db.query.tags.findFirst({ where: eq(tags.nameLower, "gamma") });
+  if (!gamma) {
+    throw new Error("gamma tag should exist before popularity check");
+  }
+
+  await db.delete(bookmarkTags).where(eq(bookmarkTags.tagId, gamma.id)).run();
+
+  const response = await app.handle(request("/api/tags"));
+  const body = await response.json();
+
+  assert(response.status === 200, "tags list should return 200");
+  assert(body.ok === true, "tags list should return success envelope");
+  assert(body.data.tags.length === 4, "tags list should include existing unattached tags");
+  assert(body.data.tags[0].name === "Shared", "tags list should keep saved display name");
+  assert(body.data.tags[0].nameLower === "shared", "tags list should return normalized name");
+  assert(body.data.tags[0].usageCount === 2, "tags list should count current attachments");
+  assert(body.data.tags[1].nameLower === "alpha", "equal popularity should sort by nameLower");
+  assert(body.data.tags[2].nameLower === "beta", "equal popularity should sort second tag");
+  assert(body.data.tags[3].usageCount === 0, "detached existing tag should have zero usage");
+});
+
 console.log("bookmark api smoke passed");
