@@ -10,7 +10,7 @@ const router = useRouter();
 const errors = ref<FormErrors>({});
 const isSaving = ref(false);
 
-const saveBookmark = async (payload: EditableBookmarkPayload) => {
+async function saveBookmark(payload: EditableBookmarkPayload) {
   isSaving.value = true;
   errors.value = {};
 
@@ -23,7 +23,7 @@ const saveBookmark = async (payload: EditableBookmarkPayload) => {
   }
 
   isSaving.value = false;
-};
+}
 </script>
 
 <template>

@@ -26,7 +26,7 @@ onMounted(async () => {
   isLoading.value = false;
 });
 
-const saveBookmark = async (payload: EditableBookmarkPayload) => {
+async function saveBookmark(payload: EditableBookmarkPayload) {
   isSaving.value = true;
   errors.value = {};
 
@@ -39,7 +39,7 @@ const saveBookmark = async (payload: EditableBookmarkPayload) => {
   }
 
   isSaving.value = false;
-};
+}
 </script>
 
 <template>

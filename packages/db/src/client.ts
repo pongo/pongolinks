@@ -10,7 +10,7 @@ export type CreateDbOptions = {
   databasePath: string;
 };
 
-export const createDb = ({ databasePath }: CreateDbOptions) => {
+export function createDb({ databasePath }: CreateDbOptions) {
   if (databasePath !== ":memory:") {
     mkdirSync(dirname(databasePath), { recursive: true });
   }
@@ -26,4 +26,4 @@ export const createDb = ({ databasePath }: CreateDbOptions) => {
   });
 
   return { db, sqlite };
-};
+}

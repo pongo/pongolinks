@@ -5,9 +5,9 @@ import type { EditableBookmarkRequest } from "./contracts";
 
 export type ValidEditableBookmarkInput = EditableBookmarkRequest;
 
-export const validateEditableBookmarkInput = (
+export function validateEditableBookmarkInput(
   input: unknown,
-): Result<ValidEditableBookmarkInput, ApiError> => {
+): Result<ValidEditableBookmarkInput, ApiError> {
   const payload =
     typeof input === "object" && input !== null ? (input as Record<string, unknown>) : {};
   const title = typeof payload.title === "string" ? payload.title.trim() : "";
@@ -22,27 +22,27 @@ export const validateEditableBookmarkInput = (
     description: typeof payload.description === "string" ? payload.description.trim() : "",
     isPrivate: payload.isPrivate === true,
   });
-};
+}
 
-const readElysiaValidationProperty = (error: unknown): string | undefined => {
+function readElysiaValidationProperty(error: unknown): string | undefined {
   if (typeof error !== "object" || error === null) {
     return undefined;
   }
 
   const valueError = (error as { valueError?: { path?: unknown } }).valueError;
   return typeof valueError?.path === "string" ? valueError.path : undefined;
-};
+}
 
-const readElysiaValidationType = (error: unknown): string | undefined => {
+function readElysiaValidationType(error: unknown): string | undefined {
   if (typeof error !== "object" || error === null) {
     return undefined;
   }
 
   const type = (error as { type?: unknown }).type;
   return typeof type === "string" ? type : undefined;
-};
+}
 
-const readElysiaValidationSummary = (error: unknown): string | undefined => {
+function readElysiaValidationSummary(error: unknown): string | undefined {
   if (typeof error !== "object" || error === null) {
     return undefined;
   }
@@ -59,9 +59,9 @@ const readElysiaValidationSummary = (error: unknown): string | undefined => {
   }
 
   return undefined;
-};
+}
 
-const bookmarkValidationApiError = (error: unknown): ApiError => {
+function bookmarkValidationApiError(error: unknown): ApiError {
   const type = readElysiaValidationType(error);
   const property = readElysiaValidationProperty(error);
   const summary = readElysiaValidationSummary(error);
@@ -85,14 +85,14 @@ const bookmarkValidationApiError = (error: unknown): ApiError => {
       ...(summary ? { summary } : {}),
     },
   });
-};
+}
 
-export const bookmarkValidationErrorResponse = (
+export function bookmarkValidationErrorResponse(
   error: unknown,
   set: { status?: number | string },
-): ErrorEnvelope => {
+): ErrorEnvelope {
   const apiError = bookmarkValidationApiError(error);
 
   set.status = apiError.status;
   return errorEnvelope(apiError);
-};
+}

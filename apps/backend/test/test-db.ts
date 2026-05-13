@@ -6,8 +6,8 @@ const migrationsFolder = fileURLToPath(
   new URL("../../../packages/db/drizzle/migrations", import.meta.url),
 );
 
-export const createMigratedTestDb = () => {
+export function createMigratedTestDb() {
   const database = createDb({ databasePath: ":memory:" });
   migrate(database.db, { migrationsFolder });
   return database;
-};
+}

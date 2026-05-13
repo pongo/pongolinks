@@ -17,18 +17,26 @@ export type CreateAppOptions = {
 
 export const APP_BASE_PATH = "/pongolinks";
 
-const createApiRoutes = (db: AppDb) =>
-  new Elysia().group("/api", (api) => api.use(healthRoutes).use(createBookmarkRoutes({ db })));
+function createApiRoutes(db: AppDb) {
+  return new Elysia().group("/api", (api) =>
+    api.use(healthRoutes).use(createBookmarkRoutes({ db })),
+  );
+}
 
-const createHealthOnlyApiRoutes = () => new Elysia().group("/api", (api) => api.use(healthRoutes));
+function createHealthOnlyApiRoutes() {
+  return new Elysia().group("/api", (api) => api.use(healthRoutes));
+}
 
-const shouldServeFrontend = (options: CreateAppOptions) =>
-  options.serveFrontend ??
-  (typeof Bun === "undefined"
-    ? process.env.NODE_ENV === "production"
-    : Bun.env.NODE_ENV === "production");
+function shouldServeFrontend(options: CreateAppOptions) {
+  return (
+    options.serveFrontend ??
+    (typeof Bun === "undefined"
+      ? process.env.NODE_ENV === "production"
+      : Bun.env.NODE_ENV === "production")
+  );
+}
 
-const serveIndexHtml = (frontendDistPath: string) => {
+function serveIndexHtml(frontendDistPath: string) {
   const indexPath = join(frontendDistPath, "index.html");
 
   if (typeof Bun !== "undefined") {
@@ -40,9 +48,9 @@ const serveIndexHtml = (frontendDistPath: string) => {
       "content-type": "text/html; charset=utf-8",
     },
   });
-};
+}
 
-export const createApp = (options: CreateAppOptions = {}) => {
+export function createApp(options: CreateAppOptions = {}) {
   const frontendDistPath = options.frontendDistPath ?? config.frontendDistPath;
   const app = new Elysia()
     .use(
@@ -77,7 +85,7 @@ export const createApp = (options: CreateAppOptions = {}) => {
 
       return serveIndexHtml(frontendDistPath);
     });
-};
+}
 
 export type App = ReturnType<typeof createApp>;
 export type ApiRoutes = ReturnType<typeof createApiRoutes>;

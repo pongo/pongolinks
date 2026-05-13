@@ -34,14 +34,14 @@ watch(
 
 const formError = computed(() => props.errors?.form);
 
-const submitForm = () => {
+function submitForm() {
   emit("submit", {
     url: form.url,
     title: form.title,
     description: form.description,
     isPrivate: form.isPrivate,
   });
-};
+}
 </script>
 
 <template>

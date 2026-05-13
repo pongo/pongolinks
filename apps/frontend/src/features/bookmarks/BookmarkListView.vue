@@ -14,7 +14,7 @@ const timestampFormatter = new Intl.DateTimeFormat(undefined, {
   timeStyle: "short",
 });
 
-const formatUpdatedAt = (updatedAt: string) => {
+function formatUpdatedAt(updatedAt: string) {
   const parsed = new Date(updatedAt);
 
   if (Number.isNaN(parsed.getTime())) {
@@ -22,7 +22,7 @@ const formatUpdatedAt = (updatedAt: string) => {
   }
 
   return timestampFormatter.format(parsed);
-};
+}
 
 onMounted(async () => {
   const result = await listBookmarks();

@@ -17,20 +17,25 @@ export type EditableBookmarkData = Omit<EditableBookmarkRequest, "url"> & { url:
 
 type BookmarkRow = typeof bookmarks.$inferSelect;
 
-const toBookmarkDTO = (row: BookmarkRow): BookmarkDTO => ({
-  id: row.id,
-  url: row.url,
-  title: row.title,
-  description: row.description,
-  isPrivate: row.isPrivate,
-  createdAt: row.createdAt,
-  updatedAt: row.updatedAt,
-});
+function toBookmarkDTO(row: BookmarkRow): BookmarkDTO {
+  return {
+    id: row.id,
+    url: row.url,
+    title: row.title,
+    description: row.description,
+    isPrivate: row.isPrivate,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
 
-const isUniqueUrlError = (error: unknown) =>
-  error instanceof Error &&
-  (error.message.includes("UNIQUE constraint failed: bookmarks.url") ||
-    error.message.includes("bookmarks.url"));
+function isUniqueUrlError(error: unknown) {
+  return (
+    error instanceof Error &&
+    (error.message.includes("UNIQUE constraint failed: bookmarks.url") ||
+      error.message.includes("bookmarks.url"))
+  );
+}
 
 export class BookmarksRepository {
   constructor(private readonly db: AppDb) {}

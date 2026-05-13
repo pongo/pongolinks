@@ -30,7 +30,7 @@ const unexpectedError: ApiError = {
   code: "bookmark.unexpected",
 };
 
-const mapApiErrorToFormErrors = (error: ApiError): FormErrors => {
+function mapApiErrorToFormErrors(error: ApiError): FormErrors {
   if (
     error.code === "bookmark.url_required" ||
     error.code === "bookmark.url_invalid" ||
@@ -44,9 +44,9 @@ const mapApiErrorToFormErrors = (error: ApiError): FormErrors => {
   }
 
   return { form: error.message };
-};
+}
 
-export const parseApiEnvelope = <T>(envelope: ApiEnvelope<T>): ApiResult<T> => {
+export function parseApiEnvelope<T>(envelope: ApiEnvelope<T>): ApiResult<T> {
   if (envelope.ok) {
     return {
       ok: true,
@@ -59,9 +59,9 @@ export const parseApiEnvelope = <T>(envelope: ApiEnvelope<T>): ApiResult<T> => {
     error: envelope.error,
     errors: mapApiErrorToFormErrors(envelope.error),
   };
-};
+}
 
-const requestJson = async <T>(path: string, init?: RequestInit): Promise<ApiResult<T>> => {
+async function requestJson<T>(path: string, init?: RequestInit): Promise<ApiResult<T>> {
   try {
     const response = await fetch(`${apiBase}${path}`, {
       headers: {
@@ -82,20 +82,26 @@ const requestJson = async <T>(path: string, init?: RequestInit): Promise<ApiResu
       },
     };
   }
-};
+}
 
-export const listBookmarks = () => requestJson<{ bookmarks: BookmarkDTO[] }>("/bookmarks");
+export function listBookmarks() {
+  return requestJson<{ bookmarks: BookmarkDTO[] }>("/bookmarks");
+}
 
-export const getBookmark = (id: string) => requestJson<BookmarkDTO>(`/bookmarks/${id}`);
+export function getBookmark(id: string) {
+  return requestJson<BookmarkDTO>(`/bookmarks/${id}`);
+}
 
-export const createBookmark = (payload: EditableBookmarkPayload) =>
-  requestJson<BookmarkDTO>("/bookmarks", {
+export function createBookmark(payload: EditableBookmarkPayload) {
+  return requestJson<BookmarkDTO>("/bookmarks", {
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
 
-export const updateBookmark = (id: string, payload: EditableBookmarkPayload) =>
-  requestJson<BookmarkDTO>(`/bookmarks/${id}`, {
+export function updateBookmark(id: string, payload: EditableBookmarkPayload) {
+  return requestJson<BookmarkDTO>(`/bookmarks/${id}`, {
     method: "PATCH",
     body: JSON.stringify(payload),
   });
+}

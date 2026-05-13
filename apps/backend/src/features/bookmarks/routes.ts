@@ -21,12 +21,13 @@ const noopLogger: WideEventLogger = {
   set: () => {},
 };
 
-const getLogger = (context: unknown): WideEventLogger =>
-  typeof context === "object" && context !== null && "log" in context
+function getLogger(context: unknown): WideEventLogger {
+  return typeof context === "object" && context !== null && "log" in context
     ? ((context as { log?: WideEventLogger }).log ?? noopLogger)
     : noopLogger;
+}
 
-const logError = (log: WideEventLogger, error: ApiError) => {
+function logError(log: WideEventLogger, error: ApiError) {
   log.set({
     error: {
       message: error.message,
@@ -35,7 +36,7 @@ const logError = (log: WideEventLogger, error: ApiError) => {
       ...(error.data ? { data: error.data } : {}),
     },
   });
-};
+}
 
 const editableBookmarkBodySchema = t.Object({
   url: t.String(),
@@ -48,7 +49,7 @@ const bookmarkIdParamsSchema = t.Object({
   id: t.Numeric({ minimum: 1 }),
 });
 
-export const createBookmarkRoutes = ({ db }: BookmarkRoutesOptions) => {
+export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
   const repository = new BookmarksRepository(db);
 
   return new Elysia({ name: "bookmark-routes" })
@@ -178,4 +179,4 @@ export const createBookmarkRoutes = ({ db }: BookmarkRoutesOptions) => {
         params: bookmarkIdParamsSchema,
       },
     );
-};
+}

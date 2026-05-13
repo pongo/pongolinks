@@ -36,28 +36,30 @@ export type ErrorEnvelope = {
   };
 };
 
-export const successEnvelope = <T>(data: T): SuccessEnvelope<T> => ({ ok: true, data });
+export function successEnvelope<T>(data: T): SuccessEnvelope<T> {
+  return { ok: true, data };
+}
 
-export const errorEnvelope = (error: ApiError): ErrorEnvelope => ({
-  ok: false,
-  error: {
-    message: error.message,
-    code: error.code,
-    ...(error.data ? { data: error.data } : {}),
-  },
-});
+export function errorEnvelope(error: ApiError): ErrorEnvelope {
+  return {
+    ok: false,
+    error: {
+      message: error.message,
+      code: error.code,
+      ...(error.data ? { data: error.data } : {}),
+    },
+  };
+}
 
-export const unexpectedError = (error: unknown) =>
-  new ApiError("Unexpected bookmark error", "bookmark.unexpected", 500, { error });
+export function unexpectedError(error: unknown) {
+  return new ApiError("Unexpected bookmark error", "bookmark.unexpected", 500, { error });
+}
 
-export const resultResponse = <T>(
-  result: Result<T, ApiError>,
-  set: { status?: number | string },
-) => {
+export function resultResponse<T>(result: Result<T, ApiError>, set: { status?: number | string }) {
   if (result.isOk) {
     return successEnvelope(result.value);
   }
 
   set.status = result.error.status;
   return errorEnvelope(result.error);
-};
+}

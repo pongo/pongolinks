@@ -6,32 +6,35 @@ import { createMigratedTestDb } from "./test-db";
 
 type TestDb = ReturnType<typeof createMigratedTestDb>;
 
-const assert = (condition: unknown, message: string) => {
+function assert(condition: unknown, message: string) {
   if (!condition) {
     throw new Error(message);
   }
-};
+}
 
-const request = (path: string, init?: RequestInit) =>
-  new Request(`http://localhost${APP_BASE_PATH}${path}`, {
+function request(path: string, init?: RequestInit) {
+  return new Request(`http://localhost${APP_BASE_PATH}${path}`, {
     headers: {
       "content-type": "application/json",
       ...init?.headers,
     },
     ...init,
   });
+}
 
-const bookmarkPayload = (overrides: Record<string, unknown> = {}) => ({
-  url: "https://example.com",
-  title: "Example",
-  description: "A useful reference",
-  isPrivate: false,
-  ...overrides,
-});
+function bookmarkPayload(overrides: Record<string, unknown> = {}) {
+  return {
+    url: "https://example.com",
+    title: "Example",
+    description: "A useful reference",
+    isPrivate: false,
+    ...overrides,
+  };
+}
 
-const withApp = async (
+async function withApp(
   run: (context: { app: ReturnType<typeof createApp>; db: TestDb["db"] }) => Promise<void>,
-) => {
+) {
   const database = createMigratedTestDb();
 
   try {
@@ -42,7 +45,7 @@ const withApp = async (
   } finally {
     database.sqlite.close();
   }
-};
+}
 
 await withApp(async ({ app }) => {
   const response = await app.handle(
