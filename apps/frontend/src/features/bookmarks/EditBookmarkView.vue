@@ -50,7 +50,7 @@ async function saveBookmark(payload: EditableBookmarkPayload) {
       </RouterLink>
       <h1 class="mt-5 text-2xl font-bold text-slate-950">Edit bookmark</h1>
       <p v-if="isLoading" class="mt-6 text-sm text-slate-600">Loading bookmark...</p>
-      <div v-else class="mt-6 border-y border-slate-200 bg-white py-6">
+      <div v-else class="py-6">
         <BookmarkForm
           :bookmark="bookmark"
           :errors="errors"

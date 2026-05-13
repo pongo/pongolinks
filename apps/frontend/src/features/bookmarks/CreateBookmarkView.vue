@@ -33,7 +33,7 @@ async function saveBookmark(payload: EditableBookmarkPayload) {
         Back to bookmarks
       </RouterLink>
       <h1 class="mt-5 text-2xl font-bold text-slate-950">New bookmark</h1>
-      <div class="mt-6 border-y border-slate-200 bg-white py-6">
+      <div class="py-6">
         <BookmarkForm
           :errors="errors"
           :is-saving="isSaving"
