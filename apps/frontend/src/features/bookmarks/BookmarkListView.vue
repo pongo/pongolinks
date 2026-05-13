@@ -38,15 +38,15 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="min-h-screen bg-[#f7f8f5] px-4 py-8 text-slate-900 sm:px-6">
+  <main class="min-h-screen px-4 py-8 text-slate-900 sm:px-6">
     <section class="mx-auto max-w-3xl">
       <header class="mb-7 flex items-center justify-between gap-4">
         <div>
-          <p class="text-xs font-bold tracking-normal text-emerald-800 uppercase">pongolinks</p>
+          <p class="text-xs font-bold tracking-normal text-blue-800 uppercase">pongolinks</p>
           <h1 class="mt-1 text-2xl font-bold text-slate-950">Bookmarks</h1>
         </div>
         <RouterLink
-          class="inline-flex min-h-10 items-center justify-center bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-800"
+          class="inline-flex min-h-10 items-center justify-center bg-blue-700 px-4 text-sm font-semibold text-white transition hover:bg-blue-800"
           to="/bookmarks/new"
         >
           New bookmark
@@ -68,7 +68,7 @@ onMounted(async () => {
         <h2 class="text-lg font-semibold text-slate-950">No bookmarks yet</h2>
         <p class="mt-2 text-sm text-slate-600">Save the first link you want to keep close.</p>
         <RouterLink
-          class="mt-5 inline-flex min-h-10 items-center justify-center bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-800"
+          class="mt-5 inline-flex min-h-10 items-center justify-center bg-blue-700 px-4 text-sm font-semibold text-white transition hover:bg-blue-800"
           to="/bookmarks/new"
         >
           Create bookmark
@@ -81,7 +81,7 @@ onMounted(async () => {
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
                 <a
-                  class="text-base font-semibold break-words text-slate-950 hover:text-emerald-800"
+                  class="text-base font-semibold break-words text-slate-950 hover:text-blue-800"
                   :href="bookmark.url"
                   rel="noreferrer"
                   target="_blank"
@@ -107,7 +107,7 @@ onMounted(async () => {
               </p>
             </div>
             <RouterLink
-              class="shrink-0 text-sm font-semibold text-emerald-800 hover:text-emerald-950"
+              class="shrink-0 text-sm font-semibold text-blue-800 hover:text-blue-950"
               :to="`/bookmarks/${bookmark.id}/edit`"
             >
               Edit

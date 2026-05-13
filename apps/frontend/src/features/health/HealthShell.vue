@@ -29,7 +29,7 @@ onMounted(async () => {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  background: #f6f3ed;
+  background: #f5f8fc;
   color: #202124;
   font-family:
     Inter,
@@ -47,7 +47,7 @@ onMounted(async () => {
 
 .eyebrow {
   margin: 0 0 12px;
-  color: #5f6f52;
+  color: #1e40af;
   font-size: 0.875rem;
   font-weight: 700;
   letter-spacing: 0;
@@ -67,7 +67,7 @@ h1 {
 }
 
 .status[data-state="ok"] {
-  color: #176b4d;
+  color: #1d4ed8;
 }
 
 .status[data-state="error"] {

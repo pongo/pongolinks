@@ -57,7 +57,7 @@ function submitForm() {
       <span class="mb-2 block text-sm font-semibold text-slate-800">URL</span>
       <input
         v-model="form.url"
-        class="w-full border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+        class="w-full border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
         type="url"
         autocomplete="url"
         :aria-invalid="Boolean(errors?.url)"
@@ -72,7 +72,7 @@ function submitForm() {
       <span class="mb-2 block text-sm font-semibold text-slate-800">Title</span>
       <input
         v-model="form.title"
-        class="w-full border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+        class="w-full border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
         type="text"
         autocomplete="off"
         :aria-invalid="Boolean(errors?.title)"
@@ -87,18 +87,18 @@ function submitForm() {
       <span class="mb-2 block text-sm font-semibold text-slate-800">Description</span>
       <textarea
         v-model="form.description"
-        class="min-h-28 w-full resize-y border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+        class="min-h-28 w-full resize-y border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none transition focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
         rows="4"
       />
     </label>
 
     <label class="flex items-center gap-3 text-sm font-semibold text-slate-800">
-      <input v-model="form.isPrivate" class="size-4 accent-emerald-700" type="checkbox" />
+      <input v-model="form.isPrivate" class="size-4 accent-blue-700" type="checkbox" />
       Private bookmark
     </label>
 
     <button
-      class="inline-flex min-h-10 items-center justify-center bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+      class="inline-flex min-h-10 items-center justify-center bg-blue-700 px-4 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-400"
       type="submit"
       :disabled="isSaving"
     >
