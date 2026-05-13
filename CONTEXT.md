@@ -33,6 +33,8 @@ _Avoid_: secret link, hidden item
 ## Rules
 
 - **Related Links** are synchronized from the Bookmark description by adding newly extracted URLs and removing URLs that are no longer present.
+- **Tags** attached to a Bookmark are synchronized from submitted Tag text by attaching newly submitted Tags and detaching Tags that are no longer submitted.
+- A **Tag** with no attached Bookmarks is removed.
 
 ## Example dialogue
 
