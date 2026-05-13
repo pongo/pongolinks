@@ -27,6 +27,7 @@ _Avoid_: secret link, hidden item
 - A **Bookmark** can have zero or more **Related Links**
 - A **Related Link** belongs to exactly one **Bookmark**
 - A **Private Bookmark** is a specialization of **Bookmark**
+- A URL can identify at most one **Bookmark**
 
 ## Example dialogue
 
