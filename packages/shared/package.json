@@ -7,6 +7,7 @@
   },
   "exports": {
     ".": "./src/index.ts",
+    "./bookmarks": "./src/bookmarks/bookmark-description-links.ts",
     "./errors": "./src/errors/index.ts",
     "./result": "./src/result/result.ts"
   },
@@ -16,5 +17,8 @@
     "test": "vitest run --passWithNoTests",
     "agent:test": "vitest run --passWithNoTests --no-color --reporter=agent",
     "format": "oxfmt ."
+  },
+  "dependencies": {
+    "autolinker": "^4.1.5"
   }
 }

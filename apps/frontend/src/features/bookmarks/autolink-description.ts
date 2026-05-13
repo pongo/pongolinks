@@ -1,14 +1,12 @@
 import { Autolinker } from "autolinker";
+import { bookmarkDescriptionLinkParsingOptions } from "@pongolinks/shared/bookmarks";
 
 export function autolinkBookmarkDescription(description: string) {
   return Autolinker.link(description, {
+    ...bookmarkDescriptionLinkParsingOptions,
     sanitizeHtml: true,
     newWindow: true,
     className: "bookmark-description-link",
-    email: false,
-    phone: false,
-    mention: false,
-    hashtag: false,
     stripPrefix: false,
     stripTrailingSlash: false,
   });
