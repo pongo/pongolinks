@@ -59,6 +59,61 @@ await withApp(async ({ app }) => {
 });
 
 await withApp(async ({ app }) => {
+  const response = await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+    }),
+  );
+  const body = await response.json();
+
+  assert(response.status === 400, "missing create body should return 400");
+  assert(body.ok === false, "missing create body should return error envelope");
+  assert(
+    body.error.code === "bookmark.validation_invalid",
+    "missing create body should return validation code",
+  );
+});
+
+await withApp(async ({ app }) => {
+  const response = await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify("bookmark"),
+    }),
+  );
+  const body = await response.json();
+
+  assert(response.status === 400, "non-object create body should return 400");
+  assert(body.ok === false, "non-object create body should return error envelope");
+});
+
+await withApp(async ({ app }) => {
+  const response = await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify(bookmarkPayload({ title: 123 })),
+    }),
+  );
+  const body = await response.json();
+
+  assert(response.status === 400, "non-string title should return 400");
+  assert(body.ok === false, "non-string title should return error envelope");
+  assert(
+    body.error.code === "bookmark.title_required",
+    "non-string title should return title required code",
+  );
+});
+
+await withApp(async ({ app }) => {
+  const response = await app.handle(request("/api/bookmarks/not-a-number"));
+  const body = await response.json();
+
+  assert(response.status === 400, "invalid id param should return 400");
+  assert(body.ok === false, "invalid id param should return error envelope");
+  assert(body.error.code === "bookmark.id_invalid", "invalid id param should return id code");
+});
+
+await withApp(async ({ app }) => {
   await app.handle(
     request("/api/bookmarks", {
       method: "POST",

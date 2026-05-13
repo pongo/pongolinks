@@ -1,4 +1,4 @@
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 
 import { resultResponse } from "../../http/result-response";
 import { BookmarkId } from "./bookmark-id";
@@ -23,6 +23,17 @@ const getLogger = (context: unknown): WideEventLogger =>
     ? ((context as { log?: WideEventLogger }).log ?? noopLogger)
     : noopLogger;
 
+const editableBookmarkBodySchema = t.Object({
+  url: t.String(),
+  title: t.String(),
+  description: t.Optional(t.String()),
+  isPrivate: t.Optional(t.Boolean()),
+});
+
+const bookmarkIdParamsSchema = t.Object({
+  id: t.Numeric({ minimum: 1 }),
+});
+
 export const createBookmarkRoutes = ({ db }: BookmarkRoutesOptions) => {
   const repository = new BookmarksRepository(db);
 
@@ -43,128 +54,151 @@ export const createBookmarkRoutes = ({ db }: BookmarkRoutesOptions) => {
 
       return resultResponse(result, set);
     })
-    .post("/bookmarks", async (context) => {
-      const { body, set } = context;
-      const log = getLogger(context);
-      log.set({ bookmark: { operation: "create" } });
+    .post(
+      "/bookmarks",
+      async (context) => {
+        const { body, set } = context;
+        const log = getLogger(context);
+        log.set({ bookmark: { operation: "create" } });
 
-      const input = validateEditableBookmarkInput(body);
-      if (input.isErr) {
+        const input = validateEditableBookmarkInput(body);
+        if (input.isErr) {
+          log.set({
+            bookmark: { operation: "create", validation: "invalid", code: input.error.code },
+          });
+          return resultResponse(input, set);
+        }
+
+        const url = BookmarkUrl.from(input.value.url);
+        if (url.isErr) {
+          log.set({
+            bookmark: { operation: "create", validation: "invalid", code: url.error.code },
+          });
+          return resultResponse(url, set);
+        }
+
         log.set({
-          bookmark: { operation: "create", validation: "invalid", code: input.error.code },
+          bookmark: {
+            operation: "create",
+            validation: "valid",
+            url: url.value.value(),
+          },
         });
-        return resultResponse(input, set);
-      }
 
-      const url = BookmarkUrl.from(input.value.url);
-      if (url.isErr) {
-        log.set({ bookmark: { operation: "create", validation: "invalid", code: url.error.code } });
-        return resultResponse(url, set);
-      }
+        const result = await repository.create({ ...input.value, url: url.value });
+        log.set({
+          bookmark: {
+            operation: "create",
+            outcome: result.isOk ? "created" : "error",
+            duplicate: result.isErr && result.error.code === "bookmark.url_duplicate",
+            id: result.isOk ? result.value.id : undefined,
+          },
+        });
 
-      log.set({
-        bookmark: {
-          operation: "create",
-          validation: "valid",
-          url: url.value.value(),
-        },
-      });
+        return resultResponse(result, set);
+      },
+      {
+        body: editableBookmarkBodySchema,
+      },
+    )
+    .get(
+      "/bookmarks/:id",
+      async (context) => {
+        const { params, set } = context;
+        const log = getLogger(context);
+        log.set({ bookmark: { operation: "get" } });
 
-      const result = await repository.create({ ...input.value, url: url.value });
-      log.set({
-        bookmark: {
-          operation: "create",
-          outcome: result.isOk ? "created" : "error",
-          duplicate: result.isErr && result.error.code === "bookmark.url_duplicate",
-          id: result.isOk ? result.value.id : undefined,
-        },
-      });
+        const id = BookmarkId.from(params.id);
+        if (id.isErr) {
+          log.set({ bookmark: { operation: "get", validation: "invalid", code: id.error.code } });
+          return resultResponse(id, set);
+        }
 
-      return resultResponse(result, set);
-    })
-    .get("/bookmarks/:id", async (context) => {
-      const { params, set } = context;
-      const log = getLogger(context);
-      log.set({ bookmark: { operation: "get" } });
+        log.set({ bookmark: { operation: "get", id: id.value.value(), validation: "valid" } });
 
-      const id = BookmarkId.from(params.id);
-      if (id.isErr) {
-        log.set({ bookmark: { operation: "get", validation: "invalid", code: id.error.code } });
-        return resultResponse(id, set);
-      }
+        const result = await repository.findById(id.value);
+        log.set({
+          bookmark: {
+            operation: "get",
+            id: id.value.value(),
+            outcome: result.isOk ? "found" : "error",
+            notFound: result.isErr && result.error.code === "bookmark.not_found",
+          },
+        });
 
-      log.set({ bookmark: { operation: "get", id: id.value.value(), validation: "valid" } });
+        return resultResponse(result, set);
+      },
+      {
+        params: bookmarkIdParamsSchema,
+      },
+    )
+    .patch(
+      "/bookmarks/:id",
+      async (context) => {
+        const { body, params, set } = context;
+        const log = getLogger(context);
+        log.set({ bookmark: { operation: "update" } });
 
-      const result = await repository.findById(id.value);
-      log.set({
-        bookmark: {
-          operation: "get",
-          id: id.value.value(),
-          outcome: result.isOk ? "found" : "error",
-          notFound: result.isErr && result.error.code === "bookmark.not_found",
-        },
-      });
+        const id = BookmarkId.from(params.id);
+        if (id.isErr) {
+          log.set({
+            bookmark: { operation: "update", validation: "invalid", code: id.error.code },
+          });
+          return resultResponse(id, set);
+        }
 
-      return resultResponse(result, set);
-    })
-    .patch("/bookmarks/:id", async (context) => {
-      const { body, params, set } = context;
-      const log = getLogger(context);
-      log.set({ bookmark: { operation: "update" } });
+        const input = validateEditableBookmarkInput(body);
+        if (input.isErr) {
+          log.set({
+            bookmark: {
+              operation: "update",
+              id: id.value.value(),
+              validation: "invalid",
+              code: input.error.code,
+            },
+          });
+          return resultResponse(input, set);
+        }
 
-      const id = BookmarkId.from(params.id);
-      if (id.isErr) {
-        log.set({ bookmark: { operation: "update", validation: "invalid", code: id.error.code } });
-        return resultResponse(id, set);
-      }
+        const url = BookmarkUrl.from(input.value.url);
+        if (url.isErr) {
+          log.set({
+            bookmark: {
+              operation: "update",
+              id: id.value.value(),
+              validation: "invalid",
+              code: url.error.code,
+            },
+          });
+          return resultResponse(url, set);
+        }
 
-      const input = validateEditableBookmarkInput(body);
-      if (input.isErr) {
         log.set({
           bookmark: {
             operation: "update",
             id: id.value.value(),
-            validation: "invalid",
-            code: input.error.code,
+            validation: "valid",
+            url: url.value.value(),
           },
         });
-        return resultResponse(input, set);
-      }
 
-      const url = BookmarkUrl.from(input.value.url);
-      if (url.isErr) {
+        const result = await repository.update(id.value, { ...input.value, url: url.value });
         log.set({
           bookmark: {
             operation: "update",
             id: id.value.value(),
-            validation: "invalid",
-            code: url.error.code,
+            outcome: result.isOk ? "updated" : "error",
+            duplicate: result.isErr && result.error.code === "bookmark.url_duplicate",
+            notFound: result.isErr && result.error.code === "bookmark.not_found",
+            updatedId: result.isOk ? result.value.id : undefined,
           },
         });
-        return resultResponse(url, set);
-      }
 
-      log.set({
-        bookmark: {
-          operation: "update",
-          id: id.value.value(),
-          validation: "valid",
-          url: url.value.value(),
-        },
-      });
-
-      const result = await repository.update(id.value, { ...input.value, url: url.value });
-      log.set({
-        bookmark: {
-          operation: "update",
-          id: id.value.value(),
-          outcome: result.isOk ? "updated" : "error",
-          duplicate: result.isErr && result.error.code === "bookmark.url_duplicate",
-          notFound: result.isErr && result.error.code === "bookmark.not_found",
-          updatedId: result.isOk ? result.value.id : undefined,
-        },
-      });
-
-      return resultResponse(result, set);
-    });
+        return resultResponse(result, set);
+      },
+      {
+        body: editableBookmarkBodySchema,
+        params: bookmarkIdParamsSchema,
+      },
+    );
 };
