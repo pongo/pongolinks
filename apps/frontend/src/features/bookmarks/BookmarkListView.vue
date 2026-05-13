@@ -45,10 +45,10 @@ function formatBookmarkDomain(url: string) {
 onMounted(async () => {
   const result = await listBookmarks();
 
-  if (result.ok) {
-    bookmarks.value = result.data.bookmarks;
+  if (result.isOk) {
+    bookmarks.value = result.value.bookmarks;
   } else {
-    error.value = result.errors.form ?? result.error.message;
+    error.value = result.error.formErrors.form ?? result.error.message;
   }
 
   isLoading.value = false;

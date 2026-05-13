@@ -1,78 +1,47 @@
+import { Err, Ok, type Result } from "@pongolinks/shared/result";
+
 import { apiClient } from "#/shared/api/client.ts";
+import { ApiError } from "../bookmarks/types";
 import type { TagSummaryDTO } from "./types";
 
-type ApiError = {
-  message: string;
-  code: string;
-  data?: Record<string, unknown>;
-};
+const fallbackError = new ApiError(
+  "Something went wrong. Please try again.",
+  "bookmark.unexpected",
+);
 
-type SuccessEnvelope<T> = {
-  ok: true;
-  data: T;
-};
-
-type ErrorEnvelope = {
-  ok: false;
-  error: ApiError;
-};
-
-type ApiResult<T> =
-  | {
-      ok: true;
-      data: T;
-    }
-  | {
-      ok: false;
-      error: ApiError;
-    };
-
-const unexpectedError: ApiError = {
-  message: "Something went wrong. Please try again.",
-  code: "bookmark.unexpected",
-};
-
-function isApiEnvelope<T>(value: unknown): value is SuccessEnvelope<T> | ErrorEnvelope {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "ok" in value &&
-    typeof (value as { ok: unknown }).ok === "boolean"
-  );
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
-function unexpectedResult<T>(): ApiResult<T> {
-  return {
-    ok: false,
-    error: unexpectedError,
-  };
-}
-
-function parseApiEnvelope<T>(envelope: SuccessEnvelope<T> | ErrorEnvelope): ApiResult<T> {
-  if (envelope.ok) {
-    return {
-      ok: true,
-      data: envelope.data,
-    };
+function parseApiPayload<T>(payload: unknown): Result<T, ApiError> {
+  if (!isRecord(payload)) {
+    return Err(fallbackError);
   }
 
-  return {
-    ok: false,
-    error: envelope.error,
-  };
+  if (payload.isOk === true && payload.isErr === false) {
+    return Ok(payload.value as T);
+  }
+
+  if (payload.isOk !== false || payload.isErr !== true) {
+    return Err(fallbackError);
+  }
+
+  if (!isRecord(payload.error)) {
+    return Err(fallbackError);
+  }
+
+  const message =
+    typeof payload.error.message === "string" ? payload.error.message : fallbackError.message;
+
+  return Err(new ApiError(message, fallbackError.code));
 }
 
-export async function listTags(): Promise<ApiResult<{ tags: TagSummaryDTO[] }>> {
+export async function listTags(): Promise<Result<{ tags: TagSummaryDTO[] }, ApiError>> {
   try {
     const response = await apiClient.api.tags.get();
-    const envelope = response.data ?? response.error?.value;
 
-    if (isApiEnvelope<{ tags: TagSummaryDTO[] }>(envelope)) {
-      return parseApiEnvelope(envelope);
-    }
-
-    return unexpectedResult<{ tags: TagSummaryDTO[] }>();
+    return parseApiPayload<{ tags: TagSummaryDTO[] }>(response.data ?? response.error?.value);
   } catch {
-    return unexpectedResult<{ tags: TagSummaryDTO[] }>();
+    return Err(fallbackError);
   }
 }

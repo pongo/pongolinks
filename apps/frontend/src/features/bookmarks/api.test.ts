@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { parseApiEnvelope } from "./api";
+import { parseApiPayload } from "./api";
 
-describe("bookmark API envelope parsing", () => {
-  it("parses success envelopes", () => {
-    const result = parseApiEnvelope({
-      ok: true,
-      data: {
+describe("bookmark API payload parsing", () => {
+  it("parses success payloads", () => {
+    const result = parseApiPayload({
+      isOk: true,
+      isErr: false,
+      value: {
         bookmarks: [
           {
             id: 1,
@@ -23,9 +24,9 @@ describe("bookmark API envelope parsing", () => {
       },
     });
 
-    expect(result).toEqual({
-      ok: true,
-      data: {
+    expect(result).toMatchObject({
+      isOk: true,
+      value: {
         bookmarks: [
           {
             id: 1,
@@ -43,9 +44,10 @@ describe("bookmark API envelope parsing", () => {
     });
   });
 
-  it("maps field error envelopes", () => {
-    const result = parseApiEnvelope({
-      ok: false,
+  it("maps field error payloads", () => {
+    const result = parseApiPayload({
+      isOk: false,
+      isErr: true,
       error: {
         message: "Bookmark URL is required",
         code: "bookmark.url_required",
@@ -53,16 +55,19 @@ describe("bookmark API envelope parsing", () => {
     });
 
     expect(result).toMatchObject({
-      ok: false,
-      errors: {
-        url: "Bookmark URL is required",
+      isErr: true,
+      error: {
+        formErrors: {
+          url: "Bookmark URL is required",
+        },
       },
     });
   });
 
-  it("maps form error envelopes", () => {
-    const result = parseApiEnvelope({
-      ok: false,
+  it("maps form error payloads", () => {
+    const result = parseApiPayload({
+      isOk: false,
+      isErr: true,
       error: {
         message: "Bookmark was not found",
         code: "bookmark.not_found",
@@ -70,16 +75,19 @@ describe("bookmark API envelope parsing", () => {
     });
 
     expect(result).toMatchObject({
-      ok: false,
-      errors: {
-        form: "Bookmark was not found",
+      isErr: true,
+      error: {
+        formErrors: {
+          form: "Bookmark was not found",
+        },
       },
     });
   });
 
   it("maps invalid tag input to a form error", () => {
-    const result = parseApiEnvelope({
-      ok: false,
+    const result = parseApiPayload({
+      isOk: false,
+      isErr: true,
       error: {
         message: "Tags must be non-empty names without whitespace",
         code: "bookmark.tags_invalid",
@@ -87,9 +95,11 @@ describe("bookmark API envelope parsing", () => {
     });
 
     expect(result).toMatchObject({
-      ok: false,
-      errors: {
-        form: "Tags must be non-empty names without whitespace",
+      isErr: true,
+      error: {
+        formErrors: {
+          form: "Tags must be non-empty names without whitespace",
+        },
       },
     });
   });

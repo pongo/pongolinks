@@ -8,4 +8,4 @@ The Eden contract consumed by the frontend should be exported from a side-effect
 
 The frontend should keep one shared Eden client for backend connectivity, while each vertical slice owns its own API adapter functions and UI-facing error mapping.
 
-Backend API routes should continue returning the project envelope shape (`{ ok: true, data } | { ok: false, error }`). Frontend feature adapters should translate Eden responses into UI-facing results instead of exposing transport details to Vue components.
+Backend API routes should return the shared Result shape (`{ isOk: true, isErr: false, value } | { isOk: false, isErr: true, error }`) from `@pongolinks/shared/result`. Frontend feature adapters should translate Eden responses into UI-facing Results instead of exposing transport details to Vue components.

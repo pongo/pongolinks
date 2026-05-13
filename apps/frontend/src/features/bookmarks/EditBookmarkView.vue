@@ -20,14 +20,14 @@ const tagSuggestions = ref<TagSummaryDTO[]>([]);
 onMounted(async () => {
   const [bookmarkResult, tagsResult] = await Promise.all([getBookmark(bookmarkId), listTags()]);
 
-  if (bookmarkResult.ok) {
-    bookmark.value = bookmarkResult.data;
+  if (bookmarkResult.isOk) {
+    bookmark.value = bookmarkResult.value;
   } else {
-    errors.value = bookmarkResult.errors;
+    errors.value = bookmarkResult.error.formErrors;
   }
 
-  if (tagsResult.ok) {
-    tagSuggestions.value = tagsResult.data.tags;
+  if (tagsResult.isOk) {
+    tagSuggestions.value = tagsResult.value.tags;
   }
 
   isLoading.value = false;
@@ -39,10 +39,10 @@ async function saveBookmark(payload: EditableBookmarkPayload) {
 
   const result = await updateBookmark(bookmarkId, payload);
 
-  if (result.ok) {
+  if (result.isOk) {
     await router.push("/");
   } else {
-    errors.value = result.errors;
+    errors.value = result.error.formErrors;
   }
 
   isSaving.value = false;

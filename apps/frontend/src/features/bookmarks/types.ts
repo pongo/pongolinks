@@ -40,14 +40,20 @@ export type ApiErrorCode =
   | "bookmark.validation_invalid"
   | "bookmark.unexpected";
 
-export type ApiError = {
-  message: string;
-  code: ApiErrorCode;
-  data?: Record<string, unknown>;
-};
-
 export type FormErrors = {
   url?: string;
   title?: string;
   form?: string;
 };
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly code: ApiErrorCode,
+    readonly data?: Record<string, unknown>,
+    readonly formErrors: FormErrors = { form: message },
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}

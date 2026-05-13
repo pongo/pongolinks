@@ -1,35 +1,45 @@
+import { Err, Ok, type Result } from "@pongolinks/shared/result";
+
 import { apiClient } from "#/shared/api/client.ts";
-import type { ApiError, BookmarkDTO, EditableBookmarkPayload, FormErrors } from "./types";
+import {
+  ApiError,
+  type ApiErrorCode,
+  type BookmarkDTO,
+  type EditableBookmarkPayload,
+  type FormErrors,
+} from "./types";
 
-type SuccessEnvelope<T> = {
-  ok: true;
-  data: T;
+const apiErrorCodes = [
+  "bookmark.url_required",
+  "bookmark.url_invalid",
+  "bookmark.url_duplicate",
+  "bookmark.title_required",
+  "bookmark.id_invalid",
+  "bookmark.not_found",
+  "bookmark.tags_invalid",
+  "bookmark.validation_invalid",
+  "bookmark.unexpected",
+] as const satisfies readonly ApiErrorCode[];
+
+const fallbackError = new ApiError(
+  "Something went wrong. Please try again.",
+  "bookmark.unexpected",
+);
+
+type EdenApiResponse = {
+  data: unknown;
+  error: { value?: unknown } | null;
 };
 
-type ErrorEnvelope = {
-  ok: false;
-  error: ApiError;
-};
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
 
-type ApiEnvelope<T> = SuccessEnvelope<T> | ErrorEnvelope;
+function isApiErrorCode(value: unknown): value is ApiErrorCode {
+  return typeof value === "string" && apiErrorCodes.includes(value as ApiErrorCode);
+}
 
-export type ApiResult<T> =
-  | {
-      ok: true;
-      data: T;
-    }
-  | {
-      ok: false;
-      errors: FormErrors;
-      error: ApiError;
-    };
-
-const unexpectedError: ApiError = {
-  message: "Something went wrong. Please try again.",
-  code: "bookmark.unexpected",
-};
-
-function mapApiErrorToFormErrors(error: ApiError): FormErrors {
+function mapApiErrorToFormErrors(error: Pick<ApiError, "code" | "message">): FormErrors {
   if (
     error.code === "bookmark.url_required" ||
     error.code === "bookmark.url_invalid" ||
@@ -45,85 +55,79 @@ function mapApiErrorToFormErrors(error: ApiError): FormErrors {
   return { form: error.message };
 }
 
-export function parseApiEnvelope<T>(envelope: ApiEnvelope<T>): ApiResult<T> {
-  if (envelope.ok) {
-    return {
-      ok: true,
-      data: envelope.data,
-    };
+function parseApiError(value: unknown): ApiError {
+  if (!isRecord(value)) {
+    return fallbackError;
   }
 
-  return {
-    ok: false,
-    error: envelope.error,
-    errors: mapApiErrorToFormErrors(envelope.error),
-  };
+  const message = typeof value.message === "string" ? value.message : fallbackError.message;
+  const code = isApiErrorCode(value.code) ? value.code : fallbackError.code;
+  const data = isRecord(value.data) ? value.data : undefined;
+
+  return new ApiError(message, code, data, mapApiErrorToFormErrors({ code, message }));
 }
 
-type EdenApiResponse = {
-  data: unknown;
-  error: { value?: unknown } | null;
-};
-
-function isApiEnvelope<T>(value: unknown): value is ApiEnvelope<T> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "ok" in value &&
-    typeof (value as { ok: unknown }).ok === "boolean"
-  );
-}
-
-function unexpectedResult<T>(): ApiResult<T> {
-  return {
-    ok: false,
-    error: unexpectedError,
-    errors: {
-      form: unexpectedError.message,
-    },
-  };
-}
-
-function parseEdenResponse<T>(response: EdenApiResponse): ApiResult<T> {
-  if (isApiEnvelope<T>(response.data)) {
-    return parseApiEnvelope(response.data);
+export function parseApiPayload<T>(payload: unknown): Result<T, ApiError> {
+  if (!isRecord(payload)) {
+    return Err(fallbackError);
   }
 
-  if (response.error && isApiEnvelope<T>(response.error.value)) {
-    return parseApiEnvelope(response.error.value);
+  if (payload.isOk === true && payload.isErr === false) {
+    return Ok(payload.value as T);
   }
 
-  return unexpectedResult();
+  if (payload.isOk !== false || payload.isErr !== true) {
+    return Err(fallbackError);
+  }
+
+  return Err(parseApiError(payload.error));
 }
 
-export async function listBookmarks() {
+function parseEdenResponse<T>(response: EdenApiResponse): Result<T, ApiError> {
+  if (response.data) {
+    return parseApiPayload<T>(response.data);
+  }
+
+  if (response.error) {
+    return parseApiPayload<T>(response.error.value);
+  }
+
+  return Err(fallbackError);
+}
+
+export async function listBookmarks(): Promise<Result<{ bookmarks: BookmarkDTO[] }, ApiError>> {
   try {
     return parseEdenResponse<{ bookmarks: BookmarkDTO[] }>(await apiClient.api.bookmarks.get());
   } catch {
-    return unexpectedResult<{ bookmarks: BookmarkDTO[] }>();
+    return Err(fallbackError);
   }
 }
 
-export async function getBookmark(id: string) {
+export async function getBookmark(id: string): Promise<Result<BookmarkDTO, ApiError>> {
   try {
     return parseEdenResponse<BookmarkDTO>(await apiClient.api.bookmarks[id]!.get());
   } catch {
-    return unexpectedResult<BookmarkDTO>();
+    return Err(fallbackError);
   }
 }
 
-export async function createBookmark(payload: EditableBookmarkPayload) {
+export async function createBookmark(
+  payload: EditableBookmarkPayload,
+): Promise<Result<BookmarkDTO, ApiError>> {
   try {
     return parseEdenResponse<BookmarkDTO>(await apiClient.api.bookmarks.post(payload));
   } catch {
-    return unexpectedResult<BookmarkDTO>();
+    return Err(fallbackError);
   }
 }
 
-export async function updateBookmark(id: string, payload: EditableBookmarkPayload) {
+export async function updateBookmark(
+  id: string,
+  payload: EditableBookmarkPayload,
+): Promise<Result<BookmarkDTO, ApiError>> {
   try {
     return parseEdenResponse<BookmarkDTO>(await apiClient.api.bookmarks[id]!.patch(payload));
   } catch {
-    return unexpectedResult<BookmarkDTO>();
+    return Err(fallbackError);
   }
 }
