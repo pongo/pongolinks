@@ -13,6 +13,10 @@ A reusable label attached to bookmarks for organization and filtering.
 A Tag name is a single whitespace-free token; spaces separate multiple Tags in text entry.
 _Avoid_: category, folder, label
 
+**Tag Popularity**:
+The number of current Bookmarks a Tag is attached to.
+_Avoid_: weight, rank, score
+
 **Related Link**:
 A secondary URL automatically extracted from a Bookmark description because it provides nearby or supporting context.
 _Avoid_: child bookmark, attachment, reference
@@ -25,6 +29,7 @@ _Avoid_: secret link, hidden item
 
 - A **Bookmark** can have zero or more **Tags**
 - A **Tag** can belong to zero or more **Bookmarks**
+- **Tag Popularity** is counted from a **Tag**'s current Bookmark attachments
 - A **Bookmark** can have zero or more **Related Links**
 - A **Related Link** belongs to exactly one **Bookmark**
 - A **Private Bookmark** is a specialization of **Bookmark**
