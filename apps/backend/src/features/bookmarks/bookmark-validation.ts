@@ -1,6 +1,6 @@
 import { Err, Ok, type Result } from "@pongolinks/shared/result";
 
-import { ApiError, errorEnvelope, type ErrorEnvelope } from "../../http/result-response";
+import { ApiError } from "../../http/result-response";
 import type { EditableBookmarkRequest } from "./contracts";
 
 export type ValidEditableBookmarkInput = EditableBookmarkRequest;
@@ -91,9 +91,9 @@ function bookmarkValidationApiError(error: unknown): ApiError {
 export function bookmarkValidationErrorResponse(
   error: unknown,
   set: { status?: number | string },
-): ErrorEnvelope {
+): Result<never, ApiError> {
   const apiError = bookmarkValidationApiError(error);
 
   set.status = apiError.status;
-  return errorEnvelope(apiError);
+  return Err(apiError);
 }

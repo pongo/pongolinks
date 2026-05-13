@@ -80,13 +80,13 @@ await withApp(async ({ app }) => {
   const body = await response.json();
 
   assert(response.status === 200, "create should return 200");
-  assert(body.ok === true, "create should return success envelope");
-  assert(body.data.url === "https://example.com", "create should return BookmarkDTO url");
-  assert(Array.isArray(body.data.tags), "create should return BookmarkDTO tags");
-  assert(body.data.tags.length === 0, "create should return empty tags by default");
-  assert(Array.isArray(body.data.relatedLinks), "create should return BookmarkDTO related links");
+  assert(body.isOk === true, "create should return Ok result");
+  assert(body.value.url === "https://example.com", "create should return BookmarkDTO url");
+  assert(Array.isArray(body.value.tags), "create should return BookmarkDTO tags");
+  assert(body.value.tags.length === 0, "create should return empty tags by default");
+  assert(Array.isArray(body.value.relatedLinks), "create should return BookmarkDTO related links");
   assert(
-    body.data.relatedLinks.length === 0,
+    body.value.relatedLinks.length === 0,
     "create should return empty related links by default",
   );
 });
@@ -101,9 +101,9 @@ await withApp(async ({ app }) => {
   const body = await response.json();
 
   assert(response.status === 200, "create with tags should return 200");
-  assert(body.data.tags.length === 2, "create should return unique tags");
-  assert(body.data.tags[0].nameLower === "article", "create should sort tags by nameLower");
-  assert(body.data.tags[1].nameLower === "lang-ru", "create should include the second tag");
+  assert(body.value.tags.length === 2, "create should return unique tags");
+  assert(body.value.tags[0].nameLower === "article", "create should sort tags by nameLower");
+  assert(body.value.tags[1].nameLower === "lang-ru", "create should include the second tag");
 });
 
 await withApp(async ({ app }) => {
@@ -122,15 +122,15 @@ await withApp(async ({ app }) => {
 
   assert(response.status === 200, "create with related links should return 200");
   assert(
-    body.data.relatedLinks.length === 2,
+    body.value.relatedLinks.length === 2,
     "create should persist unique explicit related links",
   );
   assert(
-    body.data.relatedLinks[0].url === "https://example.com",
+    body.value.relatedLinks[0].url === "https://example.com",
     "create should allow the bookmark URL as a related link",
   );
   assert(
-    body.data.relatedLinks[1].url === "https://example.com/docs",
+    body.value.relatedLinks[1].url === "https://example.com/docs",
     "create should return the second related link",
   );
 });
@@ -157,7 +157,7 @@ await withApp(async ({ app }) => {
   const body = await response.json();
 
   assert(response.status === 200, "create should reuse existing tags");
-  assert(body.data.tags[0].name === "Article", "reuse should preserve display casing");
+  assert(body.value.tags[0].name === "Article", "reuse should preserve display casing");
 });
 
 await withApp(async ({ app }) => {
@@ -169,7 +169,7 @@ await withApp(async ({ app }) => {
   const body = await response.json();
 
   assert(response.status === 400, "missing create body should return 400");
-  assert(body.ok === false, "missing create body should return error envelope");
+  assert(body.isOk === false, "missing create body should return Err result");
   assert(
     body.error.code === "bookmark.validation_invalid",
     "missing create body should return validation code",
@@ -186,7 +186,7 @@ await withApp(async ({ app }) => {
   const body = await response.json();
 
   assert(response.status === 400, "non-object create body should return 400");
-  assert(body.ok === false, "non-object create body should return error envelope");
+  assert(body.isOk === false, "non-object create body should return Err result");
 });
 
 await withApp(async ({ app }) => {
@@ -199,7 +199,7 @@ await withApp(async ({ app }) => {
   const body = await response.json();
 
   assert(response.status === 400, "non-string title should return 400");
-  assert(body.ok === false, "non-string title should return error envelope");
+  assert(body.isOk === false, "non-string title should return Err result");
   assert(
     body.error.code === "bookmark.title_required",
     "non-string title should return title required code",
@@ -211,7 +211,7 @@ await withApp(async ({ app }) => {
   const body = await response.json();
 
   assert(response.status === 400, "invalid id param should return 400");
-  assert(body.ok === false, "invalid id param should return error envelope");
+  assert(body.isOk === false, "invalid id param should return Err result");
   assert(body.error.code === "bookmark.id_invalid", "invalid id param should return id code");
 });
 
@@ -257,11 +257,11 @@ await withApp(async ({ app, db }) => {
   const body = await response.json();
 
   assert(response.status === 200, "list should return 200");
-  assert(body.data.bookmarks[0].title === "New", "list should order by updatedAt descending");
-  assert(Array.isArray(body.data.bookmarks[0].tags), "list should include tags");
-  assert(Array.isArray(body.data.bookmarks[0].relatedLinks), "list should include related links");
+  assert(body.value.bookmarks[0].title === "New", "list should order by updatedAt descending");
+  assert(Array.isArray(body.value.bookmarks[0].tags), "list should include tags");
+  assert(Array.isArray(body.value.bookmarks[0].relatedLinks), "list should include related links");
   assert(
-    body.data.bookmarks[0].relatedLinks.length === 0,
+    body.value.bookmarks[0].relatedLinks.length === 0,
     "list should return empty related links when none exist",
   );
 });
@@ -305,14 +305,14 @@ await withApp(async ({ app, db }) => {
   const body = await response.json();
 
   assert(response.status === 200, "get with tags should return 200");
-  assert(body.data.tags[0].nameLower === "alpha", "get should sort tags by nameLower");
-  assert(body.data.tags[1].nameLower === "zed", "get should return all tags");
+  assert(body.value.tags[0].nameLower === "alpha", "get should sort tags by nameLower");
+  assert(body.value.tags[1].nameLower === "zed", "get should return all tags");
   assert(
-    body.data.relatedLinks[0].url === "https://example.com/second-related",
+    body.value.relatedLinks[0].url === "https://example.com/second-related",
     "get should order related links by id ascending",
   );
   assert(
-    body.data.relatedLinks[1].url === "https://example.com/first-related",
+    body.value.relatedLinks[1].url === "https://example.com/first-related",
     "get should return all related links",
   );
 });
@@ -340,8 +340,8 @@ await withApp(async ({ app }) => {
   const body = await response.json();
 
   assert(response.status === 200, "update should return 200");
-  assert(body.data.title === "Updated", "update should return changed title");
-  assert(body.data.isPrivate === true, "update should return changed privacy flag");
+  assert(body.value.title === "Updated", "update should return changed title");
+  assert(body.value.isPrivate === true, "update should return changed privacy flag");
 });
 
 await withApp(async ({ app }) => {
@@ -357,7 +357,7 @@ await withApp(async ({ app }) => {
   );
   const originalResponse = await app.handle(request("/api/bookmarks/1"));
   const originalBody = await originalResponse.json();
-  const keptId = originalBody.data.relatedLinks[0].id;
+  const keptId = originalBody.value.relatedLinks[0].id;
 
   const updateResponse = await app.handle(
     request("/api/bookmarks/1", {
@@ -372,17 +372,17 @@ await withApp(async ({ app }) => {
   const updateBody = await updateResponse.json();
 
   assert(updateResponse.status === 200, "related link update should return 200");
-  assert(updateBody.data.relatedLinks.length === 2, "update should return final related links");
+  assert(updateBody.value.relatedLinks.length === 2, "update should return final related links");
   assert(
-    updateBody.data.relatedLinks[0].id === keptId,
+    updateBody.value.relatedLinks[0].id === keptId,
     "update should preserve unchanged related link id",
   );
   assert(
-    updateBody.data.relatedLinks[0].url === "https://example.com/keep",
+    updateBody.value.relatedLinks[0].url === "https://example.com/keep",
     "update should retain existing related link URL",
   );
   assert(
-    updateBody.data.relatedLinks[1].url === "https://example.com/add",
+    updateBody.value.relatedLinks[1].url === "https://example.com/add",
     "update should insert new related link URL",
   );
 
@@ -395,7 +395,7 @@ await withApp(async ({ app }) => {
   const clearBody = await clearResponse.json();
 
   assert(clearResponse.status === 200, "related link clear update should return 200");
-  assert(clearBody.data.relatedLinks.length === 0, "update should clear removed related links");
+  assert(clearBody.value.relatedLinks.length === 0, "update should clear removed related links");
 });
 
 await withApp(async ({ app, db }) => {
@@ -422,9 +422,9 @@ await withApp(async ({ app, db }) => {
   const betaLinkRowIdAfterSync = bookmarkTagRowId(db, 1, beta.id);
 
   assert(syncResponse.status === 200, "tag diff update should return 200");
-  assert(syncBody.data.tags.length === 2, "update should return final diffed tags");
-  assert(syncBody.data.tags[0].nameLower === "beta", "update should retain submitted beta tag");
-  assert(syncBody.data.tags[1].nameLower === "gamma", "update should attach submitted gamma tag");
+  assert(syncBody.value.tags.length === 2, "update should return final diffed tags");
+  assert(syncBody.value.tags[0].nameLower === "beta", "update should retain submitted beta tag");
+  assert(syncBody.value.tags[1].nameLower === "gamma", "update should attach submitted gamma tag");
   assert(!alphaAfterSync, "detached single-use alpha tag should be deleted");
   assert(
     betaLinkRowIdAfterSync === betaLinkRowId,
@@ -440,7 +440,7 @@ await withApp(async ({ app, db }) => {
   const clearBody = await clearResponse.json();
 
   assert(clearResponse.status === 200, "tag clear update should return 200");
-  assert(clearBody.data.tags.length === 0, "empty tagsText should clear tag links");
+  assert(clearBody.value.tags.length === 0, "empty tagsText should clear tag links");
 
   const remainingTags = await db.query.tags.findMany();
   assert(remainingTags.length === 0, "empty tagsText should delete detached single-use tags");
@@ -479,7 +479,7 @@ await withApp(async ({ app, db }) => {
   });
 
   assert(response.status === 200, "shared tag detach should return 200");
-  assert(body.data.tags.length === 0, "shared tag should detach from edited bookmark");
+  assert(body.value.tags.length === 0, "shared tag should detach from edited bookmark");
   assert(shared?.name === "Shared", "shared detached tag should keep persisted display casing");
   assert(remainingSharedLinks.length === 1, "shared detached tag should remain attached elsewhere");
 });
@@ -609,6 +609,75 @@ await withApp(async ({ app, db }) => {
 
   assert(response.status === 200, "updatedAt patch should return 200");
   assert(row?.updatedAt !== updatedAt, "update should change updatedAt through Drizzle");
+});
+
+await withApp(async ({ app }) => {
+  const response = await app.handle(request("/api/tags"));
+  const body = await response.json();
+
+  assert(response.status === 200, "empty tags list should return 200");
+  assert(body.isOk === true, "empty tags list should return Ok result");
+  assert(Array.isArray(body.value.tags), "empty tags list should return tags array");
+  assert(body.value.tags.length === 0, "empty tags list should return no tags");
+});
+
+await withApp(async ({ app, db }) => {
+  await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify(
+        bookmarkPayload({
+          url: "https://example.com/tag-one",
+          title: "Tag One",
+          tagsText: "Shared Alpha",
+        }),
+      ),
+    }),
+  );
+  await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify(
+        bookmarkPayload({
+          url: "https://example.com/tag-two",
+          title: "Tag Two",
+          tagsText: "shared beta",
+        }),
+      ),
+    }),
+  );
+  await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify(
+        bookmarkPayload({
+          url: "https://example.com/tag-three",
+          title: "Tag Three",
+          tagsText: "gamma",
+        }),
+      ),
+    }),
+  );
+
+  const gamma = await db.query.tags.findFirst({ where: eq(tags.nameLower, "gamma") });
+  if (!gamma) {
+    throw new Error("gamma tag should exist before popularity check");
+  }
+
+  await db.delete(bookmarkTags).where(eq(bookmarkTags.tagId, gamma.id)).run();
+
+  const response = await app.handle(request("/api/tags"));
+  const body = await response.json();
+
+  assert(response.status === 200, "tags list should return 200");
+  assert(body.isOk === true, "tags list should return Ok result");
+  assert(body.value.tags.length === 4, "tags list should include existing unattached tags");
+  assert(body.value.tags[0].name === "Shared", "tags list should keep saved display name");
+  assert(body.value.tags[0].nameLower === "shared", "tags list should return normalized name");
+  assert(body.value.tags[0].usageCount === 2, "tags list should count current attachments");
+  assert(body.value.tags[1].nameLower === "alpha", "equal popularity should sort by nameLower");
+  assert(body.value.tags[2].nameLower === "beta", "equal popularity should sort second tag");
+  assert(body.value.tags[3].usageCount === 0, "detached existing tag should have zero usage");
 });
 
 console.log("bookmark api smoke passed");

@@ -1,4 +1,4 @@
-import type { Result } from "@pongolinks/shared/result";
+import { Err, Ok, type Result } from "@pongolinks/shared/result";
 
 export type ApiErrorCode =
   | "bookmark.url_required"
@@ -20,36 +20,13 @@ export class ApiError extends Error {
   ) {
     super(message);
     this.name = "ApiError";
+    Object.defineProperty(this, "message", {
+      value: message,
+      enumerable: true,
+      configurable: true,
+      writable: true,
+    });
   }
-}
-
-export type SuccessEnvelope<T> = {
-  ok: true;
-  data: T;
-};
-
-export type ErrorEnvelope = {
-  ok: false;
-  error: {
-    message: string;
-    code: ApiErrorCode;
-    data?: Record<string, unknown>;
-  };
-};
-
-export function successEnvelope<T>(data: T): SuccessEnvelope<T> {
-  return { ok: true, data };
-}
-
-export function errorEnvelope(error: ApiError): ErrorEnvelope {
-  return {
-    ok: false,
-    error: {
-      message: error.message,
-      code: error.code,
-      ...(error.data ? { data: error.data } : {}),
-    },
-  };
 }
 
 export function unexpectedError(error: unknown) {
@@ -58,9 +35,9 @@ export function unexpectedError(error: unknown) {
 
 export function resultResponse<T>(result: Result<T, ApiError>, set: { status?: number | string }) {
   if (result.isOk) {
-    return successEnvelope(result.value);
+    return Ok(result.value);
   }
 
   set.status = result.error.status;
-  return errorEnvelope(result.error);
+  return Err(result.error);
 }
