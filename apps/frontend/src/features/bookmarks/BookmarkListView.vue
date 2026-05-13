@@ -9,11 +9,6 @@ const bookmarks = ref<BookmarkDTO[]>([]);
 const isLoading = ref(true);
 const error = ref("");
 
-const timestampFormatter = new Intl.DateTimeFormat(undefined, {
-  dateStyle: "medium",
-  timeStyle: "short",
-});
-
 function formatUpdatedAt(updatedAt: string) {
   const parsed = new Date(updatedAt);
 
@@ -21,7 +16,28 @@ function formatUpdatedAt(updatedAt: string) {
     return updatedAt;
   }
 
-  return timestampFormatter.format(parsed);
+  return YYYYMMDD(parsed);
+}
+
+/**
+ * Converts a Date object to a string in the format YYYY-MM-DD.
+ *
+ * @param {Date} date - The date to be converted.
+ * @returns {string} The formatted date string.
+ */
+function YYYYMMDD(date: Readonly<Date>): string {
+  const yyyy = date.getFullYear();
+  const mm = (date.getMonth() + 1).toString().padStart(2, "0");
+  const dd = date.getDate().toString().padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function formatBookmarkDomain(url: string) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
 }
 
 onMounted(async () => {
@@ -95,23 +111,27 @@ onMounted(async () => {
                   Private
                 </span>
               </div>
-              <p class="mt-1 text-sm break-all text-slate-600">{{ bookmark.url }}</p>
+              <p class="mt-1 text-sm break-all text-slate-600">
+                {{ formatBookmarkDomain(bookmark.url) }}
+              </p>
               <p
                 v-if="bookmark.description"
                 class="mt-2 text-sm leading-6 whitespace-pre-wrap text-slate-700"
               >
                 {{ bookmark.description }}
               </p>
+            </div>
+            <div class="shrink-0 text-right">
+              <RouterLink
+                class="text-sm font-semibold text-slate-800 hover:text-red-500"
+                :to="`/bookmarks/${bookmark.id}/edit`"
+              >
+                Edit
+              </RouterLink>
               <p class="mt-2 text-xs font-medium text-slate-500">
                 {{ formatUpdatedAt(bookmark.updatedAt) }}
               </p>
             </div>
-            <RouterLink
-              class="shrink-0 text-sm font-semibold text-blue-800 hover:text-blue-950"
-              :to="`/bookmarks/${bookmark.id}/edit`"
-            >
-              Edit
-            </RouterLink>
           </div>
         </li>
       </ul>
