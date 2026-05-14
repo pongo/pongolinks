@@ -5,51 +5,112 @@ import type { EditableBookmarkRequest } from "./contracts";
 
 export type ValidEditableBookmarkInput = EditableBookmarkRequest;
 
+export type EditableBookmarkBody = {
+  url: string;
+  title: string;
+  description?: string;
+  isPrivate?: boolean;
+  tagsText?: string;
+};
+
 export function validateEditableBookmarkInput(
-  input: unknown,
+  input: EditableBookmarkBody,
 ): Result<ValidEditableBookmarkInput, ApiError> {
-  const payload =
-    typeof input === "object" && input !== null ? (input as Record<string, unknown>) : {};
-  const title = typeof payload.title === "string" ? payload.title.trim() : "";
+  const title = input.title.trim();
 
   if (title === "") {
     return Err(new ApiError("Bookmark title is required", "bookmark.title_required", 400));
   }
 
   return Ok({
-    url: typeof payload.url === "string" ? payload.url : "",
+    url: input.url,
     title,
-    description: typeof payload.description === "string" ? payload.description.trim() : "",
-    isPrivate: payload.isPrivate === true,
-    tagsText: typeof payload.tagsText === "string" ? payload.tagsText : "",
+    description: input.description?.trim() ?? "",
+    isPrivate: input.isPrivate ?? false,
+    tagsText: input.tagsText ?? "",
   });
 }
 
-function readElysiaValidationProperty(error: unknown): string | undefined {
-  if (typeof error !== "object" || error === null) {
+function parseElysiaValidationMessage(error: unknown): Record<string, unknown> | undefined {
+  if (!(error instanceof Error)) {
     return undefined;
   }
 
-  const valueError = (error as { valueError?: { path?: unknown } }).valueError;
+  try {
+    const parsed = JSON.parse(error.message);
+    return typeof parsed === "object" && parsed !== null
+      ? (parsed as Record<string, unknown>)
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function readElysiaValidationPayload(error: unknown): Record<string, unknown> | undefined {
+  const parsed = parseElysiaValidationMessage(error);
+  const direct =
+    typeof error === "object" && error !== null ? (error as Record<string, unknown>) : undefined;
+
+  if (!parsed) {
+    return direct;
+  }
+
+  return {
+    ...parsed,
+    ...direct,
+  };
+}
+
+function readElysiaValidationProperty(error: unknown): string | undefined {
+  const payload = readElysiaValidationPayload(error);
+
+  if (!payload) {
+    return undefined;
+  }
+
+  const property = payload.property;
+  if (typeof property === "string") {
+    return property === "root" ? "" : property;
+  }
+
+  const valueError = payload.valueError as { path?: unknown } | undefined;
   return typeof valueError?.path === "string" ? valueError.path : undefined;
 }
 
-function readElysiaValidationType(error: unknown): string | undefined {
-  if (typeof error !== "object" || error === null) {
+function readElysiaValidationTarget(error: unknown): string | undefined {
+  const payload = readElysiaValidationPayload(error);
+
+  if (!payload) {
     return undefined;
   }
 
-  const type = (error as { type?: unknown }).type;
+  const on = payload.on;
+  if (typeof on === "string") {
+    return on;
+  }
+
+  const type = payload.type;
   return typeof type === "string" ? type : undefined;
 }
 
 function readElysiaValidationSummary(error: unknown): string | undefined {
-  if (typeof error !== "object" || error === null) {
+  const payload = readElysiaValidationPayload(error);
+
+  if (!payload) {
     return undefined;
   }
 
-  const valueError = (error as { valueError?: { summary?: unknown; message?: unknown } })
-    .valueError;
+  const summary = payload.summary;
+  if (typeof summary === "string") {
+    return summary;
+  }
+
+  const message = payload.message;
+  if (typeof message === "string") {
+    return message;
+  }
+
+  const valueError = payload.valueError as { summary?: unknown; message?: unknown } | undefined;
 
   if (typeof valueError?.summary === "string") {
     return valueError.summary;
@@ -62,13 +123,55 @@ function readElysiaValidationSummary(error: unknown): string | undefined {
   return undefined;
 }
 
+function isEmptyBodyShapeFailure(error: unknown): boolean {
+  const payload = readElysiaValidationPayload(error);
+
+  if (!payload) {
+    return false;
+  }
+
+  const found = payload.found;
+  const errors = payload.errors;
+
+  if (
+    typeof found !== "object" ||
+    found === null ||
+    Object.keys(found).length > 0 ||
+    !Array.isArray(errors)
+  ) {
+    return false;
+  }
+
+  const paths = new Set(
+    errors
+      .map((entry) =>
+        typeof entry === "object" && entry !== null
+          ? (entry as { path?: unknown }).path
+          : undefined,
+      )
+      .filter((path): path is string => typeof path === "string"),
+  );
+
+  return paths.has("/url") && paths.has("/title");
+}
+
 function bookmarkValidationApiError(error: unknown): ApiError {
-  const type = readElysiaValidationType(error);
+  const type = readElysiaValidationTarget(error);
   const property = readElysiaValidationProperty(error);
   const summary = readElysiaValidationSummary(error);
 
   if (type === "params") {
     return new ApiError("Bookmark id must be a positive safe integer", "bookmark.id_invalid", 400);
+  }
+
+  if (isEmptyBodyShapeFailure(error)) {
+    return new ApiError("Bookmark request is invalid", "bookmark.validation_invalid", 400, {
+      validation: {
+        ...(type ? { type } : {}),
+        ...(property ? { property } : {}),
+        ...(summary ? { summary } : {}),
+      },
+    });
   }
 
   if (property === "/title") {

@@ -7,7 +7,7 @@ import {
   bookmarkValidationErrorResponse,
   validateEditableBookmarkInput,
 } from "./bookmark-validation";
-import { BookmarksRepository, type AppDb, type EditableBookmarkData } from "./bookmarks-repository";
+import { BookmarksRepository, type AppDb } from "./bookmarks-repository";
 import { parseTagNames } from "./tag-name";
 
 export type BookmarkRoutesOptions = {
@@ -44,7 +44,7 @@ const editableBookmarkBodySchema = t.Object({
   title: t.String(),
   description: t.Optional(t.String()),
   isPrivate: t.Optional(t.Boolean()),
-  tagsText: t.Optional(t.Any()),
+  tagsText: t.Optional(t.String()),
 });
 
 const bookmarkIdParamsSchema = t.Object({
