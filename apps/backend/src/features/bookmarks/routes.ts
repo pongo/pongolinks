@@ -1,4 +1,4 @@
-import { Err } from "@pongolinks/shared/result";
+import { combine, Err } from "@pongolinks/shared/result";
 import { Elysia } from "elysia";
 import { z } from "zod";
 
@@ -144,22 +144,16 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
           },
         });
 
-        const urlResult = BookmarkUrl.from(body.url);
-        if (urlResult.isErr) {
-          logError(log, urlResult.error);
-          return resultResponse(urlResult, set);
+        const parseResults = combine([BookmarkUrl.from(body.url), parseTagNames(body.tagsText)]);
+        if (parseResults.isErr) {
+          logError(log, parseResults.error);
+          return resultResponse(parseResults, set);
         }
-        const url = urlResult.value;
-        log.set({ bookmark: { url: url.value() } });
 
-        const tagsResult = parseTagNames(body.tagsText);
-        if (tagsResult.isErr) {
-          logError(log, tagsResult.error);
-          return resultResponse(tagsResult, set);
-        }
-        const tags = tagsResult.value;
+        const [url, tags] = parseResults.value;
         log.set({
           bookmark: {
+            url: url.value(),
             tags: tags.map((tag) => tag.name()),
           },
           tags: { count: tags.length },
@@ -209,35 +203,30 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
         const { body, params, set } = context;
         const log = getLogger(context);
 
-        const id = BookmarkId.from(params.id);
-        if (id.isErr) {
-          logError(log, id.error);
-          return resultResponse(id, set);
+        const parseResults = combine([
+          BookmarkId.from(params.id),
+          BookmarkUrl.from(body.url),
+          parseTagNames(body.tagsText),
+        ]);
+        if (parseResults.isErr) {
+          logError(log, parseResults.error);
+          return resultResponse(parseResults, set);
         }
+
+        const [id, url, tags] = parseResults.value;
         log.set({
           bookmark: {
-            id: id.value.value(),
+            id: id.value(),
             title: body.title,
             description: body.description,
             isPrivate: body.isPrivate,
+            url: url.value(),
+            tags: tags.map((tag) => tag.name()),
           },
+          tags: { count: tags.length },
         });
 
-        const tagsResult = parseTagNames(body.tagsText);
-        if (tagsResult.isErr) {
-          logError(log, tagsResult.error);
-          return resultResponse(tagsResult, set);
-        }
-        const tags = tagsResult.value;
-
-        const url = BookmarkUrl.from(body.url);
-        if (url.isErr) {
-          logError(log, url.error);
-          return resultResponse(url, set);
-        }
-        log.set({ bookmark: { url: url.value.value() } });
-
-        const result = await repository.update(id.value, { ...body, url: url.value, tags }, log);
+        const result = await repository.update(id, { ...body, url, tags }, log);
         if (result.isErr) {
           logError(log, result.error);
         } else {

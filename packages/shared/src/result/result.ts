@@ -52,3 +52,39 @@ export function isResult<T, E extends Error>(value: unknown): value is Result<T,
     (maybeResult.isOk === false && maybeResult.isErr === true && "error" in maybeResult)
   );
 }
+
+type ResultValue<R> = R extends Ok<infer T> ? T : never;
+type ResultError<R> = R extends Err<infer E> ? E : never;
+
+type CombinedValues<R extends readonly Result<unknown>[]> = {
+  -readonly [K in keyof R]: ResultValue<R[K]>;
+};
+
+type CombinedError<R extends readonly Result<unknown>[]> = ResultError<R[number]>;
+
+/**
+ * @example
+ * declare function a(): Result<string>;
+ * declare function b(): Result<number>;
+ * const result = combine([a(), b()]);
+ * if (result.isOk) {
+ *   const [valueA, valueB] = result.value;
+ *   // valueA: string
+ *   // valueB: number
+ * }
+ */
+export function combine<const R extends readonly Result<unknown>[]>(
+  results: R,
+): Result<CombinedValues<R>, CombinedError<R>> {
+  const values: unknown[] = [];
+
+  for (const result of results) {
+    if (result.isErr) {
+      return result as Err<CombinedError<R>>;
+    }
+
+    values.push(result.value);
+  }
+
+  return Ok(values as CombinedValues<R>);
+}
