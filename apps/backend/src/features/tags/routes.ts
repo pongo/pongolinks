@@ -2,7 +2,7 @@ import { Elysia } from "elysia";
 
 import { getRouteLogger, logApiError } from "../../http/route-logging.ts";
 import { resultResponse } from "../../http/result-response";
-import type { AppDb } from "../bookmarks/bookmarks-repository";
+import type { AppDb } from "../../db/app-db.ts";
 import { TagsRepository } from "./tags-repository";
 
 export type TagRoutesOptions = {
