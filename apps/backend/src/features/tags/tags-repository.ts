@@ -4,8 +4,8 @@ import { Err, Ok } from "@pongolinks/shared/result";
 
 import { bookmarkTags, tags } from "@pongolinks/db/schema";
 
-import { type ApiError, unexpectedError } from "../../http/result-response";
-import type { AppDb } from "../bookmarks/bookmarks-repository";
+import type { AppDb } from "#/db/app-db.ts";
+import { type ApiError, unexpectedError } from "#/http/result-response.ts";
 import type { TagSummaryDTO } from "./contracts";
 
 export class TagsRepository {

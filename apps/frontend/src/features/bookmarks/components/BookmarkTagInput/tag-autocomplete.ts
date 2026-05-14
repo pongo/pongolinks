@@ -1,4 +1,4 @@
-import type { TagSummaryDTO } from "../../../tags/types";
+import type { TagSummaryDTO } from "#/features/tags/types.ts";
 
 export type TokenRange = {
   start: number;

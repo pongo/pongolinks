@@ -2,7 +2,7 @@
 import { computed, reactive, watch } from "vue";
 
 import type { FormErrors } from "#/shared/api/errors.ts";
-import type { TagSummaryDTO } from "../../tags/types";
+import type { TagSummaryDTO } from "#/features/tags/types.ts";
 import type { BookmarkDTO, EditableBookmarkPayload } from "../types";
 import BookmarkTagInput from "./BookmarkTagInput/BookmarkTagInput.vue";
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from "vue";
 
-import type { TagSummaryDTO } from "../../../tags/types";
+import type { TagSummaryDTO } from "#/features/tags/types.ts";
 import { replaceCurrentTagToken, suggestTags } from "./tag-autocomplete";
 
 const props = defineProps<{

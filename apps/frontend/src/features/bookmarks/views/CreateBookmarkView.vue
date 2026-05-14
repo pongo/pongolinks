@@ -3,8 +3,8 @@ import { onMounted, ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 
 import type { FormErrors } from "#/shared/api/errors.ts";
-import { listTags } from "../../tags/api";
-import type { TagSummaryDTO } from "../../tags/types";
+import { listTags } from "#/features/tags/api.ts";
+import type { TagSummaryDTO } from "#/features/tags/types.ts";
 import { createBookmark } from "../api/api";
 import BookmarkForm from "../components/BookmarkForm.vue";
 import type { EditableBookmarkPayload } from "../types";

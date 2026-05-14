@@ -5,10 +5,10 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { config } from "./config";
+import type { AppDb } from "./db/app-db";
 import { createBookmarkRoutes } from "./features/bookmarks/routes";
 import { createTagRoutes } from "./features/tags/routes";
 import { healthRoutes } from "./features/health/routes";
-import type { AppDb } from "./features/bookmarks/bookmarks-repository";
 
 export type CreateAppOptions = {
   db?: AppDb;

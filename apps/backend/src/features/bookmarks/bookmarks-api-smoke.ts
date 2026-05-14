@@ -1,12 +1,12 @@
 import { bookmarks, bookmarkTags, relatedLinks, tags } from "@pongolinks/db/schema";
 import { and, eq, sql } from "drizzle-orm";
 
-import { APP_BASE_PATH, createApp } from "../src/app";
-import { BookmarkId } from "../src/features/bookmarks/bookmark-id";
-import { BookmarkUrl } from "../src/features/bookmarks/bookmark-url";
-import { BookmarksRepository } from "../src/features/bookmarks/bookmarks-repository";
-import { parseTagNames } from "../src/features/bookmarks/tag-name";
-import { createMigratedTestDb } from "./test-db";
+import { APP_BASE_PATH, createApp } from "#/app.ts";
+import { BookmarkId } from "#/features/bookmarks/domain/bookmark-id.ts";
+import { BookmarkUrl } from "#/features/bookmarks/domain/bookmark-url.ts";
+import { BookmarksRepository } from "#/features/bookmarks/bookmarks-repository.ts";
+import { parseTagNames } from "#/features/bookmarks/domain/tag-name.ts";
+import { createMigratedTestDb } from "../../../test/test-db";
 
 type TestDb = ReturnType<typeof createMigratedTestDb>;
 
@@ -43,6 +43,15 @@ function unwrapResult<T>(result: { isErr: false; value: T } | { isErr: true; err
   }
 
   return result.value;
+}
+
+function assertBookmarkErrorCode(
+  body: { isErr: boolean; error?: { code?: unknown } },
+  code: string,
+  message: string,
+) {
+  assert(body.isErr === true, `${message} should return Err result`);
+  assert(body.error?.code === code, `${message} should return ${code}`);
 }
 
 function bookmarkTagRowId(db: TestDb["db"], bookmarkId: number, tagId: number) {
@@ -169,11 +178,7 @@ await withApp(async ({ app }) => {
   const body = await response.json();
 
   assert(response.status === 400, "missing create body should return 400");
-  assert(body.isOk === false, "missing create body should return Err result");
-  assert(
-    body.error.code === "bookmark.validation_invalid",
-    "missing create body should return validation code",
-  );
+  assertBookmarkErrorCode(body, "bookmark.validation_invalid", "missing create body");
 });
 
 await withApp(async ({ app }) => {
@@ -186,7 +191,46 @@ await withApp(async ({ app }) => {
   const body = await response.json();
 
   assert(response.status === 400, "non-object create body should return 400");
-  assert(body.isOk === false, "non-object create body should return Err result");
+  assertBookmarkErrorCode(body, "bookmark.validation_invalid", "non-object create body");
+});
+
+await withApp(async ({ app }) => {
+  const response = await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify(bookmarkPayload({ url: undefined })),
+    }),
+  );
+  const body = await response.json();
+
+  assert(response.status === 400, "missing url should return 400");
+  assertBookmarkErrorCode(body, "bookmark.url_required", "missing url");
+});
+
+await withApp(async ({ app }) => {
+  const response = await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify(bookmarkPayload({ url: 123 })),
+    }),
+  );
+  const body = await response.json();
+
+  assert(response.status === 400, "non-string url should return 400");
+  assertBookmarkErrorCode(body, "bookmark.url_required", "non-string url");
+});
+
+await withApp(async ({ app }) => {
+  const response = await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify(bookmarkPayload({ title: undefined })),
+    }),
+  );
+  const body = await response.json();
+
+  assert(response.status === 400, "missing title should return 400");
+  assertBookmarkErrorCode(body, "bookmark.title_required", "missing title");
 });
 
 await withApp(async ({ app }) => {
@@ -199,11 +243,90 @@ await withApp(async ({ app }) => {
   const body = await response.json();
 
   assert(response.status === 400, "non-string title should return 400");
-  assert(body.isOk === false, "non-string title should return Err result");
-  assert(
-    body.error.code === "bookmark.title_required",
-    "non-string title should return title required code",
+  assertBookmarkErrorCode(body, "bookmark.title_required", "non-string title");
+});
+
+await withApp(async ({ app }) => {
+  const response = await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify(bookmarkPayload({ title: " \t\n " })),
+    }),
   );
+  const body = await response.json();
+
+  assert(response.status === 400, "blank title should return 400");
+  assertBookmarkErrorCode(body, "bookmark.title_required", "blank title");
+});
+
+await withApp(async ({ app }) => {
+  const response = await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify(bookmarkPayload({ description: 123 })),
+    }),
+  );
+  const body = await response.json();
+
+  assert(response.status === 400, "non-string description should return 400");
+  assertBookmarkErrorCode(body, "bookmark.validation_invalid", "non-string description");
+});
+
+await withApp(async ({ app }) => {
+  const response = await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify(bookmarkPayload({ isPrivate: "false" })),
+    }),
+  );
+  const body = await response.json();
+
+  assert(response.status === 400, "non-boolean isPrivate should return 400");
+  assertBookmarkErrorCode(body, "bookmark.validation_invalid", "non-boolean isPrivate");
+});
+
+await withApp(async ({ app }) => {
+  const response = await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify(bookmarkPayload({ tagsText: ["tag"] })),
+    }),
+  );
+  const body = await response.json();
+
+  assert(response.status === 400, "non-string tagsText should return 400");
+  assertBookmarkErrorCode(body, "bookmark.validation_invalid", "non-string tagsText");
+});
+
+await withApp(async ({ app }) => {
+  const response = await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify({
+        url: "https://example.com/minimal",
+        title: "Minimal",
+      }),
+    }),
+  );
+  const body = await response.json();
+
+  assert(response.status === 200, "missing optional fields should return 200");
+  assert(body.value.description === "", "missing description should default to empty string");
+  assert(body.value.isPrivate === false, "missing isPrivate should default to false");
+  assert(body.value.tags.length === 0, "missing tagsText should default to empty tags");
+});
+
+await withApp(async ({ app }) => {
+  const response = await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify(bookmarkPayload({ url: "ftp://example.com" })),
+    }),
+  );
+  const body = await response.json();
+
+  assert(response.status === 400, "non-http url should return 400");
+  assertBookmarkErrorCode(body, "bookmark.url_invalid", "non-http url");
 });
 
 await withApp(async ({ app }) => {
@@ -609,75 +732,6 @@ await withApp(async ({ app, db }) => {
 
   assert(response.status === 200, "updatedAt patch should return 200");
   assert(row?.updatedAt !== updatedAt, "update should change updatedAt through Drizzle");
-});
-
-await withApp(async ({ app }) => {
-  const response = await app.handle(request("/api/tags"));
-  const body = await response.json();
-
-  assert(response.status === 200, "empty tags list should return 200");
-  assert(body.isOk === true, "empty tags list should return Ok result");
-  assert(Array.isArray(body.value.tags), "empty tags list should return tags array");
-  assert(body.value.tags.length === 0, "empty tags list should return no tags");
-});
-
-await withApp(async ({ app, db }) => {
-  await app.handle(
-    request("/api/bookmarks", {
-      method: "POST",
-      body: JSON.stringify(
-        bookmarkPayload({
-          url: "https://example.com/tag-one",
-          title: "Tag One",
-          tagsText: "Shared Alpha",
-        }),
-      ),
-    }),
-  );
-  await app.handle(
-    request("/api/bookmarks", {
-      method: "POST",
-      body: JSON.stringify(
-        bookmarkPayload({
-          url: "https://example.com/tag-two",
-          title: "Tag Two",
-          tagsText: "shared beta",
-        }),
-      ),
-    }),
-  );
-  await app.handle(
-    request("/api/bookmarks", {
-      method: "POST",
-      body: JSON.stringify(
-        bookmarkPayload({
-          url: "https://example.com/tag-three",
-          title: "Tag Three",
-          tagsText: "gamma",
-        }),
-      ),
-    }),
-  );
-
-  const gamma = await db.query.tags.findFirst({ where: eq(tags.nameLower, "gamma") });
-  if (!gamma) {
-    throw new Error("gamma tag should exist before popularity check");
-  }
-
-  await db.delete(bookmarkTags).where(eq(bookmarkTags.tagId, gamma.id)).run();
-
-  const response = await app.handle(request("/api/tags"));
-  const body = await response.json();
-
-  assert(response.status === 200, "tags list should return 200");
-  assert(body.isOk === true, "tags list should return Ok result");
-  assert(body.value.tags.length === 4, "tags list should include existing unattached tags");
-  assert(body.value.tags[0].name === "Shared", "tags list should keep saved display name");
-  assert(body.value.tags[0].nameLower === "shared", "tags list should return normalized name");
-  assert(body.value.tags[0].usageCount === 2, "tags list should count current attachments");
-  assert(body.value.tags[1].nameLower === "alpha", "equal popularity should sort by nameLower");
-  assert(body.value.tags[2].nameLower === "beta", "equal popularity should sort second tag");
-  assert(body.value.tags[3].usageCount === 0, "detached existing tag should have zero usage");
 });
 
 console.log("bookmark api smoke passed");
