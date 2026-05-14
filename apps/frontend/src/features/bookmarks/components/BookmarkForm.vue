@@ -2,9 +2,9 @@
 import { computed, nextTick, reactive, ref, watch } from "vue";
 
 import type { FormErrors } from "#/shared/api/errors.ts";
-import type { TagSummaryDTO } from "../tags/types";
-import { replaceCurrentTagToken, suggestTags } from "./tag-autocomplete";
-import type { BookmarkDTO, EditableBookmarkPayload } from "./types";
+import type { TagSummaryDTO } from "../../tags/types";
+import { replaceCurrentTagToken, suggestTags } from "../tag-autocomplete";
+import type { BookmarkDTO, EditableBookmarkPayload } from "../types";
 
 const props = defineProps<{
   bookmark?: BookmarkDTO;

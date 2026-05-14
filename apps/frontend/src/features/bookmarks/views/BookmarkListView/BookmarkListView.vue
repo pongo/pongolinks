@@ -3,8 +3,8 @@ import { LockIcon } from "@lucide/vue";
 import { onMounted, ref, watchEffect } from "vue";
 import { RouterLink } from "vue-router";
 import { autolinkBookmarkDescription } from "./autolink-description";
-import { listBookmarks } from "./api";
-import type { BookmarkDTO } from "./types";
+import { listBookmarks } from "../../api/api";
+import type { BookmarkDTO } from "../../types";
 
 import { useAppVariants } from "#/variants.ts";
 const { variants } = useAppVariants();

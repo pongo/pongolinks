@@ -2,7 +2,7 @@ import { Err, Ok, type Result } from "@pongolinks/shared/result";
 
 import { apiClient } from "#/shared/api/client.ts";
 import { ApiError, type ApiErrorCode, type FormErrors } from "#/shared/api/errors.ts";
-import type { BookmarkDTO, EditableBookmarkPayload } from "./types";
+import type { BookmarkDTO, EditableBookmarkPayload } from "../types";
 
 const apiErrorCodes = [
   "bookmark.url_required",

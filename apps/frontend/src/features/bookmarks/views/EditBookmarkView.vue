@@ -3,11 +3,11 @@ import { onMounted, ref } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
 import type { FormErrors } from "#/shared/api/errors.ts";
-import { listTags } from "../tags/api";
-import type { TagSummaryDTO } from "../tags/types";
-import { getBookmark, updateBookmark } from "./api";
-import BookmarkForm from "./BookmarkForm.vue";
-import type { BookmarkDTO, EditableBookmarkPayload } from "./types";
+import { listTags } from "../../tags/api";
+import type { TagSummaryDTO } from "../../tags/types";
+import { getBookmark, updateBookmark } from "../api/api";
+import BookmarkForm from "../components/BookmarkForm.vue";
+import type { BookmarkDTO, EditableBookmarkPayload } from "../types";
 
 const route = useRoute();
 const router = useRouter();
