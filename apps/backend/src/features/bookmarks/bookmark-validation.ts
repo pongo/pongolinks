@@ -1,6 +1,6 @@
 import { Err, Ok, type Result } from "@pongolinks/shared/result";
 
-import { ApiError } from "../../http/result-response";
+import { ApiError, type ApiErrorCode } from "../../http/result-response";
 import type { EditableBookmarkRequest } from "./contracts";
 
 export type ValidEditableBookmarkInput = EditableBookmarkRequest;
@@ -31,171 +31,190 @@ export function validateEditableBookmarkInput(
   });
 }
 
-function parseElysiaValidationMessage(error: unknown): Record<string, unknown> | undefined {
+type ValidationIssue = {
+  path?: string;
+  message?: string;
+  summary?: string;
+};
+
+const validationErrorMessages = {
+  "bookmark.id_invalid": "Bookmark id must be a positive safe integer",
+  "bookmark.title_required": "Bookmark title is required",
+  "bookmark.url_required": "Bookmark URL is required",
+  "bookmark.validation_invalid": "Bookmark request is invalid",
+} as const satisfies Partial<Record<ApiErrorCode, string>>;
+
+type ValidationApiErrorCode = keyof typeof validationErrorMessages;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function readString(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
+function readValidationPayload(error: unknown): Record<string, unknown> | undefined {
   if (!(error instanceof Error)) {
-    return undefined;
+    return isRecord(error) ? error : undefined;
   }
 
   try {
-    const parsed = JSON.parse(error.message);
-    return typeof parsed === "object" && parsed !== null
-      ? (parsed as Record<string, unknown>)
-      : undefined;
+    const payload = JSON.parse(error.message);
+    return isRecord(payload) ? payload : undefined;
   } catch {
-    return undefined;
+    return isRecord(error) ? error : undefined;
   }
 }
 
-function readElysiaValidationPayload(error: unknown): Record<string, unknown> | undefined {
-  const parsed = parseElysiaValidationMessage(error);
-  const direct =
-    typeof error === "object" && error !== null ? (error as Record<string, unknown>) : undefined;
-
-  if (!parsed) {
-    return direct;
+function readValidationTarget(error: unknown): string | undefined {
+  const payload = readValidationPayload(error);
+  if (!payload) {
+    return undefined;
   }
 
+  return readString(payload.on) ?? readString(payload.type);
+}
+
+function readValidationValue(error: unknown): unknown {
+  const payload = readValidationPayload(error);
+  return payload?.value ?? payload?.found;
+}
+
+function readValidationIssues(error: unknown): ValidationIssue[] {
+  const payload = readValidationPayload(error);
+  if (!payload) {
+    return [];
+  }
+
+  const issues = Array.isArray(payload.all) ? payload.all : payload.errors;
+  if (!Array.isArray(issues)) {
+    return [];
+  }
+
+  return issues.filter(isRecord).map((issue) => ({
+    path: readString(issue.path),
+    message: readString(issue.message),
+    summary: readString(issue.summary),
+  }));
+}
+
+function readValidationMessage(error: unknown): string | undefined {
+  return error instanceof Error ? error.message : undefined;
+}
+
+function isBodyObjectShapeFailure(
+  error: unknown,
+  issues: ValidationIssue[],
+  input?: unknown,
+): boolean {
+  const target = readValidationTarget(error);
+  if (target && target !== "body") {
+    return false;
+  }
+
+  if (input !== undefined && !isRecord(input)) {
+    return true;
+  }
+
+  const message = readValidationMessage(error);
+  if (
+    input === undefined &&
+    (message === "bookmark.url_required" || message === "bookmark.title_required")
+  ) {
+    return true;
+  }
+
+  const value = readValidationValue(error);
+  if (!isRecord(value)) {
+    return true;
+  }
+
+  if (issues.some((issue) => !issue.path && issue.message === "bookmark.validation_invalid")) {
+    return true;
+  }
+
+  const paths = new Set(issues.map((issue) => issue.path));
+  if (!paths.has("/url") || !paths.has("/title")) {
+    return false;
+  }
+
+  return !isRecord(value) || Object.keys(value).length === 0;
+}
+
+function readApiErrorCode(
+  error: unknown,
+  issues: ValidationIssue[],
+  input?: unknown,
+): ValidationApiErrorCode {
+  if (isBodyObjectShapeFailure(error, issues, input)) {
+    return "bookmark.validation_invalid";
+  }
+
+  const message = readValidationMessage(error);
+  if (message && message in validationErrorMessages) {
+    return message as ValidationApiErrorCode;
+  }
+
+  const explicitIssue = issues.find((issue) =>
+    issue.message ? issue.message in validationErrorMessages : false,
+  );
+  if (explicitIssue?.message) {
+    return explicitIssue.message as ValidationApiErrorCode;
+  }
+
+  if (readValidationTarget(error) === "params") {
+    return "bookmark.id_invalid";
+  }
+
+  const firstPath = issues.find((issue) => issue.path)?.path;
+  if (firstPath === "/url") {
+    return "bookmark.url_required";
+  }
+
+  if (firstPath === "/title") {
+    return "bookmark.title_required";
+  }
+
+  if (firstPath === "/id") {
+    return "bookmark.id_invalid";
+  }
+
+  return "bookmark.validation_invalid";
+}
+
+function validationData(error: unknown, issues: ValidationIssue[]): Record<string, unknown> {
+  const type = readValidationTarget(error);
+  const firstIssue = issues[0];
+
   return {
-    ...parsed,
-    ...direct,
+    validation: {
+      ...(type ? { type } : {}),
+      ...(firstIssue?.path ? { property: firstIssue.path } : {}),
+      ...(firstIssue?.summary ? { summary: firstIssue.summary } : {}),
+    },
   };
 }
 
-function readElysiaValidationProperty(error: unknown): string | undefined {
-  const payload = readElysiaValidationPayload(error);
+function bookmarkValidationApiError(error: unknown, input?: unknown): ApiError {
+  const issues = readValidationIssues(error);
+  const code = readApiErrorCode(error, issues, input);
+  const message =
+    validationErrorMessages[code] ?? validationErrorMessages["bookmark.validation_invalid"];
 
-  if (!payload) {
-    return undefined;
+  if (code !== "bookmark.validation_invalid") {
+    return new ApiError(message, code, 400);
   }
 
-  const property = payload.property;
-  if (typeof property === "string") {
-    return property === "root" ? "" : property;
-  }
-
-  const valueError = payload.valueError as { path?: unknown } | undefined;
-  return typeof valueError?.path === "string" ? valueError.path : undefined;
-}
-
-function readElysiaValidationTarget(error: unknown): string | undefined {
-  const payload = readElysiaValidationPayload(error);
-
-  if (!payload) {
-    return undefined;
-  }
-
-  const on = payload.on;
-  if (typeof on === "string") {
-    return on;
-  }
-
-  const type = payload.type;
-  return typeof type === "string" ? type : undefined;
-}
-
-function readElysiaValidationSummary(error: unknown): string | undefined {
-  const payload = readElysiaValidationPayload(error);
-
-  if (!payload) {
-    return undefined;
-  }
-
-  const summary = payload.summary;
-  if (typeof summary === "string") {
-    return summary;
-  }
-
-  const message = payload.message;
-  if (typeof message === "string") {
-    return message;
-  }
-
-  const valueError = payload.valueError as { summary?: unknown; message?: unknown } | undefined;
-
-  if (typeof valueError?.summary === "string") {
-    return valueError.summary;
-  }
-
-  if (typeof valueError?.message === "string") {
-    return valueError.message;
-  }
-
-  return undefined;
-}
-
-function isEmptyBodyShapeFailure(error: unknown): boolean {
-  const payload = readElysiaValidationPayload(error);
-
-  if (!payload) {
-    return false;
-  }
-
-  const found = payload.found;
-  const errors = payload.errors;
-
-  if (
-    typeof found !== "object" ||
-    found === null ||
-    Object.keys(found).length > 0 ||
-    !Array.isArray(errors)
-  ) {
-    return false;
-  }
-
-  const paths = new Set(
-    errors
-      .map((entry) =>
-        typeof entry === "object" && entry !== null
-          ? (entry as { path?: unknown }).path
-          : undefined,
-      )
-      .filter((path): path is string => typeof path === "string"),
-  );
-
-  return paths.has("/url") && paths.has("/title");
-}
-
-function bookmarkValidationApiError(error: unknown): ApiError {
-  const type = readElysiaValidationTarget(error);
-  const property = readElysiaValidationProperty(error);
-  const summary = readElysiaValidationSummary(error);
-
-  if (type === "params") {
-    return new ApiError("Bookmark id must be a positive safe integer", "bookmark.id_invalid", 400);
-  }
-
-  if (isEmptyBodyShapeFailure(error)) {
-    return new ApiError("Bookmark request is invalid", "bookmark.validation_invalid", 400, {
-      validation: {
-        ...(type ? { type } : {}),
-        ...(property ? { property } : {}),
-        ...(summary ? { summary } : {}),
-      },
-    });
-  }
-
-  if (property === "/title") {
-    return new ApiError("Bookmark title is required", "bookmark.title_required", 400);
-  }
-
-  if (property === "/url") {
-    return new ApiError("Bookmark URL is required", "bookmark.url_required", 400);
-  }
-
-  return new ApiError("Bookmark request is invalid", "bookmark.validation_invalid", 400, {
-    validation: {
-      ...(type ? { type } : {}),
-      ...(property ? { property } : {}),
-      ...(summary ? { summary } : {}),
-    },
-  });
+  return new ApiError(message, code, 400, validationData(error, issues));
 }
 
 export function bookmarkValidationErrorResponse(
   error: unknown,
   set: { status?: number | string },
+  input?: unknown,
 ): Result<never, ApiError> {
-  const apiError = bookmarkValidationApiError(error);
+  const apiError = bookmarkValidationApiError(error, input);
 
   set.status = apiError.status;
   return Err(apiError);

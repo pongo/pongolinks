@@ -48,16 +48,16 @@ const editableBookmarkBodySchema = t.Object({
 });
 
 const bookmarkIdParamsSchema = t.Object({
-  id: t.Numeric({ minimum: 1 }),
+  id: t.Numeric({ minimum: 1, error: "bookmark.id_invalid" }),
 });
 
 export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
   const repository = new BookmarksRepository(db);
 
   return new Elysia({ name: "bookmark-routes" })
-    .onError(({ code, error, set }) => {
+    .onError(({ body, code, error, set }) => {
       if (code === "VALIDATION") {
-        return bookmarkValidationErrorResponse(error, set);
+        return bookmarkValidationErrorResponse(error, set, body);
       }
     })
     .get("/bookmarks", async (context) => {
