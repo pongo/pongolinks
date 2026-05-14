@@ -6,7 +6,7 @@ import { BookmarkId } from "#/features/bookmarks/domain/bookmark-id.ts";
 import { BookmarkUrl } from "#/features/bookmarks/domain/bookmark-url.ts";
 import { BookmarksRepository } from "#/features/bookmarks/bookmarks-repository.ts";
 import { parseTagNames } from "#/features/bookmarks/domain/tag-name.ts";
-import { createMigratedTestDb } from "./test-db";
+import { createMigratedTestDb } from "../../../test/test-db";
 
 type TestDb = ReturnType<typeof createMigratedTestDb>;
 

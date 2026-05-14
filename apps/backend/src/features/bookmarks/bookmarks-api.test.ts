@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 
 describe("Bookmark API", () => {
   it("passes the Bun SQLite API smoke suite", () => {
-    const result = spawnSync("bun", ["test/bookmarks-api-smoke.ts"], {
-      cwd: fileURLToPath(new URL("..", import.meta.url)),
+    const result = spawnSync("bun", ["src/features/bookmarks/bookmarks-api-smoke.ts"], {
+      cwd: fileURLToPath(new URL("../../..", import.meta.url)),
       encoding: "utf8",
     });
 
