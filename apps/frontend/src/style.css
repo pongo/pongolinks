@@ -9,14 +9,15 @@ body {
   min-width: 320px;
   /* background: #f7f8f5; */
   /* background: #f5f8fc; */
-  background: var(--color-blue-50);
-  background: var(--color-slate-50);
+  /* background: var(--color-blue-50); */
+  /* background: var(--color-slate-50); */
   /* background: var(--color-gray-50); */
   /* background: var(--color-zinc-50); */
   /* background: var(--color-neutral-50); */
   /* background: var(--color-stone-50); */
   /* background: var(--color-mist-50); */
   /* background: var(--color-olive-50); */
+  background: #fff;
   color: #1f2933;
   font-family:
     Inter,
@@ -26,6 +27,9 @@ body {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+}
+html.bg-blue body {
+  background: var(--color-slate-50);
 }
 
 button,

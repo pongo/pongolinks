@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { LockIcon } from "@lucide/vue";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watchEffect } from "vue";
 import { RouterLink } from "vue-router";
-
 import { autolinkBookmarkDescription } from "./autolink-description";
 import { listBookmarks } from "./api";
 import type { BookmarkDTO } from "./types";
+
+import { useAppVariants } from "#/variants.ts";
+const { variants } = useAppVariants();
 
 const bookmarks = ref<BookmarkDTO[]>([]);
 const isLoading = ref(true);
@@ -93,9 +95,13 @@ onMounted(async () => {
         </RouterLink>
       </div>
 
-      <ul v-else class="divide-y divide-slate-200 border-y border-slate-200 bg-white">
+      <ul
+        v-else
+        class="divide-y divide-slate-200 border-slate-200 bg-white"
+        :class="[variants.bgBlue ? 'border-y' : 'border-0']"
+      >
         <li v-for="bookmark in bookmarks" :key="bookmark.id" class="py-4">
-          <div class="flex items-start justify-between gap-4 px-4">
+          <div class="flex items-start justify-between gap-4" :class="{ 'px-4': variants.bgBlue }">
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
                 <a
@@ -133,7 +139,7 @@ onMounted(async () => {
             </div>
             <div class="shrink-0 text-right">
               <RouterLink
-                class="text-sm font-semibold text-slate-800 hover:text-red-500"
+                class="text-sm font-semibold text-slate-800 hover:text-blue-800"
                 :to="`/bookmarks/${bookmark.id}/edit`"
               >
                 Edit
