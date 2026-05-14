@@ -1,12 +1,10 @@
-import { Elysia, t } from "elysia";
+import { Err } from "@pongolinks/shared/result";
+import { Elysia } from "elysia";
+import { z } from "zod";
 
-import { resultResponse, type ApiError } from "../../http/result-response";
+import { ApiError, resultResponse, type ApiErrorCode } from "../../http/result-response";
 import { BookmarkId } from "./bookmark-id";
 import { BookmarkUrl } from "./bookmark-url";
-import {
-  bookmarkValidationErrorResponse,
-  validateEditableBookmarkInput,
-} from "./bookmark-validation";
 import { BookmarksRepository, type AppDb } from "./bookmarks-repository";
 import { parseTagNames } from "./tag-name";
 
@@ -39,25 +37,85 @@ function logError(log: WideEventLogger, error: ApiError) {
   });
 }
 
-const editableBookmarkBodySchema = t.Object({
-  url: t.String(),
-  title: t.String(),
-  description: t.Optional(t.String()),
-  isPrivate: t.Optional(t.Boolean()),
-  tagsText: t.Optional(t.String()),
+const editableBookmarkBodySchema = z.strictObject(
+  {
+    url: z.string({ error: "bookmark.url_required" }),
+    title: z.string({ error: "bookmark.title_required" }).trim().min(1, {
+      error: "bookmark.title_required",
+    }),
+    description: z.string({ error: "bookmark.validation_invalid" }).trim().optional().default(""),
+    isPrivate: z.boolean({ error: "bookmark.validation_invalid" }).optional().default(false),
+    tagsText: z.string({ error: "bookmark.validation_invalid" }).optional().default(""),
+  },
+  {
+    error: "bookmark.validation_invalid",
+  },
+);
+
+const bookmarkIdParamsSchema = z.object({
+  id: z.coerce
+    .number({ error: "bookmark.id_invalid" })
+    .int({
+      error: "bookmark.id_invalid",
+    })
+    .min(1, { error: "bookmark.id_invalid" }),
 });
 
-const bookmarkIdParamsSchema = t.Object({
-  id: t.Numeric({ minimum: 1, error: "bookmark.id_invalid" }),
-});
+const validationErrorMessages = {
+  "bookmark.id_invalid": "Bookmark id must be a positive safe integer",
+  "bookmark.title_required": "Bookmark title is required",
+  "bookmark.url_required": "Bookmark URL is required",
+  "bookmark.validation_invalid": "Bookmark request is invalid",
+} as const satisfies Partial<Record<ApiErrorCode, string>>;
+
+type ValidationApiErrorCode = keyof typeof validationErrorMessages;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function readValidationCode(error: unknown): ValidationApiErrorCode {
+  if (!(error instanceof Error)) {
+    return "bookmark.validation_invalid";
+  }
+
+  if (error.message in validationErrorMessages) {
+    return error.message as ValidationApiErrorCode;
+  }
+
+  try {
+    const payload = JSON.parse(error.message);
+    const message = isRecord(payload) ? payload.message : undefined;
+
+    return typeof message === "string" && message in validationErrorMessages
+      ? (message as ValidationApiErrorCode)
+      : "bookmark.validation_invalid";
+  } catch {
+    return "bookmark.validation_invalid";
+  }
+}
+
+function bookmarkValidationApiError(error: unknown): ApiError {
+  const code = readValidationCode(error);
+  const message = validationErrorMessages[code];
+
+  return new ApiError(message, code, 400);
+}
+
+function bookmarkValidationErrorResponse(error: unknown, set: { status?: number | string }) {
+  const apiError = bookmarkValidationApiError(error);
+
+  set.status = apiError.status;
+  return Err(apiError);
+}
 
 export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
   const repository = new BookmarksRepository(db);
 
   return new Elysia({ name: "bookmark-routes" })
-    .onError(({ body, code, error, set }) => {
+    .onError(({ code, error, set }) => {
       if (code === "VALIDATION") {
-        return bookmarkValidationErrorResponse(error, set, body);
+        return bookmarkValidationErrorResponse(error, set);
       }
     })
     .get("/bookmarks", async (context) => {
@@ -78,22 +136,15 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
       async (context) => {
         const { body, set } = context;
         const log = getLogger(context);
-
-        const inputResult = validateEditableBookmarkInput(body);
-        if (inputResult.isErr) {
-          logError(log, inputResult.error);
-          return resultResponse(inputResult, set);
-        }
-        const input = inputResult.value;
         log.set({
           bookmark: {
-            title: input.title,
-            description: input.description,
-            isPrivate: input.isPrivate,
+            title: body.title,
+            description: body.description,
+            isPrivate: body.isPrivate,
           },
         });
 
-        const urlResult = BookmarkUrl.from(input.url);
+        const urlResult = BookmarkUrl.from(body.url);
         if (urlResult.isErr) {
           logError(log, urlResult.error);
           return resultResponse(urlResult, set);
@@ -101,7 +152,7 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
         const url = urlResult.value;
         log.set({ bookmark: { url: url.value() } });
 
-        const tagsResult = parseTagNames(input.tagsText);
+        const tagsResult = parseTagNames(body.tagsText);
         if (tagsResult.isErr) {
           logError(log, tagsResult.error);
           return resultResponse(tagsResult, set);
@@ -114,7 +165,7 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
           tags: { count: tags.length },
         });
 
-        const result = await repository.create({ ...input, url, tags }, log);
+        const result = await repository.create({ ...body, url, tags }, log);
         if (result.isErr) {
           logError(log, result.error);
         } else {
@@ -163,44 +214,30 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
           logError(log, id.error);
           return resultResponse(id, set);
         }
-        log.set({ bookmark: { id: id.value.value() } });
-
-        const input = validateEditableBookmarkInput(body);
-        if (input.isErr) {
-          logError(log, input.error);
-          return resultResponse(input, set);
-        }
         log.set({
           bookmark: {
-            title: input.value.title,
-            description: input.value.description,
-            isPrivate: input.value.isPrivate,
+            id: id.value.value(),
+            title: body.title,
+            description: body.description,
+            isPrivate: body.isPrivate,
           },
         });
 
-        const tagsResult = parseTagNames(input.value.tagsText);
+        const tagsResult = parseTagNames(body.tagsText);
         if (tagsResult.isErr) {
           logError(log, tagsResult.error);
           return resultResponse(tagsResult, set);
         }
         const tags = tagsResult.value;
 
-        const url = BookmarkUrl.from(input.value.url);
+        const url = BookmarkUrl.from(body.url);
         if (url.isErr) {
           logError(log, url.error);
           return resultResponse(url, set);
         }
         log.set({ bookmark: { url: url.value.value() } });
 
-        const result = await repository.update(
-          id.value,
-          {
-            ...input.value,
-            url: url.value,
-            tags,
-          },
-          log,
-        );
+        const result = await repository.update(id.value, { ...body, url: url.value, tags }, log);
         if (result.isErr) {
           logError(log, result.error);
         } else {
