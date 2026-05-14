@@ -1,6 +1,10 @@
-import { Err, Ok, type Result } from "@pongolinks/shared/result";
+import { Err, type Result } from "@pongolinks/shared/result";
 
-import { apiClient } from "#/shared/api/client.ts";
+import {
+  apiClient,
+  parseApiPayload as parseSharedApiPayload,
+  parseEdenResponse,
+} from "#/shared/api/client.ts";
 import { ApiError, type ApiErrorCode, type FormErrors } from "#/shared/api/errors.ts";
 import type { BookmarkDTO, EditableBookmarkPayload } from "../types";
 
@@ -20,11 +24,6 @@ const fallbackError = new ApiError(
   "Something went wrong. Please try again.",
   "bookmark.unexpected",
 );
-
-type EdenApiResponse = {
-  data: unknown;
-  error: { value?: unknown } | null;
-};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -63,36 +62,21 @@ function parseApiError(value: unknown): ApiError {
 }
 
 export function parseApiPayload<T>(payload: unknown): Result<T, ApiError> {
-  if (!isRecord(payload)) {
-    return Err(fallbackError);
-  }
-
-  if (payload.isOk === true && payload.isErr === false) {
-    return Ok(payload.value as T);
-  }
-
-  if (payload.isOk !== false || payload.isErr !== true) {
-    return Err(fallbackError);
-  }
-
-  return Err(parseApiError(payload.error));
-}
-
-function parseEdenResponse<T>(response: EdenApiResponse): Result<T, ApiError> {
-  if (response.data) {
-    return parseApiPayload<T>(response.data);
-  }
-
-  if (response.error) {
-    return parseApiPayload<T>(response.error.value);
-  }
-
-  return Err(fallbackError);
+  return parseSharedApiPayload<T, ApiError>(payload, {
+    fallbackError,
+    parseError: parseApiError,
+  });
 }
 
 export async function listBookmarks(): Promise<Result<{ bookmarks: BookmarkDTO[] }, ApiError>> {
   try {
-    return parseEdenResponse<{ bookmarks: BookmarkDTO[] }>(await apiClient.api.bookmarks.get());
+    return parseEdenResponse<{ bookmarks: BookmarkDTO[] }, ApiError>(
+      await apiClient.api.bookmarks.get(),
+      {
+        fallbackError,
+        parseError: parseApiError,
+      },
+    );
   } catch {
     return Err(fallbackError);
   }
@@ -100,7 +84,10 @@ export async function listBookmarks(): Promise<Result<{ bookmarks: BookmarkDTO[]
 
 export async function getBookmark(id: string): Promise<Result<BookmarkDTO, ApiError>> {
   try {
-    return parseEdenResponse<BookmarkDTO>(await apiClient.api.bookmarks[id]!.get());
+    return parseEdenResponse<BookmarkDTO, ApiError>(await apiClient.api.bookmarks[id]!.get(), {
+      fallbackError,
+      parseError: parseApiError,
+    });
   } catch {
     return Err(fallbackError);
   }
@@ -110,7 +97,10 @@ export async function createBookmark(
   payload: EditableBookmarkPayload,
 ): Promise<Result<BookmarkDTO, ApiError>> {
   try {
-    return parseEdenResponse<BookmarkDTO>(await apiClient.api.bookmarks.post(payload));
+    return parseEdenResponse<BookmarkDTO, ApiError>(await apiClient.api.bookmarks.post(payload), {
+      fallbackError,
+      parseError: parseApiError,
+    });
   } catch {
     return Err(fallbackError);
   }
@@ -121,7 +111,13 @@ export async function updateBookmark(
   payload: EditableBookmarkPayload,
 ): Promise<Result<BookmarkDTO, ApiError>> {
   try {
-    return parseEdenResponse<BookmarkDTO>(await apiClient.api.bookmarks[id]!.patch(payload));
+    return parseEdenResponse<BookmarkDTO, ApiError>(
+      await apiClient.api.bookmarks[id]!.patch(payload),
+      {
+        fallbackError,
+        parseError: parseApiError,
+      },
+    );
   } catch {
     return Err(fallbackError);
   }
