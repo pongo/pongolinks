@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { extractRelatedLinks } from "../src/features/bookmarks/extract-related-links";
+import { extractRelatedLinks } from "./extract-related-links.ts";
 
 describe("extractRelatedLinks", () => {
   it("returns only explicit http and https URLs", () => {

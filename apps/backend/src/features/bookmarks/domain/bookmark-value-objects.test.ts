@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { BookmarkId } from "#/features/bookmarks/bookmark-id.ts";
-import { BookmarkUrl } from "#/features/bookmarks/bookmark-url.ts";
-import { TagName } from "#/features/bookmarks/tag-name.ts";
+import { BookmarkId } from "./bookmark-id.ts";
+import { BookmarkUrl } from "./bookmark-url.ts";
+import { TagName } from "./tag-name.ts";
 
 describe("BookmarkUrl", () => {
   it("accepts trimmed absolute http and https URLs", () => {

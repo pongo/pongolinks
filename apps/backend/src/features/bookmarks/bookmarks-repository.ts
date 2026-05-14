@@ -7,12 +7,12 @@ import * as relations from "@pongolinks/db/relations";
 import { bookmarks, bookmarkTags, relatedLinks, tags } from "@pongolinks/db/schema";
 import * as schema from "@pongolinks/db/schema";
 
-import { ApiError, unexpectedError } from "../../http/result-response";
-import type { BookmarkId } from "./bookmark-id";
-import type { BookmarkUrl } from "./bookmark-url";
-import type { BookmarkDTO, EditableBookmarkRequest } from "./contracts";
-import { extractRelatedLinks } from "./extract-related-links";
-import type { TagName } from "./tag-name";
+import { ApiError, unexpectedError } from "../../http/result-response.ts";
+import type { BookmarkId } from "./domain/bookmark-id.ts";
+import type { BookmarkUrl } from "./domain/bookmark-url.ts";
+import type { BookmarkDTO, EditableBookmarkRequest } from "./domain/contracts.ts";
+import { extractRelatedLinks } from "./utils/extract-related-links.ts";
+import type { TagName } from "./domain/tag-name.ts";
 
 export type AppDb = BunSQLiteDatabase<typeof schema & typeof relations>;
 export type EditableBookmarkData = Omit<EditableBookmarkRequest, "url" | "tagsText"> & {

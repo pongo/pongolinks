@@ -2,11 +2,11 @@ import { combine, Err } from "@pongolinks/shared/result";
 import { Elysia } from "elysia";
 import { z } from "zod";
 
-import { ApiError, resultResponse, type ApiErrorCode } from "../../http/result-response";
-import { BookmarkId } from "./bookmark-id";
-import { BookmarkUrl } from "./bookmark-url";
+import { ApiError, resultResponse, type ApiErrorCode } from "../../http/result-response.ts";
+import { BookmarkId } from "./domain/bookmark-id.ts";
+import { BookmarkUrl } from "./domain/bookmark-url.ts";
 import { BookmarksRepository, type AppDb } from "./bookmarks-repository";
-import { parseTagNames } from "./tag-name";
+import { parseTagNames } from "./domain/tag-name.ts";
 
 export type BookmarkRoutesOptions = {
   db: AppDb;

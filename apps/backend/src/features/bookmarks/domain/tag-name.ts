@@ -1,6 +1,6 @@
 import { Err, Ok, type Result } from "@pongolinks/shared/result";
 
-import { ApiError } from "../../http/result-response";
+import { ApiError } from "../../../http/result-response.ts";
 
 export class TagName {
   private constructor(
