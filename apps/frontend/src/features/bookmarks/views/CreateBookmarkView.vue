@@ -3,11 +3,11 @@ import { onMounted, ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 
 import type { FormErrors } from "#/shared/api/errors.ts";
-import { listTags } from "../tags/api";
-import type { TagSummaryDTO } from "../tags/types";
-import { createBookmark } from "./api";
-import BookmarkForm from "./BookmarkForm.vue";
-import type { EditableBookmarkPayload } from "./types";
+import { listTags } from "../../tags/api";
+import type { TagSummaryDTO } from "../../tags/types";
+import { createBookmark } from "../api/api";
+import BookmarkForm from "../components/BookmarkForm.vue";
+import type { EditableBookmarkPayload } from "../types";
 
 const router = useRouter();
 const errors = ref<FormErrors>({});
@@ -39,12 +39,10 @@ async function saveBookmark(payload: EditableBookmarkPayload) {
 </script>
 
 <template>
-  <main class="min-h-screen px-4 py-8 text-slate-900 sm:px-6">
+  <main class="ui-page-text min-h-screen px-4 py-8 sm:px-6">
     <section class="mx-auto max-w-3xl">
-      <RouterLink class="text-sm font-semibold text-blue-800 hover:text-blue-950" to="/">
-        Back to bookmarks
-      </RouterLink>
-      <h1 class="mt-5 text-2xl font-bold text-slate-950">New bookmark</h1>
+      <RouterLink class="ui-link text-sm font-semibold" to="/"> Back to bookmarks </RouterLink>
+      <h1 class="ui-text-strong mt-5 text-2xl font-bold">New bookmark</h1>
       <div class="py-6">
         <BookmarkForm
           :errors="errors"

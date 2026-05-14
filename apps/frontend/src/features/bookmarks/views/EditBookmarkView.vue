@@ -3,11 +3,11 @@ import { onMounted, ref } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
 import type { FormErrors } from "#/shared/api/errors.ts";
-import { listTags } from "../tags/api";
-import type { TagSummaryDTO } from "../tags/types";
-import { getBookmark, updateBookmark } from "./api";
-import BookmarkForm from "./BookmarkForm.vue";
-import type { BookmarkDTO, EditableBookmarkPayload } from "./types";
+import { listTags } from "../../tags/api";
+import type { TagSummaryDTO } from "../../tags/types";
+import { getBookmark, updateBookmark } from "../api/api";
+import BookmarkForm from "../components/BookmarkForm.vue";
+import type { BookmarkDTO, EditableBookmarkPayload } from "../types";
 
 const route = useRoute();
 const router = useRouter();
@@ -51,13 +51,11 @@ async function saveBookmark(payload: EditableBookmarkPayload) {
 </script>
 
 <template>
-  <main class="min-h-screen px-4 py-8 text-slate-900 sm:px-6">
+  <main class="ui-page-text min-h-screen px-4 py-8 sm:px-6">
     <section class="mx-auto max-w-3xl">
-      <RouterLink class="text-sm font-semibold text-blue-800 hover:text-blue-950" to="/">
-        Back to bookmarks
-      </RouterLink>
-      <h1 class="mt-5 text-2xl font-bold text-slate-950">Edit bookmark</h1>
-      <p v-if="isLoading" class="mt-6 text-sm text-slate-600">Loading bookmark...</p>
+      <RouterLink class="ui-link text-sm font-semibold" to="/"> Back to bookmarks </RouterLink>
+      <h1 class="ui-text-strong mt-5 text-2xl font-bold">Edit bookmark</h1>
+      <p v-if="isLoading" class="ui-text-muted mt-6 text-sm">Loading bookmark...</p>
       <div v-else class="py-6">
         <BookmarkForm
           :bookmark="bookmark"

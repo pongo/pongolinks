@@ -1,6 +1,6 @@
-import { Err, Ok, type Result } from "@pongolinks/shared/result";
+import { Err, type Result } from "@pongolinks/shared/result";
 
-import { apiClient } from "#/shared/api/client.ts";
+import { apiClient, parseEdenResponse } from "#/shared/api/client.ts";
 import { ApiError } from "#/shared/api/errors.ts";
 import type { TagSummaryDTO } from "./types";
 
@@ -9,38 +9,22 @@ const fallbackError = new ApiError(
   "bookmark.unexpected",
 );
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function parseApiPayload<T>(payload: unknown): Result<T, ApiError> {
-  if (!isRecord(payload)) {
-    return Err(fallbackError);
+function parseTagApiError(error: unknown): ApiError {
+  if (typeof error !== "object" || error === null || !("message" in error)) {
+    return fallbackError;
   }
 
-  if (payload.isOk === true && payload.isErr === false) {
-    return Ok(payload.value as T);
-  }
+  const message = typeof error.message === "string" ? error.message : fallbackError.message;
 
-  if (payload.isOk !== false || payload.isErr !== true) {
-    return Err(fallbackError);
-  }
-
-  if (!isRecord(payload.error)) {
-    return Err(fallbackError);
-  }
-
-  const message =
-    typeof payload.error.message === "string" ? payload.error.message : fallbackError.message;
-
-  return Err(new ApiError(message, fallbackError.code));
+  return new ApiError(message, fallbackError.code);
 }
 
 export async function listTags(): Promise<Result<{ tags: TagSummaryDTO[] }, ApiError>> {
   try {
-    const response = await apiClient.api.tags.get();
-
-    return parseApiPayload<{ tags: TagSummaryDTO[] }>(response.data ?? response.error?.value);
+    return parseEdenResponse<{ tags: TagSummaryDTO[] }, ApiError>(await apiClient.api.tags.get(), {
+      fallbackError,
+      parseError: parseTagApiError,
+    });
   } catch {
     return Err(fallbackError);
   }

@@ -1,8 +1,8 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-import BookmarkListView from "#/features/bookmarks/BookmarkListView.vue";
-import CreateBookmarkView from "#/features/bookmarks/CreateBookmarkView.vue";
-import EditBookmarkView from "#/features/bookmarks/EditBookmarkView.vue";
+import BookmarkListView from "#/features/bookmarks/views/BookmarkListView/BookmarkListView.vue";
+import CreateBookmarkView from "#/features/bookmarks/views/CreateBookmarkView.vue";
+import EditBookmarkView from "#/features/bookmarks/views/EditBookmarkView.vue";
 
 export const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),

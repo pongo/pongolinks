@@ -1,5 +1,36 @@
 @import "tailwindcss";
 
+:root {
+  --ui-background: var(--color-white);
+  --ui-background-muted: var(--color-slate-50);
+  --ui-body-text: rgb(31 41 51);
+  --ui-text: var(--color-slate-900);
+  --ui-text-strong: var(--color-slate-950);
+  --ui-text-emphasis: var(--color-slate-800);
+  --ui-text-readable: var(--color-slate-700);
+  --ui-text-muted: var(--color-slate-600);
+  --ui-text-soft: var(--color-slate-500);
+  --ui-surface: var(--color-white);
+  --ui-border: var(--color-slate-300);
+  --ui-border-subtle: var(--color-slate-200);
+  --ui-tag-border: rgb(238 238 238);
+  --ui-action: var(--color-blue-700);
+  --ui-action-hover: var(--color-blue-800);
+  --ui-action-text: var(--color-white);
+  --ui-action-disabled: var(--color-slate-400);
+  --ui-link: var(--color-blue-800);
+  --ui-link-hover: var(--color-blue-950);
+  --ui-link-readable: var(--color-blue-700);
+  --ui-field-ring: var(--color-blue-100);
+  --ui-danger-border: var(--color-red-600);
+  --ui-danger-surface: var(--color-red-50);
+  --ui-danger-text: var(--color-red-800);
+  --ui-danger-text-readable: var(--color-red-700);
+  --ui-suggestion-surface: var(--color-blue-50);
+  --ui-suggestion-text: var(--color-blue-950);
+  --ui-suggestion-hover: var(--color-slate-50);
+}
+
 html {
   color-scheme: light;
 }
@@ -7,18 +38,8 @@ html {
 body {
   margin: 0;
   min-width: 320px;
-  /* background: #f7f8f5; */
-  /* background: #f5f8fc; */
-  /* background: var(--color-blue-50); */
-  /* background: var(--color-slate-50); */
-  /* background: var(--color-gray-50); */
-  /* background: var(--color-zinc-50); */
-  /* background: var(--color-neutral-50); */
-  /* background: var(--color-stone-50); */
-  /* background: var(--color-mist-50); */
-  /* background: var(--color-olive-50); */
-  background: #fff;
-  color: #1f2933;
+  background: var(--ui-background);
+  color: var(--ui-body-text);
   font-family:
     Inter,
     ui-sans-serif,
@@ -28,12 +49,136 @@ body {
     "Segoe UI",
     sans-serif;
 }
-html.bg-blue body {
-  background: var(--color-slate-50);
+html.ui-muted-background body {
+  background: var(--ui-background-muted);
 }
 
 button,
 input,
 textarea {
   font: inherit;
+}
+
+.ui-page-text {
+  color: var(--ui-text);
+}
+
+.ui-text-strong {
+  color: var(--ui-text-strong);
+}
+
+.ui-text-emphasis {
+  color: var(--ui-text-emphasis);
+}
+
+.ui-text-readable {
+  color: var(--ui-text-readable);
+}
+
+.ui-text-muted {
+  color: var(--ui-text-muted);
+}
+
+.ui-text-soft {
+  color: var(--ui-text-soft);
+}
+
+.ui-surface {
+  background-color: var(--ui-surface);
+}
+
+.ui-border {
+  border-color: var(--ui-border);
+}
+
+.ui-border-subtle {
+  border-color: var(--ui-border-subtle);
+}
+
+.ui-divide-subtle > :not(:last-child) {
+  border-color: var(--ui-border-subtle);
+}
+
+.ui-link {
+  color: var(--ui-link);
+}
+
+.ui-link:hover {
+  color: var(--ui-link-hover);
+}
+
+.ui-link-readable {
+  color: var(--ui-link-readable);
+}
+
+.ui-link-readable:hover {
+  color: var(--ui-link);
+}
+
+.ui-title-link {
+  color: var(--ui-text-strong);
+}
+
+.ui-title-link:hover {
+  color: var(--ui-link);
+}
+
+.ui-muted-link {
+  color: var(--ui-text-emphasis);
+}
+
+.ui-muted-link:hover {
+  color: var(--ui-link);
+}
+
+.ui-action {
+  background-color: var(--ui-action);
+  color: var(--ui-action-text);
+}
+
+.ui-action:hover:not(:disabled) {
+  background-color: var(--ui-action-hover);
+}
+
+.ui-action:disabled {
+  background-color: var(--ui-action-disabled);
+}
+
+.ui-field {
+  border-color: var(--ui-border);
+  background-color: var(--ui-surface);
+  color: var(--ui-text-strong);
+}
+
+.ui-field:focus {
+  border-color: var(--ui-action);
+  --tw-ring-color: var(--ui-field-ring);
+}
+
+.ui-checkbox-accent {
+  accent-color: var(--ui-action);
+}
+
+.ui-danger-banner {
+  border-color: var(--ui-danger-border);
+  background-color: var(--ui-danger-surface);
+  color: var(--ui-danger-text);
+}
+
+.ui-danger-text {
+  color: var(--ui-danger-text-readable);
+}
+
+.ui-tag {
+  border-color: var(--ui-tag-border);
+  color: var(--ui-text-muted);
+}
+
+.ui-suggestion-selected {
+  background-color: var(--ui-suggestion-surface);
+  color: var(--ui-suggestion-text);
+}
+
+.ui-suggestion-hover:hover {
+  background-color: var(--ui-suggestion-hover);
 }

@@ -4,7 +4,7 @@ const { variants } = provideAppVariants();
 
 import { watchEffect } from "vue";
 watchEffect(() => {
-  document.documentElement.classList.toggle("bg-blue", variants.bgBlue);
+  document.documentElement.classList.toggle("ui-muted-background", variants.bgBlue);
 });
 </script>
 
