@@ -12,10 +12,10 @@ Keep durable schema and migration changes in `packages/db`. Keep backend HTTP ro
 
 - `api/` contains frontend API adapter functions for Bookmark endpoints.
 - `components/` contains reusable Bookmark UI that is not a route screen.
+- `components/BookmarkTagInput/` contains the Bookmark form Tag input and autocomplete helpers private to that component.
 - `views/` contains route-level Bookmark screens registered from `src/router/index.ts`.
 - `views/BookmarkListView/` contains the Bookmark list screen and helpers private to that screen.
 - `types.ts` contains small Bookmark DTO and editable payload types shared within the slice.
-- `tag-autocomplete.ts` contains Bookmark form Tag autocomplete helpers until the Tag input is extracted into its own component folder.
 
 ## Testing
 
