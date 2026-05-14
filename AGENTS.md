@@ -46,6 +46,14 @@ const user = userResult.value;
 res.json({ ok: true, user });
 ```
 
+## Import boundaries
+
+- Relative imports are allowed only within the same vertical slice/module.
+- Imports that cross feature, app-infrastructure, or shared-layer boundaries must use an alias or workspace package import.
+- In app source code, use `#/...` for app-local cross-boundary imports, for example `#/http/result-response.ts`, `#/db/app-db.ts`, `#/features/tags/api.ts`.
+- In monorepo package boundaries, use workspace package imports, for example `@pongolinks/shared/result` or `@pongolinks/db/schema`.
+- Do not import another feature's private internals through deep relative paths. If cross-feature access is needed, import via the feature's public API/entrypoint when one exists.
+
 ## Agent skills
 
 ### Issue tracker

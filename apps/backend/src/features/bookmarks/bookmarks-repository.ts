@@ -4,8 +4,8 @@ import { Err, Ok } from "@pongolinks/shared/result";
 
 import { bookmarks, bookmarkTags, relatedLinks, tags } from "@pongolinks/db/schema";
 
-import type { AppDb } from "../../db/app-db.ts";
-import { ApiError, unexpectedError } from "../../http/result-response.ts";
+import type { AppDb } from "#/db/app-db.ts";
+import { ApiError, unexpectedError } from "#/http/result-response.ts";
 import type { BookmarkId } from "./domain/bookmark-id.ts";
 import type { BookmarkUrl } from "./domain/bookmark-url.ts";
 import type { BookmarkDTO, EditableBookmarkRequest } from "./domain/contracts.ts";

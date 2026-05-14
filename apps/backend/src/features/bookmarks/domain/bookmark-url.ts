@@ -1,6 +1,6 @@
 import { Err, Ok, type Result } from "@pongolinks/shared/result";
 
-import { ApiError } from "../../../http/result-response.ts";
+import { ApiError } from "#/http/result-response.ts";
 
 export class BookmarkUrl {
   private constructor(private readonly rawValue: string) {}

@@ -1,8 +1,8 @@
 import { Elysia } from "elysia";
 
-import { getRouteLogger, logApiError } from "../../http/route-logging.ts";
-import { resultResponse } from "../../http/result-response";
-import type { AppDb } from "../../db/app-db.ts";
+import type { AppDb } from "#/db/app-db.ts";
+import { getRouteLogger, logApiError } from "#/http/route-logging.ts";
+import { resultResponse } from "#/http/result-response.ts";
 import { TagsRepository } from "./tags-repository";
 
 export type TagRoutesOptions = {
