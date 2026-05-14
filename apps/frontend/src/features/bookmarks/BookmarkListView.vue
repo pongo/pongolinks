@@ -115,12 +115,12 @@ onMounted(async () => {
                   <LockIcon class="size-3.5" aria-hidden="true" />
                 </span>
               </div>
-              <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-600">
+              <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-600">
                 <span class="break-all">{{ formatBookmarkDomain(bookmark.url) }}</span>
                 <span
                   v-for="tag in bookmark.tags"
                   :key="tag.id"
-                  class="inline-flex max-w-full items-center border border-slate-300 px-1.5 py-0.5 text-xs font-medium text-slate-600"
+                  class="inline-flex max-w-full items-center border border-[#eee] px-1.5 py-0.5 text-xs text-slate-600"
                 >
                   {{ tag.name }}
                 </span>
