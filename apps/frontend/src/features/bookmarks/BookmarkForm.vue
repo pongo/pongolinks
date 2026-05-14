@@ -223,7 +223,7 @@ function submitForm() {
           class="w-full border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 transition outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
           type="text"
           autocomplete="off"
-          placeholder="article lang-ru learning"
+          placeholder=""
           role="combobox"
           :aria-expanded="tagSuggestionsOpen"
           :aria-controls="tagListboxId"
@@ -256,7 +256,7 @@ function submitForm() {
           </li>
         </ul>
       </div>
-      <span class="mt-2 block text-sm text-slate-600">Separate tags with spaces.</span>
+      <span hidden class="mt-2 block text-sm text-slate-600">Separate tags with spaces.</span>
     </label>
 
     <label class="flex items-center gap-3 text-sm font-semibold text-slate-800">
