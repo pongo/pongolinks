@@ -2,6 +2,7 @@ import { combine, Err } from "@pongolinks/shared/result";
 import { Elysia } from "elysia";
 import { z } from "zod";
 
+import { getRouteLogger, logApiError } from "../../http/route-logging.ts";
 import { ApiError, resultResponse, type ApiErrorCode } from "../../http/result-response.ts";
 import { BookmarkId } from "./domain/bookmark-id.ts";
 import { BookmarkUrl } from "./domain/bookmark-url.ts";
@@ -11,31 +12,6 @@ import { parseTagNames } from "./domain/tag-name.ts";
 export type BookmarkRoutesOptions = {
   db: AppDb;
 };
-
-type WideEventLogger = {
-  set: (context: Record<string, unknown>) => void;
-};
-
-const noopLogger: WideEventLogger = {
-  set: () => {},
-};
-
-function getLogger(context: unknown): WideEventLogger {
-  return typeof context === "object" && context !== null && "log" in context
-    ? ((context as { log?: WideEventLogger }).log ?? noopLogger)
-    : noopLogger;
-}
-
-function logError(log: WideEventLogger, error: ApiError) {
-  log.set({
-    error: {
-      message: error.message,
-      code: error.code,
-      status: error.status,
-      ...(error.data ? { data: error.data } : {}),
-    },
-  });
-}
 
 const editableBookmarkBodySchema = z.strictObject(
   {
@@ -120,11 +96,11 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
     })
     .get("/bookmarks", async (context) => {
       const { set } = context;
-      const log = getLogger(context);
+      const log = getRouteLogger(context);
 
       const result = await repository.list();
       if (result.isErr) {
-        logError(log, result.error);
+        logApiError(log, result.error);
       } else {
         log.set({ bookmarks: { count: result.value.bookmarks.length } });
       }
@@ -135,7 +111,7 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
       "/bookmarks",
       async (context) => {
         const { body, set } = context;
-        const log = getLogger(context);
+        const log = getRouteLogger(context);
         log.set({
           bookmark: {
             title: body.title,
@@ -146,7 +122,7 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
 
         const parseResults = combine([BookmarkUrl.from(body.url), parseTagNames(body.tagsText)]);
         if (parseResults.isErr) {
-          logError(log, parseResults.error);
+          logApiError(log, parseResults.error);
           return resultResponse(parseResults, set);
         }
 
@@ -161,7 +137,7 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
 
         const result = await repository.create({ ...body, url, tags }, log);
         if (result.isErr) {
-          logError(log, result.error);
+          logApiError(log, result.error);
         } else {
           log.set({ bookmark: { id: result.value.id } });
         }
@@ -176,11 +152,11 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
       "/bookmarks/:id",
       async (context) => {
         const { params, set } = context;
-        const log = getLogger(context);
+        const log = getRouteLogger(context);
 
         const id = BookmarkId.from(params.id);
         if (id.isErr) {
-          logError(log, id.error);
+          logApiError(log, id.error);
           return resultResponse(id, set);
         }
 
@@ -188,7 +164,7 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
 
         const result = await repository.findById(id.value);
         if (result.isErr) {
-          logError(log, result.error);
+          logApiError(log, result.error);
         }
 
         return resultResponse(result, set);
@@ -201,7 +177,7 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
       "/bookmarks/:id",
       async (context) => {
         const { body, params, set } = context;
-        const log = getLogger(context);
+        const log = getRouteLogger(context);
 
         const parseResults = combine([
           BookmarkId.from(params.id),
@@ -209,7 +185,7 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
           parseTagNames(body.tagsText),
         ]);
         if (parseResults.isErr) {
-          logError(log, parseResults.error);
+          logApiError(log, parseResults.error);
           return resultResponse(parseResults, set);
         }
 
@@ -228,7 +204,7 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
 
         const result = await repository.update(id, { ...body, url, tags }, log);
         if (result.isErr) {
-          logError(log, result.error);
+          logApiError(log, result.error);
         } else {
           log.set({ bookmark: { updatedId: result.value.id } });
         }
