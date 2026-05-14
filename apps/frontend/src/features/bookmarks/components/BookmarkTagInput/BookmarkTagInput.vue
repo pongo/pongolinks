@@ -152,12 +152,12 @@ function handleTagKeydown(event: KeyboardEvent) {
 
 <template>
   <label class="block">
-    <span class="mb-2 block text-sm font-semibold text-slate-800">Tags</span>
+    <span class="ui-text-emphasis mb-2 block text-sm font-semibold">Tags</span>
     <div class="relative">
       <input
         ref="tagsInput"
         v-model="tagsText"
-        class="w-full border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 transition outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
+        class="ui-field w-full border px-3 py-2 text-sm transition outline-none focus:ring-2"
         type="text"
         autocomplete="off"
         placeholder=""
@@ -174,16 +174,16 @@ function handleTagKeydown(event: KeyboardEvent) {
       <ul
         v-if="tagSuggestionsOpen"
         :id="tagListboxId"
-        class="absolute z-10 mt-1 max-h-56 w-full overflow-y-auto border border-slate-200 bg-white py-1 shadow-sm"
+        class="ui-border-subtle ui-surface absolute z-10 mt-1 max-h-56 w-full overflow-y-auto border py-1 shadow-sm"
         role="listbox"
       >
         <li
           v-for="(tag, index) in visibleTagSuggestions"
           :id="`${tagListboxId}-${tag.id}`"
           :key="tag.id"
-          class="cursor-pointer px-3 py-2 text-sm text-slate-800"
+          class="ui-text-emphasis cursor-pointer px-3 py-2 text-sm"
           :class="
-            index === activeTagSuggestionIndex ? 'bg-blue-50 text-blue-950' : 'hover:bg-slate-50'
+            index === activeTagSuggestionIndex ? 'ui-suggestion-selected' : 'ui-suggestion-hover'
           "
           role="option"
           :aria-selected="index === activeTagSuggestionIndex"
@@ -193,6 +193,6 @@ function handleTagKeydown(event: KeyboardEvent) {
         </li>
       </ul>
     </div>
-    <span hidden class="mt-2 block text-sm text-slate-600">Separate tags with spaces.</span>
+    <span hidden class="ui-text-muted mt-2 block text-sm">Separate tags with spaces.</span>
   </label>
 </template>

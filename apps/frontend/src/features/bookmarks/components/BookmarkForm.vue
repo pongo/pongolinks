@@ -54,61 +54,62 @@ function submitForm() {
 
 <template>
   <form class="space-y-5" @submit.prevent="submitForm">
-    <p
-      v-if="formError"
-      class="border-l-4 border-red-600 bg-red-50 px-4 py-3 text-sm font-medium text-red-800"
-    >
+    <p v-if="formError" class="ui-danger-banner border-l-4 px-4 py-3 text-sm font-medium">
       {{ formError }}
     </p>
 
     <label class="block">
-      <span class="mb-2 block text-sm font-semibold text-slate-800">URL</span>
+      <span class="ui-text-emphasis mb-2 block text-sm font-semibold">URL</span>
       <input
         v-model="form.url"
-        class="w-full border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 transition outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
+        class="ui-field w-full border px-3 py-2 text-sm transition outline-none focus:ring-2"
         type="url"
         autocomplete="url"
         :aria-invalid="Boolean(errors?.url)"
         :aria-describedby="errors?.url ? 'bookmark-url-error' : undefined"
       />
-      <span v-if="errors?.url" id="bookmark-url-error" class="mt-2 block text-sm text-red-700">
+      <span v-if="errors?.url" id="bookmark-url-error" class="ui-danger-text mt-2 block text-sm">
         {{ errors.url }}
       </span>
     </label>
 
     <label class="block">
-      <span class="mb-2 block text-sm font-semibold text-slate-800">Title</span>
+      <span class="ui-text-emphasis mb-2 block text-sm font-semibold">Title</span>
       <input
         v-model="form.title"
-        class="w-full border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 transition outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
+        class="ui-field w-full border px-3 py-2 text-sm transition outline-none focus:ring-2"
         type="text"
         autocomplete="off"
         :aria-invalid="Boolean(errors?.title)"
         :aria-describedby="errors?.title ? 'bookmark-title-error' : undefined"
       />
-      <span v-if="errors?.title" id="bookmark-title-error" class="mt-2 block text-sm text-red-700">
+      <span
+        v-if="errors?.title"
+        id="bookmark-title-error"
+        class="ui-danger-text mt-2 block text-sm"
+      >
         {{ errors.title }}
       </span>
     </label>
 
     <label class="block">
-      <span class="mb-2 block text-sm font-semibold text-slate-800">Description</span>
+      <span class="ui-text-emphasis mb-2 block text-sm font-semibold">Description</span>
       <textarea
         v-model="form.description"
-        class="min-h-28 w-full resize-y border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 transition outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
+        class="ui-field min-h-28 w-full resize-y border px-3 py-2 text-sm transition outline-none focus:ring-2"
         rows="4"
       />
     </label>
 
     <BookmarkTagInput v-model="form.tagsText" :tag-suggestions="tagSuggestions" />
 
-    <label class="flex items-center gap-3 text-sm font-semibold text-slate-800">
-      <input v-model="form.isPrivate" class="size-4 accent-blue-700" type="checkbox" />
+    <label class="ui-text-emphasis flex items-center gap-3 text-sm font-semibold">
+      <input v-model="form.isPrivate" class="ui-checkbox-accent size-4" type="checkbox" />
       Private bookmark
     </label>
 
     <button
-      class="inline-flex min-h-10 items-center justify-center bg-blue-700 px-4 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+      class="ui-action inline-flex min-h-10 items-center justify-center px-4 text-sm font-semibold transition disabled:cursor-not-allowed"
       type="submit"
       :disabled="isSaving"
     >
