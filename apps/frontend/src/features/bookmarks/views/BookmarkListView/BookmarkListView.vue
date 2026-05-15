@@ -26,6 +26,10 @@ const isLoading = ref(true);
 const error = ref("");
 const currentPage = computed(() => normalizeBookmarkListPageQuery(route.query.page));
 const { isDelayed, start: startLoadingDelay, stop: stopLoadingDelay } = useDelayedFlag(1000);
+const shouldShowLoadingMessage = computed(
+  () => isLoading.value && isDelayed.value && bookmarks.value.length === 0,
+);
+const shouldShowBookmarkContent = computed(() => !isLoading.value || bookmarks.value.length > 0);
 
 watch(
   currentPage,
@@ -41,6 +45,7 @@ watch(
     isLoading.value = true;
     error.value = "";
 
+    await new Promise((resolve) => setTimeout(resolve, 2000));
     const result = await listBookmarks(page);
 
     if (!isCurrentRequest) {
@@ -81,11 +86,9 @@ watch(
       <p v-if="error" class="ui-danger-banner border-l-4 px-4 py-3 text-sm font-medium">
         {{ error }}
       </p>
-      <p v-else-if="isLoading && isDelayed && bookmarks.length === 0" class="ui-text-muted text-sm">
-        Loading bookmarks...
-      </p>
+      <p v-else-if="shouldShowLoadingMessage" class="ui-text-muted text-sm">Loading bookmarks...</p>
 
-      <template v-else>
+      <template v-else-if="shouldShowBookmarkContent">
         <div
           v-if="bookmarks.length === 0"
           class="ui-border ui-surface border border-dashed px-5 py-8"
