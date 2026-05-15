@@ -22,16 +22,36 @@ const pagination = ref<BookmarkListPaginationState>({
   hasNextPage: false,
 });
 const isLoading = ref(true);
+const showLoadingMessage = ref(false);
 const error = ref("");
 const currentPage = computed(() => normalizeBookmarkListPageQuery(route.query.page));
 
 watch(
   currentPage,
-  async (page) => {
+  async (page, _previousPage, onCleanup) => {
+    let isCurrentRequest = true;
+    const loadingMessageTimer = setTimeout(() => {
+      if (isCurrentRequest) {
+        showLoadingMessage.value = true;
+      }
+    }, 1000);
+
+    onCleanup(() => {
+      isCurrentRequest = false;
+      clearTimeout(loadingMessageTimer);
+    });
+
     isLoading.value = true;
+    showLoadingMessage.value = false;
     error.value = "";
 
     const result = await listBookmarks(page);
+
+    if (!isCurrentRequest) {
+      return;
+    }
+
+    clearTimeout(loadingMessageTimer);
 
     if (result.isOk) {
       bookmarks.value = result.value.bookmarks;
@@ -41,6 +61,7 @@ watch(
     }
 
     isLoading.value = false;
+    showLoadingMessage.value = false;
   },
   { immediate: true },
 );
@@ -62,9 +83,14 @@ watch(
         </RouterLink>
       </header>
 
-      <p v-if="isLoading" class="ui-text-muted text-sm">Loading bookmarks...</p>
-      <p v-else-if="error" class="ui-danger-banner border-l-4 px-4 py-3 text-sm font-medium">
+      <p v-if="error" class="ui-danger-banner border-l-4 px-4 py-3 text-sm font-medium">
         {{ error }}
+      </p>
+      <p
+        v-else-if="isLoading && showLoadingMessage && bookmarks.length === 0"
+        class="ui-text-muted text-sm"
+      >
+        Loading bookmarks...
       </p>
 
       <template v-else>
