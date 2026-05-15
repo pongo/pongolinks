@@ -1,6 +1,7 @@
 import { bookmarks, bookmarkTags, relatedLinks, tags } from "@pongolinks/db/schema";
 
 import { assert, request, withApp } from "./bookmarks-api-smoke-support";
+import { BOOKMARK_LIST_PAGE_SIZE } from "./pagination";
 
 await withApp(async ({ app, db }) => {
   await db
@@ -25,7 +26,10 @@ await withApp(async ({ app, db }) => {
   assert(response.status === 200, "list should return 200");
   assert(body.value.bookmarks[0].title === "New", "list should order by updatedAt descending");
   assert(body.value.pagination.page === 1, "list should default to page 1");
-  assert(body.value.pagination.pageSize === 3, "list should return backend page size");
+  assert(
+    body.value.pagination.pageSize === BOOKMARK_LIST_PAGE_SIZE,
+    "list should return backend page size",
+  );
   assert(body.value.pagination.totalCount === 2, "list should return total count");
   assert(body.value.pagination.totalPages === 1, "list should return total pages");
   assert(
@@ -47,20 +51,27 @@ await withApp(async ({ app, db }) => {
 await withApp(async ({ app, db }) => {
   await db
     .insert(bookmarks)
-    .values([
-      { url: "https://example.com/one", title: "One", updatedAt: "2020-01-01 00:00:00" },
-      { url: "https://example.com/two", title: "Two", updatedAt: "2020-01-02 00:00:00" },
-      { url: "https://example.com/three", title: "Three", updatedAt: "2020-01-03 00:00:00" },
-      { url: "https://example.com/four", title: "Four", updatedAt: "2020-01-04 00:00:00" },
-    ])
+    .values(
+      Array.from({ length: BOOKMARK_LIST_PAGE_SIZE + 1 }, (_, index) => ({
+        url: `https://example.com/page-size-${index + 1}`,
+        title: `Page Size ${index + 1}`,
+        updatedAt: `2020-01-${String(index + 1).padStart(2, "0")} 00:00:00`,
+      })),
+    )
     .run();
 
   const response = await app.handle(request("/api/bookmarks"));
   const body = await response.json();
 
   assert(response.status === 200, "default paginated list should return 200");
-  assert(body.value.bookmarks.length === 3, "default paginated list should return at most 3 rows");
-  assert(body.value.pagination.totalCount === 4, "paginated list should return total count");
+  assert(
+    body.value.bookmarks.length === BOOKMARK_LIST_PAGE_SIZE,
+    "default paginated list should return at most one page of rows",
+  );
+  assert(
+    body.value.pagination.totalCount === BOOKMARK_LIST_PAGE_SIZE + 1,
+    "paginated list should return total count",
+  );
   assert(body.value.pagination.totalPages === 2, "paginated list should return total pages");
   assert(
     body.value.pagination.hasNextPage === true,
@@ -71,12 +82,12 @@ await withApp(async ({ app, db }) => {
 await withApp(async ({ app, db }) => {
   await db
     .insert(bookmarks)
-    .values([
-      { url: "https://example.com/one", title: "One" },
-      { url: "https://example.com/two", title: "Two" },
-      { url: "https://example.com/three", title: "Three" },
-      { url: "https://example.com/four", title: "Four" },
-    ])
+    .values(
+      Array.from({ length: BOOKMARK_LIST_PAGE_SIZE + 1 }, (_, index) => ({
+        url: `https://example.com/invalid-page-${index + 1}`,
+        title: `Invalid Page ${index + 1}`,
+      })),
+    )
     .run();
 
   for (const pageValue of ["not-a-number", "0", "-1", "1.5", ""]) {
@@ -87,19 +98,22 @@ await withApp(async ({ app, db }) => {
 
     assert(response.status === 200, `${pageValue} page should return 200`);
     assert(body.value.pagination.page === 1, `${pageValue} page should normalize to page 1`);
-    assert(body.value.bookmarks.length === 3, `${pageValue} page should return first page rows`);
+    assert(
+      body.value.bookmarks.length === BOOKMARK_LIST_PAGE_SIZE,
+      `${pageValue} page should return first page rows`,
+    );
   }
 });
 
 await withApp(async ({ app, db }) => {
   await db
     .insert(bookmarks)
-    .values([
-      { url: "https://example.com/one", title: "One" },
-      { url: "https://example.com/two", title: "Two" },
-      { url: "https://example.com/three", title: "Three" },
-      { url: "https://example.com/four", title: "Four" },
-    ])
+    .values(
+      Array.from({ length: BOOKMARK_LIST_PAGE_SIZE + 1 }, (_, index) => ({
+        url: `https://example.com/deep-page-${index + 1}`,
+        title: `Deep Page ${index + 1}`,
+      })),
+    )
     .run();
 
   const response = await app.handle(request("/api/bookmarks?page=3"));
@@ -108,8 +122,14 @@ await withApp(async ({ app, db }) => {
   assert(response.status === 200, "page past last page should return 200");
   assert(body.value.bookmarks.length === 0, "page past last page should return empty bookmarks");
   assert(body.value.pagination.page === 3, "page past last page should preserve requested page");
-  assert(body.value.pagination.pageSize === 3, "page past last page should return page size");
-  assert(body.value.pagination.totalCount === 4, "page past last page should return real count");
+  assert(
+    body.value.pagination.pageSize === BOOKMARK_LIST_PAGE_SIZE,
+    "page past last page should return page size",
+  );
+  assert(
+    body.value.pagination.totalCount === BOOKMARK_LIST_PAGE_SIZE + 1,
+    "page past last page should return real count",
+  );
   assert(body.value.pagination.totalPages === 2, "page past last page should return real pages");
   assert(
     body.value.pagination.hasPreviousPage === true,
