@@ -1,6 +1,6 @@
 import type { BookmarkDTO } from "./domain/contracts.ts";
 
-export const BOOKMARK_LIST_PAGE_SIZE = 3;
+export const BOOKMARK_LIST_PAGE_SIZE = 25;
 
 export type BookmarkListPagination = {
   page: number;
