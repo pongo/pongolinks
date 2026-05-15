@@ -1,8 +1,7 @@
-import { createClient } from "@libsql/client";
+import { createClient } from "@libsql/client/sqlite3";
 import { drizzle } from "drizzle-orm/libsql";
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 
 import * as relations from "./relations";
 import * as schema from "./schema";
@@ -11,39 +10,41 @@ export type CreateDbOptions = {
   databasePath: string;
 };
 
-function createLocalDatabasePath(databasePath: string) {
+function toLocalLibSqlUrl(databasePath: string) {
   if (databasePath !== ":memory:") {
     mkdirSync(dirname(databasePath), { recursive: true });
-    return {
-      path: databasePath,
-      cleanup: () => {},
-    };
+    return `file:${databasePath}`;
   }
 
-  const databaseDir = mkdtempSync(join(tmpdir(), "pongolinks-db-"));
+  return "file::memory:?cache=shared";
+}
 
-  return {
-    path: join(databaseDir, "memory.sqlite"),
-    cleanup: () => {
-      try {
-        rmSync(databaseDir, { recursive: true, force: true });
-      } catch (error) {
-        if (
-          !(error instanceof Error) ||
-          !("code" in error) ||
-          !["EBUSY", "EPERM"].includes(String(error.code))
-        ) {
-          throw error;
-        }
-      }
-    },
-  };
+async function resetMemoryDatabase(client: ReturnType<typeof createClient>) {
+  await client.execute("PRAGMA foreign_keys = OFF");
+  const tables = await client.execute(
+    "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
+  );
+
+  for (const table of tables.rows) {
+    const tableName = String(table.name);
+
+    if (tableName.startsWith("bookmarks_fts_")) {
+      continue;
+    }
+
+    await client.execute(`DROP TABLE IF EXISTS "${tableName.replaceAll('"', '""')}"`);
+  }
+
+  await client.execute("PRAGMA foreign_keys = ON");
 }
 
 export async function createDb({ databasePath }: CreateDbOptions) {
-  const localDatabase = createLocalDatabasePath(databasePath);
-  const client = createClient({ url: `file:${localDatabase.path}` });
-  await client.execute("PRAGMA foreign_keys = ON");
+  const client = createClient({ url: toLocalLibSqlUrl(databasePath) });
+  if (databasePath === ":memory:") {
+    await resetMemoryDatabase(client);
+  } else {
+    await client.execute("PRAGMA foreign_keys = ON");
+  }
 
   const db = drizzle(client, {
     schema: {
@@ -55,9 +56,6 @@ export async function createDb({ databasePath }: CreateDbOptions) {
   return {
     db,
     client,
-    close: () => {
-      client.close();
-      localDatabase.cleanup();
-    },
+    close: () => client.close(),
   };
 }
