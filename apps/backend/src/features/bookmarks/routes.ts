@@ -115,13 +115,6 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
       async (context) => {
         const { body, set } = context;
         const log = getRouteLogger(context);
-        log.set({
-          bookmark: {
-            title: body.title,
-            description: body.description,
-            isPrivate: body.isPrivate,
-          },
-        });
 
         const parseResults = combine([BookmarkUrl.from(body.url), parseTagNames(body.tagsText)]);
         if (parseResults.isErr) {
@@ -133,6 +126,9 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
         log.set({
           bookmark: {
             url: url.value(),
+            title: body.title,
+            description: body.description,
+            isPrivate: body.isPrivate,
             tags: tags.map((tag) => tag.name()),
           },
           tags: { count: tags.length },
