@@ -5,7 +5,6 @@ import { APP_BASE_PATH, createApp } from "#/app.ts";
 import { BookmarkEditor } from "#/features/bookmarks/bookmark-editor.ts";
 import { BookmarkId } from "#/features/bookmarks/domain/bookmark-id.ts";
 import { BookmarkUrl } from "#/features/bookmarks/domain/bookmark-url.ts";
-import { BookmarksRepository } from "#/features/bookmarks/bookmarks-repository.ts";
 import { parseTagNames } from "#/features/bookmarks/domain/tag-name.ts";
 import { createMigratedTestDb } from "../../../test/test-db";
 
@@ -610,7 +609,6 @@ await withApp(async ({ app, db }) => {
 
 await withApp(async ({ db }) => {
   const bookmarkEditor = new BookmarkEditor(db);
-  const repository = new BookmarksRepository(db);
   const firstTags = unwrapResult(parseTagNames("Article beta"));
   const secondTags = unwrapResult(parseTagNames("article"));
   const createResult = await bookmarkEditor.create({
@@ -656,10 +654,10 @@ await withApp(async ({ db }) => {
   const attachedRelatedLink = updated.relatedLinks[1];
 
   if (!retainedRelatedLink || !attachedRelatedLink) {
-    throw new Error("repository update should sync related links");
+    throw new Error("bookmark editor update should sync related links");
   }
 
-  assert(updated.relatedLinks.length === 2, "repository update should sync related links");
+  assert(updated.relatedLinks.length === 2, "bookmark editor update should sync related links");
   assert(retainedRelatedLink.url === "https://example.com/keep", "related link should retain");
   assert(attachedRelatedLink.url === "https://example.com/add", "related link should attach");
   assert(tagContext?.submittedCount === 2, "tag diff log should include submitted count");

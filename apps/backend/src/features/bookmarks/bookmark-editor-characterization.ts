@@ -5,7 +5,6 @@ import { BookmarkId } from "#/features/bookmarks/domain/bookmark-id.ts";
 import { BookmarkUrl } from "#/features/bookmarks/domain/bookmark-url.ts";
 import { BookmarkEditor } from "#/features/bookmarks/bookmark-editor.ts";
 import type { EditableBookmarkData } from "#/features/bookmarks/domain/contracts.ts";
-import { BookmarksRepository } from "#/features/bookmarks/bookmarks-repository.ts";
 import { parseTagNames } from "#/features/bookmarks/domain/tag-name.ts";
 import { createMigratedTestDb } from "../../../test/test-db";
 
@@ -69,18 +68,13 @@ function bookmarkTagRowId(db: TestDb["db"], bookmarkId: number, tagId: number) {
 }
 
 async function withRepository(
-  run: (context: {
-    bookmarkEditor: BookmarkEditor;
-    repository: BookmarksRepository;
-    db: TestDb["db"];
-  }) => Promise<void>,
+  run: (context: { bookmarkEditor: BookmarkEditor; db: TestDb["db"] }) => Promise<void>,
 ) {
   const database = createMigratedTestDb();
 
   try {
     await run({
       bookmarkEditor: new BookmarkEditor(database.db),
-      repository: new BookmarksRepository(database.db),
       db: database.db,
     });
   } finally {

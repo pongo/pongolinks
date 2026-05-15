@@ -42,7 +42,7 @@ function toBookmarkDTO(row: BookmarkWithTagsRow): BookmarkDTO {
   };
 }
 
-export class BookmarksRepository {
+export class BookmarkReadRepository {
   constructor(private readonly db: AppDb) {}
 
   async list(): Promise<Result<{ bookmarks: BookmarkDTO[] }, ApiError>> {

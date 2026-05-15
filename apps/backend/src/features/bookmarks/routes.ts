@@ -8,7 +8,7 @@ import { ApiError, resultResponse, type ApiErrorCode } from "#/http/result-respo
 import { BookmarkId } from "./domain/bookmark-id.ts";
 import { BookmarkUrl } from "./domain/bookmark-url.ts";
 import { BookmarkEditor } from "./bookmark-editor.ts";
-import { BookmarksRepository } from "./bookmarks-repository";
+import { BookmarkReadRepository } from "./bookmark-read-repository.ts";
 import { parseTagNames } from "./domain/tag-name.ts";
 
 export type BookmarkRoutesOptions = {
@@ -89,7 +89,7 @@ function bookmarkValidationErrorResponse(error: unknown, set: { status?: number 
 
 export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
   const bookmarkEditor = new BookmarkEditor(db);
-  const repository = new BookmarksRepository(db);
+  const bookmarkReads = new BookmarkReadRepository(db);
 
   return new Elysia({ name: "bookmark-routes" })
     .onError(({ code, error, set }) => {
@@ -101,7 +101,7 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
       const { set } = context;
       const log = getRouteLogger(context);
 
-      const result = await repository.list();
+      const result = await bookmarkReads.list();
       if (result.isErr) {
         logApiError(log, result.error);
       } else {
@@ -165,7 +165,7 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
 
         log.set({ bookmark: { id: id.value.value() } });
 
-        const result = await repository.findById(id.value);
+        const result = await bookmarkReads.findById(id.value);
         if (result.isErr) {
           logApiError(log, result.error);
         }
