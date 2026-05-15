@@ -1,4 +1,4 @@
-import { asc, desc, eq } from "drizzle-orm";
+import { asc, desc, eq, sql } from "drizzle-orm";
 import type { Result } from "@pongolinks/shared/result";
 import { Err, Ok } from "@pongolinks/shared/result";
 
@@ -8,6 +8,12 @@ import type { AppDb } from "#/db/app-db.ts";
 import { ApiError, unexpectedError } from "#/http/result-response.ts";
 import type { BookmarkId } from "../domain/bookmark-id.ts";
 import type { BookmarkDTO } from "../domain/contracts.ts";
+import {
+  BOOKMARK_LIST_PAGE_SIZE,
+  bookmarkListOffset,
+  createBookmarkListPagination,
+  type PaginatedBookmarkList,
+} from "../pagination.ts";
 
 type BookmarkRow = typeof bookmarks.$inferSelect;
 type TagRow = typeof tags.$inferSelect;
@@ -45,10 +51,17 @@ function toBookmarkDTO(row: BookmarkWithTagsRow): BookmarkDTO {
 export class BookmarkReadRepository {
   constructor(private readonly db: AppDb) {}
 
-  async list(): Promise<Result<{ bookmarks: BookmarkDTO[] }, ApiError>> {
+  async list(page: number): Promise<Result<PaginatedBookmarkList, ApiError>> {
     try {
+      const totalCountRow = await this.db
+        .select({ count: sql<number>`count(*)` })
+        .from(bookmarks)
+        .get();
+      const totalCount = totalCountRow?.count ?? 0;
       const rows = await this.db.query.bookmarks.findMany({
-        orderBy: desc(bookmarks.updatedAt),
+        orderBy: [desc(bookmarks.updatedAt), desc(bookmarks.id)],
+        limit: BOOKMARK_LIST_PAGE_SIZE,
+        offset: bookmarkListOffset(page),
         with: {
           bookmarkTags: {
             with: {
@@ -60,7 +73,10 @@ export class BookmarkReadRepository {
           },
         },
       });
-      return Ok({ bookmarks: rows.map(toBookmarkDTO) });
+      return Ok({
+        bookmarks: rows.map(toBookmarkDTO),
+        pagination: createBookmarkListPagination({ page, totalCount }),
+      });
     } catch (error) {
       return Err(unexpectedError(error));
     }
