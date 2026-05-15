@@ -9,12 +9,15 @@ import BookmarkTagInput from "./BookmarkTagInput/BookmarkTagInput.vue";
 const props = defineProps<{
   bookmark?: BookmarkDTO;
   errors?: FormErrors;
+  isDeleting?: boolean;
   isSaving: boolean;
+  showDelete?: boolean;
   submitLabel: string;
   tagSuggestions?: TagSummaryDTO[];
 }>();
 
 const emit = defineEmits<{
+  delete: [];
   submit: [payload: EditableBookmarkPayload];
 }>();
 
@@ -40,8 +43,13 @@ watch(
 );
 
 const formError = computed(() => props.errors?.form);
+const isPending = computed(() => props.isSaving || props.isDeleting);
 
 function submitForm() {
+  if (isPending.value) {
+    return;
+  }
+
   emit("submit", {
     url: form.url,
     title: form.title,
@@ -49,6 +57,14 @@ function submitForm() {
     isPrivate: form.isPrivate,
     tagsText: form.tagsText,
   });
+}
+
+function deleteBookmark() {
+  if (isPending.value) {
+    return;
+  }
+
+  emit("delete");
 }
 </script>
 
@@ -108,12 +124,24 @@ function submitForm() {
       Private bookmark
     </label>
 
-    <button
-      class="ui-action inline-flex min-h-10 items-center justify-center px-4 text-sm font-semibold transition disabled:cursor-not-allowed"
-      type="submit"
-      :disabled="isSaving"
-    >
-      {{ isSaving ? "Saving..." : submitLabel }}
-    </button>
+    <div class="flex items-center justify-between gap-3">
+      <button
+        class="ui-action inline-flex min-h-10 items-center justify-center px-4 text-sm font-semibold transition disabled:cursor-not-allowed"
+        type="submit"
+        :disabled="isPending"
+      >
+        {{ isSaving ? "Saving..." : submitLabel }}
+      </button>
+
+      <button
+        v-if="showDelete"
+        class="ui-danger-action inline-flex min-h-10 items-center justify-center px-4 text-sm font-semibold transition disabled:cursor-not-allowed"
+        type="button"
+        :disabled="isPending"
+        @click="deleteBookmark"
+      >
+        {{ isDeleting ? "Deleting..." : "Delete" }}
+      </button>
+    </div>
   </form>
 </template>
