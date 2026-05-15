@@ -108,9 +108,7 @@ export class BookmarkEditor {
 
       const extractedRelatedLinks = extractRelatedLinkUrls(input.description);
       log?.set({
-        relatedLinks: {
-          extractedCount: extractedRelatedLinks.length,
-        },
+        relatedLinks: { extractedCount: extractedRelatedLinks.length },
       });
 
       const row = await this.db.transaction(async (tx) => {
@@ -136,9 +134,7 @@ export class BookmarkEditor {
       }
 
       log?.set({
-        relatedLinks: {
-          insertedCount: extractedRelatedLinks.length,
-        },
+        relatedLinks: { insertedCount: extractedRelatedLinks.length },
       });
 
       return Ok(toBookmarkDTO(row));
@@ -175,16 +171,10 @@ export class BookmarkEditor {
 
       const extractedRelatedLinks = extractRelatedLinkUrls(input.description);
       log?.set({
-        relatedLinks: {
-          extractedCount: extractedRelatedLinks.length,
-        },
+        relatedLinks: { extractedCount: extractedRelatedLinks.length },
       });
 
-      let relatedLinkCounts = {
-        insertedCount: 0,
-        deletedCount: 0,
-        retainedCount: 0,
-      };
+      let relatedLinkCounts = { insertedCount: 0, deletedCount: 0, retainedCount: 0 };
       let tagDiffCounts: TagDiffCounts = {
         submittedCount: input.tags.length,
         attachedCount: 0,
