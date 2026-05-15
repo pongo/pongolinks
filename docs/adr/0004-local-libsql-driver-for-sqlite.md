@@ -1,0 +1,3 @@
+# Local libSQL driver for SQLite
+
+pongolinks will use `@libsql/client` as the Drizzle SQLite driver while keeping the database configured as a local file through `DATABASE_PATH`. The project is still a Bun backend with local SQLite storage, but `bun:sqlite` makes repository and database tests depend on Bun-only smoke scripts because Vitest runs under Node. `better-sqlite3` was considered because it models local SQLite directly, but it is not a good fit for the Bun runtime, so `@libsql/client` is the Node-compatible driver choice without introducing remote Turso/libSQL as a product requirement.
