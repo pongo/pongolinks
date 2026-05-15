@@ -1,6 +1,6 @@
-import type { BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
+import type { LibSQLDatabase } from "drizzle-orm/libsql";
 
 import * as relations from "@pongolinks/db/relations";
 import * as schema from "@pongolinks/db/schema";
 
-export type AppDb = BunSQLiteDatabase<typeof schema & typeof relations>;
+export type AppDb = LibSQLDatabase<typeof schema & typeof relations>;

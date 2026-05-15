@@ -7,7 +7,7 @@
   },
   "exports": {
     ".": "./src/index.ts",
-    "./bookmarks": "./src/bookmarks/bookmark-description-links.ts",
+    "./bookmark-description": "./src/bookmark-description/index.ts",
     "./errors": "./src/errors/index.ts",
     "./result": "./src/result/result.ts"
   },

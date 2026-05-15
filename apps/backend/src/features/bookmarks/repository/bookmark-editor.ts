@@ -1,4 +1,5 @@
-import { and, asc, desc, eq, ne } from "drizzle-orm";
+import { and, asc, eq, ne } from "drizzle-orm";
+import { extractRelatedLinkUrls } from "@pongolinks/shared/bookmark-description";
 import type { Result } from "@pongolinks/shared/result";
 import { Err, Ok } from "@pongolinks/shared/result";
 
@@ -6,15 +7,12 @@ import { bookmarks, bookmarkTags, relatedLinks, tags } from "@pongolinks/db/sche
 
 import type { AppDb } from "#/db/app-db.ts";
 import { ApiError, unexpectedError } from "#/http/result-response.ts";
-import type { BookmarkId } from "./domain/bookmark-id.ts";
-import type { BookmarkUrl } from "./domain/bookmark-url.ts";
-import type { BookmarkDTO, EditableBookmarkRequest } from "./domain/contracts.ts";
-import { extractRelatedLinks } from "./utils/extract-related-links.ts";
-import type { TagName } from "./domain/tag-name.ts";
+import type { BookmarkId } from "../domain/bookmark-id.ts";
+import type { BookmarkDTO, EditableBookmarkData } from "../domain/contracts.ts";
+import type { TagName } from "../domain/tag-name.ts";
 
-export type EditableBookmarkData = Omit<EditableBookmarkRequest, "url" | "tagsText"> & {
-  url: BookmarkUrl;
-  tags: TagName[];
+export type BookmarkEditorLogger = {
+  set: (context: Record<string, unknown>) => void;
 };
 
 type BookmarkRow = typeof bookmarks.$inferSelect;
@@ -39,10 +37,7 @@ type TagDiffCounts = {
   deletedOrphanNames: string[];
 };
 
-type RepositoryDb = Pick<AppDb, "delete" | "insert" | "query" | "update">;
-type RepositoryLogger = {
-  set: (context: Record<string, unknown>) => void;
-};
+type EditorDb = Pick<AppDb, "delete" | "insert" | "query" | "update">;
 
 function toBookmarkDTO(row: BookmarkWithTagsRow): BookmarkDTO {
   return {
@@ -68,62 +63,39 @@ function toBookmarkDTO(row: BookmarkWithTagsRow): BookmarkDTO {
 }
 
 function isUniqueUrlError(error: unknown) {
-  return (
-    error instanceof Error &&
-    (error.message.includes("UNIQUE constraint failed: bookmarks.url") ||
-      error.message.includes("bookmarks.url"))
+  return errorMessageChain(error).some(
+    (message) =>
+      message.includes("UNIQUE constraint failed: bookmarks.url") ||
+      message.includes("bookmarks.url"),
   );
 }
 
 function isUniqueTagNameLowerError(error: unknown) {
-  return (
-    error instanceof Error &&
-    (error.message.includes("UNIQUE constraint failed: tags.name_lower") ||
-      error.message.includes("tags.name_lower"))
+  return errorMessageChain(error).some(
+    (message) =>
+      message.includes("UNIQUE constraint failed: tags.name_lower") ||
+      message.includes("tags.name_lower"),
   );
 }
 
-export class BookmarksRepository {
+function errorMessageChain(error: unknown): string[] {
+  const messages: string[] = [];
+  let current = error;
+
+  while (current instanceof Error) {
+    messages.push(current.message);
+    current = current.cause;
+  }
+
+  return messages;
+}
+
+export class BookmarkEditor {
   constructor(private readonly db: AppDb) {}
-
-  async list(): Promise<Result<{ bookmarks: BookmarkDTO[] }, ApiError>> {
-    try {
-      const rows = await this.db.query.bookmarks.findMany({
-        orderBy: desc(bookmarks.updatedAt),
-        with: {
-          bookmarkTags: {
-            with: {
-              tag: true,
-            },
-          },
-          relatedLinks: {
-            orderBy: asc(relatedLinks.id),
-          },
-        },
-      });
-      return Ok({ bookmarks: rows.map(toBookmarkDTO) });
-    } catch (error) {
-      return Err(unexpectedError(error));
-    }
-  }
-
-  async findById(id: BookmarkId): Promise<Result<BookmarkDTO, ApiError>> {
-    try {
-      const row = await this.findBookmarkById(this.db, id.value());
-
-      if (!row) {
-        return Err(new ApiError("Bookmark was not found", "bookmark.not_found", 404));
-      }
-
-      return Ok(toBookmarkDTO(row));
-    } catch (error) {
-      return Err(unexpectedError(error));
-    }
-  }
 
   async create(
     input: EditableBookmarkData,
-    log?: RepositoryLogger,
+    log?: BookmarkEditorLogger,
   ): Promise<Result<BookmarkDTO, ApiError>> {
     try {
       const existing = await this.db.query.bookmarks.findFirst({
@@ -134,11 +106,9 @@ export class BookmarksRepository {
         return Err(new ApiError("Bookmark URL already exists", "bookmark.url_duplicate", 409));
       }
 
-      const extractedRelatedLinks = extractRelatedLinks(input.description);
+      const extractedRelatedLinks = extractRelatedLinkUrls(input.description);
       log?.set({
-        relatedLinks: {
-          extractedCount: extractedRelatedLinks.length,
-        },
+        relatedLinks: { extractedCount: extractedRelatedLinks.length },
       });
 
       const row = await this.db.transaction(async (tx) => {
@@ -164,9 +134,7 @@ export class BookmarksRepository {
       }
 
       log?.set({
-        relatedLinks: {
-          insertedCount: extractedRelatedLinks.length,
-        },
+        relatedLinks: { insertedCount: extractedRelatedLinks.length },
       });
 
       return Ok(toBookmarkDTO(row));
@@ -182,7 +150,7 @@ export class BookmarksRepository {
   async update(
     id: BookmarkId,
     input: EditableBookmarkData,
-    log?: RepositoryLogger,
+    log?: BookmarkEditorLogger,
   ): Promise<Result<BookmarkDTO, ApiError>> {
     try {
       const existing = await this.db.query.bookmarks.findFirst({
@@ -201,18 +169,12 @@ export class BookmarksRepository {
         return Err(new ApiError("Bookmark URL already exists", "bookmark.url_duplicate", 409));
       }
 
-      const extractedRelatedLinks = extractRelatedLinks(input.description);
+      const extractedRelatedLinks = extractRelatedLinkUrls(input.description);
       log?.set({
-        relatedLinks: {
-          extractedCount: extractedRelatedLinks.length,
-        },
+        relatedLinks: { extractedCount: extractedRelatedLinks.length },
       });
 
-      let relatedLinkCounts = {
-        insertedCount: 0,
-        deletedCount: 0,
-        retainedCount: 0,
-      };
+      let relatedLinkCounts = { insertedCount: 0, deletedCount: 0, retainedCount: 0 };
       let tagDiffCounts: TagDiffCounts = {
         submittedCount: input.tags.length,
         attachedCount: 0,
@@ -261,7 +223,7 @@ export class BookmarksRepository {
     }
   }
 
-  private async findBookmarkById(db: RepositoryDb, id: number) {
+  private async findBookmarkById(db: EditorDb, id: number) {
     return db.query.bookmarks.findFirst({
       where: eq(bookmarks.id, id),
       with: {
@@ -277,7 +239,7 @@ export class BookmarksRepository {
     });
   }
 
-  private async insertRelatedLinks(db: RepositoryDb, bookmarkId: number, urls: string[]) {
+  private async insertRelatedLinks(db: EditorDb, bookmarkId: number, urls: string[]) {
     if (urls.length === 0) {
       return;
     }
@@ -288,7 +250,7 @@ export class BookmarksRepository {
       .run();
   }
 
-  private async syncRelatedLinks(db: RepositoryDb, bookmarkId: number, nextUrls: string[]) {
+  private async syncRelatedLinks(db: EditorDb, bookmarkId: number, nextUrls: string[]) {
     const existingRows = await db.query.relatedLinks.findMany({
       where: eq(relatedLinks.bookmarkId, bookmarkId),
       orderBy: asc(relatedLinks.id),
@@ -314,7 +276,7 @@ export class BookmarksRepository {
     };
   }
 
-  private async replaceBookmarkTags(db: RepositoryDb, bookmarkId: number, tagNames: TagName[]) {
+  private async replaceBookmarkTags(db: EditorDb, bookmarkId: number, tagNames: TagName[]) {
     await db.delete(bookmarkTags).where(eq(bookmarkTags.bookmarkId, bookmarkId)).run();
 
     for (const tagName of tagNames) {
@@ -331,7 +293,7 @@ export class BookmarksRepository {
   }
 
   private async syncBookmarkTags(
-    db: RepositoryDb,
+    db: EditorDb,
     bookmarkId: number,
     tagNames: TagName[],
   ): Promise<TagDiffCounts> {
@@ -381,7 +343,7 @@ export class BookmarksRepository {
   }
 
   private async findBookmarkTagsWithTags(
-    db: RepositoryDb,
+    db: EditorDb,
     bookmarkId: number,
   ): Promise<BookmarkTagWithTagRow[]> {
     return db.query.bookmarkTags.findMany({
@@ -393,7 +355,7 @@ export class BookmarksRepository {
   }
 
   private async deleteOrphanTags(
-    db: RepositoryDb,
+    db: EditorDb,
     detachedRows: BookmarkTagWithTagRow[],
   ): Promise<TagRow[]> {
     const deletedTags: TagRow[] = [];
@@ -414,7 +376,7 @@ export class BookmarksRepository {
     return deletedTags;
   }
 
-  private async findOrCreateTag(db: RepositoryDb, tagName: TagName): Promise<TagRow> {
+  private async findOrCreateTag(db: EditorDb, tagName: TagName): Promise<TagRow> {
     const existing = await db.query.tags.findFirst({
       where: eq(tags.nameLower, tagName.nameLower()),
     });

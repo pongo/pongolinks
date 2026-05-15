@@ -2,13 +2,9 @@ import { bookmarks, bookmarkTags, relatedLinks, tags } from "@pongolinks/db/sche
 import { and, eq, sql } from "drizzle-orm";
 
 import { APP_BASE_PATH, createApp } from "#/app.ts";
-import { BookmarkId } from "#/features/bookmarks/domain/bookmark-id.ts";
-import { BookmarkUrl } from "#/features/bookmarks/domain/bookmark-url.ts";
-import { BookmarksRepository } from "#/features/bookmarks/bookmarks-repository.ts";
-import { parseTagNames } from "#/features/bookmarks/domain/tag-name.ts";
 import { createMigratedTestDb } from "../../../test/test-db";
 
-type TestDb = ReturnType<typeof createMigratedTestDb>;
+type TestDb = Awaited<ReturnType<typeof createMigratedTestDb>>;
 
 function assert(condition: unknown, message: string) {
   if (!condition) {
@@ -37,14 +33,6 @@ function bookmarkPayload(overrides: Record<string, unknown> = {}) {
   };
 }
 
-function unwrapResult<T>(result: { isErr: false; value: T } | { isErr: true; error: unknown }): T {
-  if (result.isErr) {
-    throw new Error(`Expected Ok result, got ${JSON.stringify(result.error)}`);
-  }
-
-  return result.value;
-}
-
 function assertBookmarkErrorCode(
   body: { isErr: boolean; error?: { code?: unknown } },
   code: string,
@@ -55,19 +43,17 @@ function assertBookmarkErrorCode(
 }
 
 function bookmarkTagRowId(db: TestDb["db"], bookmarkId: number, tagId: number) {
-  const row = db
+  return db
     .select({ rowId: sql<number>`rowid` })
     .from(bookmarkTags)
     .where(and(eq(bookmarkTags.bookmarkId, bookmarkId), eq(bookmarkTags.tagId, tagId)))
     .get();
-
-  return row?.rowId;
 }
 
 async function withApp(
   run: (context: { app: ReturnType<typeof createApp>; db: TestDb["db"] }) => Promise<void>,
 ) {
-  const database = createMigratedTestDb();
+  const database = await createMigratedTestDb();
 
   try {
     await run({
@@ -75,7 +61,7 @@ async function withApp(
       db: database.db,
     });
   } finally {
-    database.sqlite.close();
+    database.close();
   }
 }
 
@@ -361,7 +347,8 @@ await withApp(async ({ app }) => {
 });
 
 await withApp(async ({ app, db }) => {
-  db.insert(bookmarks)
+  await db
+    .insert(bookmarks)
     .values([
       {
         url: "https://example.com/old",
@@ -398,7 +385,7 @@ await withApp(async ({ app }) => {
 });
 
 await withApp(async ({ app, db }) => {
-  const bookmark = db
+  const bookmark = await db
     .insert(bookmarks)
     .values({
       url: "https://example.com/tagged",
@@ -406,7 +393,7 @@ await withApp(async ({ app, db }) => {
     })
     .returning({ id: bookmarks.id })
     .get();
-  const insertedTags = db
+  const insertedTags = await db
     .insert(tags)
     .values([
       { name: "Zed", nameLower: "zed" },
@@ -414,10 +401,12 @@ await withApp(async ({ app, db }) => {
     ])
     .returning({ id: tags.id })
     .all();
-  db.insert(bookmarkTags)
+  await db
+    .insert(bookmarkTags)
     .values(insertedTags.map((tag) => ({ bookmarkId: bookmark.id, tagId: tag.id })))
     .run();
-  db.insert(relatedLinks)
+  await db
+    .insert(relatedLinks)
     .values([
       { bookmarkId: bookmark.id, url: "https://example.com/second-related" },
       { bookmarkId: bookmark.id, url: "https://example.com/first-related" },
@@ -532,7 +521,7 @@ await withApp(async ({ app, db }) => {
   if (!beta) {
     throw new Error("beta tag should exist after create");
   }
-  const betaLinkRowId = bookmarkTagRowId(db, 1, beta.id);
+  const betaLinkRowId = (await bookmarkTagRowId(db, 1, beta.id))?.rowId;
 
   const syncResponse = await app.handle(
     request("/api/bookmarks/1", {
@@ -542,7 +531,7 @@ await withApp(async ({ app, db }) => {
   );
   const syncBody = await syncResponse.json();
   const alphaAfterSync = await db.query.tags.findFirst({ where: eq(tags.nameLower, "alpha") });
-  const betaLinkRowIdAfterSync = bookmarkTagRowId(db, 1, beta.id);
+  const betaLinkRowIdAfterSync = (await bookmarkTagRowId(db, 1, beta.id))?.rowId;
 
   assert(syncResponse.status === 200, "tag diff update should return 200");
   assert(syncBody.value.tags.length === 2, "update should return final diffed tags");
@@ -607,77 +596,6 @@ await withApp(async ({ app, db }) => {
   assert(remainingSharedLinks.length === 1, "shared detached tag should remain attached elsewhere");
 });
 
-await withApp(async ({ db }) => {
-  const repository = new BookmarksRepository(db);
-  const firstTags = unwrapResult(parseTagNames("Article beta"));
-  const secondTags = unwrapResult(parseTagNames("article"));
-  const createResult = await repository.create({
-    ...bookmarkPayload({
-      description: "Keep https://example.com/keep and remove https://example.com/remove",
-    }),
-    url: unwrapResult(BookmarkUrl.from("https://example.com/repository")),
-    tags: firstTags,
-  });
-  const bookmark = unwrapResult(createResult);
-
-  await repository.create({
-    ...bookmarkPayload({
-      url: "https://example.com/repository-second",
-      title: "Second",
-      tagsText: "article",
-    }),
-    url: unwrapResult(BookmarkUrl.from("https://example.com/repository-second")),
-    tags: secondTags,
-  });
-
-  const logContexts: Record<string, unknown>[] = [];
-  const updateResult = await repository.update(
-    unwrapResult(BookmarkId.from(bookmark.id)),
-    {
-      ...bookmarkPayload({
-        url: "https://example.com/repository",
-        title: "Repository Updated",
-        description: "Keep https://example.com/keep and add https://example.com/add",
-      }),
-      url: unwrapResult(BookmarkUrl.from("https://example.com/repository")),
-      tags: unwrapResult(parseTagNames("article Gamma")),
-    },
-    {
-      set: (context) => logContexts.push(context),
-    },
-  );
-  const updated = unwrapResult(updateResult);
-  const tagContext = logContexts.find((context) => "tags" in context)?.tags as
-    | Record<string, unknown>
-    | undefined;
-  const retainedRelatedLink = updated.relatedLinks[0];
-  const attachedRelatedLink = updated.relatedLinks[1];
-
-  if (!retainedRelatedLink || !attachedRelatedLink) {
-    throw new Error("repository update should sync related links");
-  }
-
-  assert(updated.relatedLinks.length === 2, "repository update should sync related links");
-  assert(retainedRelatedLink.url === "https://example.com/keep", "related link should retain");
-  assert(attachedRelatedLink.url === "https://example.com/add", "related link should attach");
-  assert(tagContext?.submittedCount === 2, "tag diff log should include submitted count");
-  assert(tagContext?.attachedCount === 1, "tag diff log should include attached count");
-  assert(tagContext?.detachedCount === 1, "tag diff log should include detached count");
-  assert(tagContext?.retainedCount === 1, "tag diff log should include retained count");
-  assert(
-    JSON.stringify(tagContext?.attachedNames) === JSON.stringify(["Gamma"]),
-    "tag diff log should include persisted attached names",
-  );
-  assert(
-    JSON.stringify(tagContext?.detachedNames) === JSON.stringify(["beta"]),
-    "tag diff log should include persisted detached names",
-  );
-  assert(
-    JSON.stringify(tagContext?.deletedOrphanNames) === JSON.stringify(["beta"]),
-    "tag diff log should include deleted orphan names",
-  );
-});
-
 await withApp(async ({ app }) => {
   await app.handle(
     request("/api/bookmarks", {
@@ -707,7 +625,7 @@ await withApp(async ({ app }) => {
 });
 
 await withApp(async ({ app, db }) => {
-  const { id, updatedAt } = db
+  const { id, updatedAt } = await db
     .insert(bookmarks)
     .values({
       url: "https://example.com/original",

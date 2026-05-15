@@ -18,7 +18,7 @@ Keep database schema changes in `packages/db`. Keep Bookmark create/update behav
 
 ## Testing
 
-Backend API behavior is covered by `tags-api.test.ts`, which runs the Bun SQLite smoke suite in `tags-api-smoke.ts`. Feature-local repository or contract tests should live next to the modules they verify.
+Backend API behavior is covered by `tags-api.test.ts`, which runs the Bun/Elysia smoke suite in `tags-api-smoke.ts`. Feature-local repository or contract tests should live next to the modules they verify.
 
 ## Conventions
 

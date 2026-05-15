@@ -1,5 +1,5 @@
-import { Database } from "bun:sqlite";
-import { drizzle } from "drizzle-orm/bun-sqlite";
+import { createClient } from "@libsql/client/sqlite3";
+import { drizzle } from "drizzle-orm/libsql";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 
@@ -10,20 +10,52 @@ export type CreateDbOptions = {
   databasePath: string;
 };
 
-export function createDb({ databasePath }: CreateDbOptions) {
+function toLocalLibSqlUrl(databasePath: string) {
   if (databasePath !== ":memory:") {
     mkdirSync(dirname(databasePath), { recursive: true });
+    return `file:${databasePath}`;
   }
 
-  const sqlite = new Database(databasePath);
-  sqlite.run("PRAGMA foreign_keys = ON");
+  return "file::memory:?cache=shared";
+}
 
-  const db = drizzle(sqlite, {
+async function resetMemoryDatabase(client: ReturnType<typeof createClient>) {
+  await client.execute("PRAGMA foreign_keys = OFF");
+  const tables = await client.execute(
+    "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
+  );
+
+  for (const table of tables.rows) {
+    const tableName = String(table.name);
+
+    if (tableName.startsWith("bookmarks_fts_")) {
+      continue;
+    }
+
+    await client.execute(`DROP TABLE IF EXISTS "${tableName.replaceAll('"', '""')}"`);
+  }
+
+  await client.execute("PRAGMA foreign_keys = ON");
+}
+
+export async function createDb({ databasePath }: CreateDbOptions) {
+  const client = createClient({ url: toLocalLibSqlUrl(databasePath) });
+  if (databasePath === ":memory:") {
+    await resetMemoryDatabase(client);
+  } else {
+    await client.execute("PRAGMA foreign_keys = ON");
+  }
+
+  const db = drizzle(client, {
     schema: {
       ...schema,
       ...relations,
     },
   });
 
-  return { db, sqlite };
+  return {
+    db,
+    client,
+    close: () => client.close(),
+  };
 }

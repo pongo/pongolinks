@@ -18,7 +18,7 @@ The number of current Bookmarks a Tag is attached to.
 _Avoid_: weight, rank, score
 
 **Related Link**:
-A secondary URL automatically extracted from a Bookmark description because it provides nearby or supporting context.
+A secondary explicit HTTP(S) URL automatically extracted from a Bookmark description because it provides nearby or supporting context.
 _Avoid_: child bookmark, attachment, reference
 
 **Private Bookmark**:
@@ -37,7 +37,7 @@ _Avoid_: secret link, hidden item
 
 ## Rules
 
-- **Related Links** are synchronized from the Bookmark description by adding newly extracted URLs and removing URLs that are no longer present.
+- **Related Links** are synchronized from explicit HTTP(S) URLs in the Bookmark description by adding newly extracted URLs and removing URLs that are no longer present.
 - **Tags** attached to a Bookmark are synchronized from submitted Tag text by attaching newly submitted Tags and detaching Tags that are no longer submitted.
 - A **Tag** with no attached Bookmarks is removed.
 

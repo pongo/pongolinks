@@ -1,5 +1,7 @@
 # Deepen Tag Synchronization Module
 
+Status: Deferred for v0.9. Tag synchronization may be extracted only as a private collaborator of `BookmarkEditor`; it should not become a separate top-level architecture boundary until another real caller or adapter appears.
+
 ## Context
 
 Tag behavior is currently split across the Bookmark and Tag slices:

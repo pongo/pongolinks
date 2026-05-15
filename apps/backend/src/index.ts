@@ -6,7 +6,7 @@ import { initializeObservability } from "./observability";
 
 initializeObservability();
 
-const database = createDb({ databasePath: config.databasePath });
+const database = await createDb({ databasePath: config.databasePath });
 
 export const app = createApp({ db: database.db });
 

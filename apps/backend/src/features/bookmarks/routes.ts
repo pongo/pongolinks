@@ -7,7 +7,8 @@ import { getRouteLogger, logApiError } from "#/http/route-logging.ts";
 import { ApiError, resultResponse, type ApiErrorCode } from "#/http/result-response.ts";
 import { BookmarkId } from "./domain/bookmark-id.ts";
 import { BookmarkUrl } from "./domain/bookmark-url.ts";
-import { BookmarksRepository } from "./bookmarks-repository";
+import { BookmarkEditor } from "./repository/bookmark-editor.ts";
+import { BookmarkReadRepository } from "./repository/bookmark-read-repository.ts";
 import { parseTagNames } from "./domain/tag-name.ts";
 
 export type BookmarkRoutesOptions = {
@@ -87,7 +88,8 @@ function bookmarkValidationErrorResponse(error: unknown, set: { status?: number 
 }
 
 export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
-  const repository = new BookmarksRepository(db);
+  const bookmarkEditor = new BookmarkEditor(db);
+  const bookmarkReads = new BookmarkReadRepository(db);
 
   return new Elysia({ name: "bookmark-routes" })
     .onError(({ code, error, set }) => {
@@ -99,7 +101,7 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
       const { set } = context;
       const log = getRouteLogger(context);
 
-      const result = await repository.list();
+      const result = await bookmarkReads.list();
       if (result.isErr) {
         logApiError(log, result.error);
       } else {
@@ -113,13 +115,6 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
       async (context) => {
         const { body, set } = context;
         const log = getRouteLogger(context);
-        log.set({
-          bookmark: {
-            title: body.title,
-            description: body.description,
-            isPrivate: body.isPrivate,
-          },
-        });
 
         const parseResults = combine([BookmarkUrl.from(body.url), parseTagNames(body.tagsText)]);
         if (parseResults.isErr) {
@@ -131,12 +126,15 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
         log.set({
           bookmark: {
             url: url.value(),
+            title: body.title,
+            description: body.description,
+            isPrivate: body.isPrivate,
             tags: tags.map((tag) => tag.name()),
           },
           tags: { count: tags.length },
         });
 
-        const result = await repository.create({ ...body, url, tags }, log);
+        const result = await bookmarkEditor.create({ ...body, url, tags }, log);
         if (result.isErr) {
           logApiError(log, result.error);
         } else {
@@ -163,7 +161,7 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
 
         log.set({ bookmark: { id: id.value.value() } });
 
-        const result = await repository.findById(id.value);
+        const result = await bookmarkReads.findById(id.value);
         if (result.isErr) {
           logApiError(log, result.error);
         }
@@ -203,7 +201,7 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
           tags: { count: tags.length },
         });
 
-        const result = await repository.update(id, { ...body, url, tags }, log);
+        const result = await bookmarkEditor.update(id, { ...body, url, tags }, log);
         if (result.isErr) {
           logApiError(log, result.error);
         } else {
