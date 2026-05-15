@@ -6,8 +6,8 @@ import { bookmarks, relatedLinks, tags } from "@pongolinks/db/schema";
 
 import type { AppDb } from "#/db/app-db.ts";
 import { ApiError, unexpectedError } from "#/http/result-response.ts";
-import type { BookmarkId } from "./domain/bookmark-id.ts";
-import type { BookmarkDTO } from "./domain/contracts.ts";
+import type { BookmarkId } from "../domain/bookmark-id.ts";
+import type { BookmarkDTO } from "../domain/contracts.ts";
 
 type BookmarkRow = typeof bookmarks.$inferSelect;
 type TagRow = typeof tags.$inferSelect;

@@ -7,8 +7,8 @@ import { getRouteLogger, logApiError } from "#/http/route-logging.ts";
 import { ApiError, resultResponse, type ApiErrorCode } from "#/http/result-response.ts";
 import { BookmarkId } from "./domain/bookmark-id.ts";
 import { BookmarkUrl } from "./domain/bookmark-url.ts";
-import { BookmarkEditor } from "./bookmark-editor.ts";
-import { BookmarkReadRepository } from "./bookmark-read-repository.ts";
+import { BookmarkEditor } from "./repository/bookmark-editor.ts";
+import { BookmarkReadRepository } from "./repository/bookmark-read-repository.ts";
 import { parseTagNames } from "./domain/tag-name.ts";
 
 export type BookmarkRoutesOptions = {

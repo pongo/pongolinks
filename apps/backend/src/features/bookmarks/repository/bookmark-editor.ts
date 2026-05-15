@@ -6,10 +6,10 @@ import { bookmarks, bookmarkTags, relatedLinks, tags } from "@pongolinks/db/sche
 
 import type { AppDb } from "#/db/app-db.ts";
 import { ApiError, unexpectedError } from "#/http/result-response.ts";
-import type { BookmarkId } from "./domain/bookmark-id.ts";
-import type { BookmarkDTO, EditableBookmarkData } from "./domain/contracts.ts";
-import { extractRelatedLinks } from "./utils/extract-related-links.ts";
-import type { TagName } from "./domain/tag-name.ts";
+import type { BookmarkId } from "../domain/bookmark-id.ts";
+import type { BookmarkDTO, EditableBookmarkData } from "../domain/contracts.ts";
+import { extractRelatedLinks } from "../utils/extract-related-links.ts";
+import type { TagName } from "../domain/tag-name.ts";
 
 export type BookmarkEditorLogger = {
   set: (context: Record<string, unknown>) => void;

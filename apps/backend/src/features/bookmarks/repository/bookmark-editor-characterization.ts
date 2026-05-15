@@ -1,12 +1,12 @@
 import { bookmarks, bookmarkTags, relatedLinks, tags } from "@pongolinks/db/schema";
 import { and, eq, sql } from "drizzle-orm";
 
-import { BookmarkId } from "#/features/bookmarks/domain/bookmark-id.ts";
-import { BookmarkUrl } from "#/features/bookmarks/domain/bookmark-url.ts";
-import { BookmarkEditor } from "#/features/bookmarks/bookmark-editor.ts";
-import type { EditableBookmarkData } from "#/features/bookmarks/domain/contracts.ts";
-import { parseTagNames } from "#/features/bookmarks/domain/tag-name.ts";
-import { createMigratedTestDb } from "../../../test/test-db";
+import { BookmarkId } from "../domain/bookmark-id.ts";
+import { BookmarkUrl } from "../domain/bookmark-url.ts";
+import { BookmarkEditor } from "./bookmark-editor.ts";
+import type { EditableBookmarkData } from "../domain/contracts.ts";
+import { parseTagNames } from "../domain/tag-name.ts";
+import { createMigratedTestDb } from "../../../../test/test-db.ts";
 
 type TestDb = ReturnType<typeof createMigratedTestDb>;
 

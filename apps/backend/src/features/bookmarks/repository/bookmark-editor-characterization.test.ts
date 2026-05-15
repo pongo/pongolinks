@@ -6,9 +6,9 @@ describe("Bookmark editor characterization", () => {
   it("passes the Bun SQLite bookmark write characterization suite", () => {
     const result = spawnSync(
       "bun",
-      ["apps/backend/src/features/bookmarks/bookmark-editor-characterization.ts"],
+      ["apps/backend/src/features/bookmarks/repository/bookmark-editor-characterization.ts"],
       {
-        cwd: fileURLToPath(new URL("../../../../..", import.meta.url)),
+        cwd: fileURLToPath(new URL("../../../../../..", import.meta.url)),
         encoding: "utf8",
       },
     );
