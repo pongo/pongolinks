@@ -25,4 +25,8 @@ describe("Bookmark API", () => {
   it("passes the Bun/Elysia update API smoke suite", () => {
     runSmokeSuite("bookmarks-update-api-smoke.ts", "bookmark update api smoke passed");
   });
+
+  it("passes the Bun/Elysia delete API smoke suite", () => {
+    runSmokeSuite("bookmarks-delete-api-smoke.ts", "bookmark delete api smoke passed");
+  });
 });

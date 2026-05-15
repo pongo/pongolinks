@@ -227,5 +227,30 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
         body: editableBookmarkBodySchema,
         params: bookmarkIdParamsSchema,
       },
+    )
+    .delete(
+      "/bookmarks/:id",
+      async (context) => {
+        const { params, set } = context;
+        const log = getRouteLogger(context);
+
+        const id = BookmarkId.from(params.id);
+        if (id.isErr) {
+          logApiError(log, id.error);
+          return resultResponse(id, set);
+        }
+
+        log.set({ bookmark: { id: id.value.value() } });
+
+        const result = await bookmarkEditor.delete(id.value, log);
+        if (result.isErr) {
+          logApiError(log, result.error);
+        }
+
+        return resultResponse(result, set);
+      },
+      {
+        params: bookmarkIdParamsSchema,
+      },
     );
 }

@@ -232,4 +232,79 @@ describe("Bookmark editor", () => {
       expect(removedRelatedLinkAfterUpdate).toBeUndefined();
     });
   });
+
+  it("deletes a bookmark with owned related rows and only single-use orphan tags", async () => {
+    await withRepository(async ({ bookmarkEditor, db }) => {
+      const deletedTarget = unwrapResult(
+        await bookmarkEditor.create(
+          editableBookmark({
+            url: unwrapResult(BookmarkUrl.from("https://example.com/delete-me")),
+            description: "Related https://example.com/delete-me/docs",
+            tagsText: "single shared",
+          }),
+        ),
+      );
+      const preservedBookmark = unwrapResult(
+        await bookmarkEditor.create(
+          editableBookmark({
+            url: unwrapResult(BookmarkUrl.from("https://example.com/preserved")),
+            title: "Preserved",
+            tagsText: "shared",
+          }),
+        ),
+      );
+
+      const sharedBefore = await db.query.tags.findFirst({ where: eq(tags.nameLower, "shared") });
+      expect(sharedBefore).toBeDefined();
+      if (!sharedBefore) return;
+
+      const result = unwrapResult(
+        await bookmarkEditor.delete(unwrapResult(BookmarkId.from(deletedTarget.id))),
+      );
+
+      const deletedBookmark = await db.query.bookmarks.findFirst({
+        where: eq(bookmarks.id, deletedTarget.id),
+      });
+      const deletedRelatedLinks = await db.query.relatedLinks.findMany({
+        where: eq(relatedLinks.bookmarkId, deletedTarget.id),
+      });
+      const deletedBookmarkTags = await db.query.bookmarkTags.findMany({
+        where: eq(bookmarkTags.bookmarkId, deletedTarget.id),
+      });
+      const singleAfterDelete = await db.query.tags.findFirst({
+        where: eq(tags.nameLower, "single"),
+      });
+      const sharedAfterDelete = await db.query.tags.findFirst({
+        where: eq(tags.nameLower, "shared"),
+      });
+      const remainingSharedLinks = await db.query.bookmarkTags.findMany({
+        where: eq(bookmarkTags.tagId, sharedBefore.id),
+      });
+
+      expect(result).toEqual({ deletedBookmarkId: deletedTarget.id });
+      expect(deletedBookmark).toBeUndefined();
+      expect(deletedRelatedLinks).toHaveLength(0);
+      expect(deletedBookmarkTags).toHaveLength(0);
+      expect(singleAfterDelete).toBeUndefined();
+      expect(sharedAfterDelete?.id).toBe(sharedBefore.id);
+      expect(remainingSharedLinks).toEqual([
+        {
+          bookmarkId: preservedBookmark.id,
+          tagId: sharedBefore.id,
+        },
+      ]);
+    });
+  });
+
+  it("returns bookmark.not_found when deleting a missing bookmark", async () => {
+    await withRepository(async ({ bookmarkEditor }) => {
+      const result = await bookmarkEditor.delete(unwrapResult(BookmarkId.from(999)));
+
+      expect(result.isErr).toBe(true);
+      if (result.isErr) {
+        expect(result.error.code).toBe("bookmark.not_found");
+        expect(result.error.status).toBe(404);
+      }
+    });
+  });
 });

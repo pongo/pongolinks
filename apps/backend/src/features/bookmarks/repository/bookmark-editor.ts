@@ -27,6 +27,9 @@ type BookmarkTagWithTagRow = {
   tagId: number;
   tag: TagRow;
 };
+export type DeletedBookmarkDTO = {
+  deletedBookmarkId: number;
+};
 type TagDiffCounts = {
   submittedCount: number;
   attachedCount: number;
@@ -219,6 +222,47 @@ export class BookmarkEditor {
         return Err(new ApiError("Bookmark URL already exists", "bookmark.url_duplicate", 409));
       }
 
+      return Err(unexpectedError(error));
+    }
+  }
+
+  async delete(
+    id: BookmarkId,
+    log?: BookmarkEditorLogger,
+  ): Promise<Result<DeletedBookmarkDTO, ApiError>> {
+    try {
+      const deletedBookmarkId = await this.db.transaction(async (tx) => {
+        const existing = await tx.query.bookmarks.findFirst({
+          where: eq(bookmarks.id, id.value()),
+        });
+
+        if (!existing) {
+          return undefined;
+        }
+
+        const attachedTags = await this.findBookmarkTagsWithTags(tx, id.value());
+
+        await tx.delete(bookmarks).where(eq(bookmarks.id, id.value())).run();
+
+        const deletedOrphanTags = await this.deleteOrphanTags(tx, attachedTags);
+        log?.set({
+          tags: {
+            detachedCount: attachedTags.length,
+            deletedOrphanNames: deletedOrphanTags.map((tag) => tag.name),
+          },
+        });
+
+        return existing.id;
+      });
+
+      if (deletedBookmarkId === undefined) {
+        return Err(new ApiError("Bookmark was not found", "bookmark.not_found", 404));
+      }
+
+      log?.set({ bookmark: { deletedId: deletedBookmarkId } });
+
+      return Ok({ deletedBookmarkId });
+    } catch (error) {
       return Err(unexpectedError(error));
     }
   }
