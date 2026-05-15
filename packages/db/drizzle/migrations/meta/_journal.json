@@ -29,6 +29,13 @@
       "when": 1778696940000,
       "tag": "0003_related_links_unique_url_per_bookmark",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1778847941078,
+      "tag": "0004_bookmarks_updated_at_id_index",
+      "breakpoints": true
     }
   ]
 }

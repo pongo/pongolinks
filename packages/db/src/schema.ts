@@ -29,7 +29,7 @@ export const bookmarks = sqliteTable(
     check("bookmarks_url_not_empty", sql`${table.url} <> ''`),
     check("bookmarks_title_not_empty", sql`${table.title} <> ''`),
     check("bookmarks_is_private_boolean", sql`${table.isPrivate} IN (0, 1)`),
-    index("idx_bookmarks_updated_at").on(desc(table.updatedAt)),
+    index("idx_bookmarks_updated_at_id").on(desc(table.updatedAt), desc(table.id)),
   ],
 );
 
