@@ -27,6 +27,9 @@ type BookmarkTagWithTagRow = {
   tagId: number;
   tag: TagRow;
 };
+export type DeletedBookmarkDTO = {
+  deletedBookmarkId: number;
+};
 type TagDiffCounts = {
   submittedCount: number;
   attachedCount: number;
@@ -123,7 +126,7 @@ export class BookmarkEditor {
           .returning({ id: bookmarks.id })
           .get();
 
-        await this.replaceBookmarkTags(tx, bookmark.id, input.tags);
+        await this.syncBookmarkTags(tx, bookmark.id, input.tags);
         await this.insertRelatedLinks(tx, bookmark.id, extractedRelatedLinks);
 
         return this.findBookmarkById(tx, bookmark.id);
@@ -223,6 +226,47 @@ export class BookmarkEditor {
     }
   }
 
+  async delete(
+    id: BookmarkId,
+    log?: BookmarkEditorLogger,
+  ): Promise<Result<DeletedBookmarkDTO, ApiError>> {
+    try {
+      const deletedBookmarkId = await this.db.transaction(async (tx) => {
+        const existing = await tx.query.bookmarks.findFirst({
+          where: eq(bookmarks.id, id.value()),
+        });
+
+        if (!existing) {
+          return undefined;
+        }
+
+        const attachedTags = await this.findBookmarkTagsWithTags(tx, id.value());
+
+        await tx.delete(bookmarks).where(eq(bookmarks.id, id.value())).run();
+
+        const deletedOrphanTags = await this.deleteOrphanTags(tx, attachedTags);
+        log?.set({
+          tags: {
+            detachedCount: attachedTags.length,
+            deletedOrphanNames: deletedOrphanTags.map((tag) => tag.name),
+          },
+        });
+
+        return existing.id;
+      });
+
+      if (deletedBookmarkId === undefined) {
+        return Err(new ApiError("Bookmark was not found", "bookmark.not_found", 404));
+      }
+
+      log?.set({ bookmark: { deletedId: deletedBookmarkId } });
+
+      return Ok({ deletedBookmarkId });
+    } catch (error) {
+      return Err(unexpectedError(error));
+    }
+  }
+
   private async findBookmarkById(db: EditorDb, id: number) {
     return db.query.bookmarks.findFirst({
       where: eq(bookmarks.id, id),
@@ -274,22 +318,6 @@ export class BookmarkEditor {
       urlsToInsert,
       urlsToDelete,
     };
-  }
-
-  private async replaceBookmarkTags(db: EditorDb, bookmarkId: number, tagNames: TagName[]) {
-    await db.delete(bookmarkTags).where(eq(bookmarkTags.bookmarkId, bookmarkId)).run();
-
-    for (const tagName of tagNames) {
-      const tag = await this.findOrCreateTag(db, tagName);
-
-      await db
-        .insert(bookmarkTags)
-        .values({
-          bookmarkId,
-          tagId: tag.id,
-        })
-        .run();
-    }
   }
 
   private async syncBookmarkTags(

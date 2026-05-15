@@ -40,6 +40,27 @@ describe("database migrations", () => {
         expect.arrayContaining(["bookmarks_ai", "bookmarks_bu", "bookmarks_au", "bookmarks_bd"]),
       );
 
+      const bookmarkIndexesResult = await client.execute("PRAGMA index_list('bookmarks')");
+      const bookmarkIndexNames = bookmarkIndexesResult.rows.map((index) => String(index.name));
+
+      expect(bookmarkIndexNames).toContain("idx_bookmarks_updated_at_id");
+      expect(bookmarkIndexNames).not.toContain("idx_bookmarks_updated_at");
+
+      const bookmarkListIndexResult = await client.execute(
+        "PRAGMA index_xinfo('idx_bookmarks_updated_at_id')",
+      );
+      const bookmarkListIndexColumns = bookmarkListIndexResult.rows
+        .filter((column) => Number(column.key) === 1)
+        .map((column) => ({
+          name: String(column.name),
+          desc: Number(column.desc),
+        }));
+
+      expect(bookmarkListIndexColumns).toEqual([
+        { name: "updated_at", desc: 1 },
+        { name: "id", desc: 1 },
+      ]);
+
       const initialUpdatedAt = "2000-01-01 00:00:00";
       const { id: firstBookmarkId } = await db
         .insert(bookmarks)

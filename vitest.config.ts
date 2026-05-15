@@ -17,6 +17,12 @@ export default defineConfig({
       },
       {
         test: {
+          name: "@pongolinks/frontend",
+          root: "./apps/frontend",
+        },
+      },
+      {
+        test: {
           name: "@pongolinks/shared",
           root: "./packages/shared",
         },

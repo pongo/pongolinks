@@ -5,7 +5,7 @@ import { RouterLink, useRoute, useRouter } from "vue-router";
 import type { FormErrors } from "#/shared/api/errors.ts";
 import { listTags } from "#/features/tags/api.ts";
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
-import { getBookmark, updateBookmark } from "../api/api";
+import { deleteBookmark, getBookmark, updateBookmark } from "../api/api";
 import BookmarkForm from "../components/BookmarkForm.vue";
 import type { BookmarkDTO, EditableBookmarkPayload } from "../types";
 
@@ -14,6 +14,7 @@ const router = useRouter();
 const bookmark = ref<BookmarkDTO>();
 const errors = ref<FormErrors>({});
 const isLoading = ref(true);
+const isDeleting = ref(false);
 const isSaving = ref(false);
 const bookmarkId = String(route.params.id);
 const tagSuggestions = ref<TagSummaryDTO[]>([]);
@@ -35,6 +36,10 @@ onMounted(async () => {
 });
 
 async function saveBookmark(payload: EditableBookmarkPayload) {
+  if (isSaving.value || isDeleting.value) {
+    return;
+  }
+
   isSaving.value = true;
   errors.value = {};
 
@@ -48,6 +53,29 @@ async function saveBookmark(payload: EditableBookmarkPayload) {
 
   isSaving.value = false;
 }
+
+async function confirmDeleteBookmark() {
+  if (isSaving.value || isDeleting.value) {
+    return;
+  }
+
+  if (!window.confirm("Delete this bookmark? This action cannot be undone.")) {
+    return;
+  }
+
+  isDeleting.value = true;
+  errors.value = {};
+
+  const result = await deleteBookmark(bookmarkId);
+
+  if (result.isOk) {
+    await router.push("/");
+  } else {
+    errors.value = result.error.formErrors;
+  }
+
+  isDeleting.value = false;
+}
 </script>
 
 <template>
@@ -60,9 +88,12 @@ async function saveBookmark(payload: EditableBookmarkPayload) {
         <BookmarkForm
           :bookmark="bookmark"
           :errors="errors"
+          :is-deleting="isDeleting"
           :is-saving="isSaving"
           :tag-suggestions="tagSuggestions"
+          show-delete
           submit-label="Save changes"
+          @delete="confirmDeleteBookmark"
           @submit="saveBookmark"
         />
       </div>

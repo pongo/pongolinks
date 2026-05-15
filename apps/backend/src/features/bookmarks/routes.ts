@@ -10,6 +10,7 @@ import { BookmarkUrl } from "./domain/bookmark-url.ts";
 import { BookmarkEditor } from "./repository/bookmark-editor.ts";
 import { BookmarkReadRepository } from "./repository/bookmark-read-repository.ts";
 import { parseTagNames } from "./domain/tag-name.ts";
+import { normalizeBookmarkListPage } from "./pagination.ts";
 
 export type BookmarkRoutesOptions = {
   db: AppDb;
@@ -97,19 +98,31 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
         return bookmarkValidationErrorResponse(error, set);
       }
     })
-    .get("/bookmarks", async (context) => {
-      const { set } = context;
-      const log = getRouteLogger(context);
+    .get(
+      "/bookmarks",
+      async (context) => {
+        const { query, set } = context;
+        const log = getRouteLogger(context);
 
-      const result = await bookmarkReads.list();
-      if (result.isErr) {
-        logApiError(log, result.error);
-      } else {
-        log.set({ bookmarks: { count: result.value.bookmarks.length } });
-      }
+        const page = normalizeBookmarkListPage(query.page);
+        const result = await bookmarkReads.list(page);
+        if (result.isErr) {
+          logApiError(log, result.error);
+        } else {
+          log.set({
+            bookmarks: { count: result.value.bookmarks.length },
+            pagination: result.value.pagination,
+          });
+        }
 
-      return resultResponse(result, set);
-    })
+        return resultResponse(result, set);
+      },
+      {
+        query: z.object({
+          page: z.string().optional(),
+        }),
+      },
+    )
     .post(
       "/bookmarks",
       async (context) => {
@@ -212,6 +225,31 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
       },
       {
         body: editableBookmarkBodySchema,
+        params: bookmarkIdParamsSchema,
+      },
+    )
+    .delete(
+      "/bookmarks/:id",
+      async (context) => {
+        const { params, set } = context;
+        const log = getRouteLogger(context);
+
+        const id = BookmarkId.from(params.id);
+        if (id.isErr) {
+          logApiError(log, id.error);
+          return resultResponse(id, set);
+        }
+
+        log.set({ bookmark: { id: id.value.value() } });
+
+        const result = await bookmarkEditor.delete(id.value, log);
+        if (result.isErr) {
+          logApiError(log, result.error);
+        }
+
+        return resultResponse(result, set);
+      },
+      {
         params: bookmarkIdParamsSchema,
       },
     );

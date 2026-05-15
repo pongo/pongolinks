@@ -33,6 +33,10 @@
 
 html {
   color-scheme: light;
+
+  /* prevent scrollbar from repositioning web page */
+  overflow-x: hidden;
+  margin-right: calc(100% - 100vw);
 }
 
 body {
@@ -142,6 +146,20 @@ textarea {
 
 .ui-action:disabled {
   background-color: var(--ui-action-disabled);
+}
+
+.ui-danger-action {
+  background-color: var(--ui-danger-border);
+  color: var(--color-white);
+}
+
+.ui-danger-action:hover:not(:disabled) {
+  background-color: var(--ui-danger-text-readable);
+}
+
+.ui-danger-action:disabled {
+  background-color: var(--color-red-300);
+  color: var(--color-white);
 }
 
 .ui-field {

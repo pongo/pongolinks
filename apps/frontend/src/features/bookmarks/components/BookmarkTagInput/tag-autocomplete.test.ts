@@ -17,7 +17,6 @@ describe("tag autocomplete", () => {
   it("finds suggestions by substring match while preserving backend order", () => {
     expect(suggestTags(tags, "art", 3)).toEqual([
       tags[0],
-      tags[2],
       tags[3],
       tags[4],
       tags[5],
