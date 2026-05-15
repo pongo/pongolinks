@@ -9,6 +9,7 @@ import type { AppDb } from "./db/app-db";
 import { createBookmarkRoutes } from "./features/bookmarks/routes";
 import { createTagRoutes } from "./features/tags/routes";
 import { healthRoutes } from "./features/health/routes";
+import { createRequestLoggingOptions } from "./observability";
 
 export type CreateAppOptions = {
   db?: AppDb;
@@ -56,6 +57,7 @@ export function createApp(options: CreateAppOptions = {}) {
   const app = new Elysia()
     .use(
       evlog({
+        ...createRequestLoggingOptions(),
         include: [`${APP_BASE_PATH}/api/**`],
         exclude: [`${APP_BASE_PATH}/api/health`],
       }),
