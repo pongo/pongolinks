@@ -7,6 +7,7 @@ import type {
   BookmarkDTO,
   BookmarkListPagination as BookmarkListPaginationState,
 } from "../../types";
+import { useDelayedFlag } from "#/shared/useDelayedFlag.ts";
 import BookmarkList from "./BookmarkList.vue";
 import BookmarkListPagination from "./BookmarkListPagination.vue";
 import { normalizeBookmarkListPageQuery } from "./pagination-window";
@@ -22,27 +23,22 @@ const pagination = ref<BookmarkListPaginationState>({
   hasNextPage: false,
 });
 const isLoading = ref(true);
-const showLoadingMessage = ref(false);
 const error = ref("");
 const currentPage = computed(() => normalizeBookmarkListPageQuery(route.query.page));
+const { isDelayed, start: startLoadingDelay, stop: stopLoadingDelay } = useDelayedFlag(1000);
 
 watch(
   currentPage,
   async (page, _previousPage, onCleanup) => {
     let isCurrentRequest = true;
-    const loadingMessageTimer = setTimeout(() => {
-      if (isCurrentRequest) {
-        showLoadingMessage.value = true;
-      }
-    }, 1000);
+    startLoadingDelay();
 
     onCleanup(() => {
       isCurrentRequest = false;
-      clearTimeout(loadingMessageTimer);
+      stopLoadingDelay();
     });
 
     isLoading.value = true;
-    showLoadingMessage.value = false;
     error.value = "";
 
     const result = await listBookmarks(page);
@@ -51,7 +47,7 @@ watch(
       return;
     }
 
-    clearTimeout(loadingMessageTimer);
+    stopLoadingDelay();
 
     if (result.isOk) {
       bookmarks.value = result.value.bookmarks;
@@ -61,7 +57,6 @@ watch(
     }
 
     isLoading.value = false;
-    showLoadingMessage.value = false;
   },
   { immediate: true },
 );
@@ -86,10 +81,7 @@ watch(
       <p v-if="error" class="ui-danger-banner border-l-4 px-4 py-3 text-sm font-medium">
         {{ error }}
       </p>
-      <p
-        v-else-if="isLoading && showLoadingMessage && bookmarks.length === 0"
-        class="ui-text-muted text-sm"
-      >
+      <p v-else-if="isLoading && isDelayed && bookmarks.length === 0" class="ui-text-muted text-sm">
         Loading bookmarks...
       </p>
 
