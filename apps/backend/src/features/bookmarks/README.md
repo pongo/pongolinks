@@ -15,7 +15,7 @@ Keep database schema changes in `packages/db`. Keep Tag summary/read behavior in
 - `routes.ts` exposes the Bookmark HTTP route module mounted from `apps/backend/src/app.ts`.
 - `bookmarks-repository.ts` persists Bookmarks, synchronizes Bookmark Tags and Related Links, and maps database rows to Bookmark DTOs.
 - `domain/` contains validated Bookmark primitives and Bookmark request/response contracts.
-- `utils/extract-related-links.ts` contains Bookmark description parsing used for Related Link synchronization.
+- `@pongolinks/shared/bookmark-description` owns Bookmark description parsing used for Related Link synchronization.
 
 ## Testing
 

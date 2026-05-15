@@ -1,4 +1,5 @@
 import { and, asc, eq, ne } from "drizzle-orm";
+import { extractRelatedLinkUrls } from "@pongolinks/shared/bookmark-description";
 import type { Result } from "@pongolinks/shared/result";
 import { Err, Ok } from "@pongolinks/shared/result";
 
@@ -8,7 +9,6 @@ import type { AppDb } from "#/db/app-db.ts";
 import { ApiError, unexpectedError } from "#/http/result-response.ts";
 import type { BookmarkId } from "../domain/bookmark-id.ts";
 import type { BookmarkDTO, EditableBookmarkData } from "../domain/contracts.ts";
-import { extractRelatedLinks } from "../utils/extract-related-links.ts";
 import type { TagName } from "../domain/tag-name.ts";
 
 export type BookmarkEditorLogger = {
@@ -106,7 +106,7 @@ export class BookmarkEditor {
         return Err(new ApiError("Bookmark URL already exists", "bookmark.url_duplicate", 409));
       }
 
-      const extractedRelatedLinks = extractRelatedLinks(input.description);
+      const extractedRelatedLinks = extractRelatedLinkUrls(input.description);
       log?.set({
         relatedLinks: {
           extractedCount: extractedRelatedLinks.length,
@@ -173,7 +173,7 @@ export class BookmarkEditor {
         return Err(new ApiError("Bookmark URL already exists", "bookmark.url_duplicate", 409));
       }
 
-      const extractedRelatedLinks = extractRelatedLinks(input.description);
+      const extractedRelatedLinks = extractRelatedLinkUrls(input.description);
       log?.set({
         relatedLinks: {
           extractedCount: extractedRelatedLinks.length,

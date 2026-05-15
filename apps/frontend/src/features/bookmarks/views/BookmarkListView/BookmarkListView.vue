@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { LockIcon } from "@lucide/vue";
+import { renderBookmarkDescriptionHtml } from "@pongolinks/shared/bookmark-description";
 import { onMounted, ref, watchEffect } from "vue";
 import { RouterLink } from "vue-router";
-import { autolinkBookmarkDescription } from "./autolink-description";
 import { listBookmarks } from "../../api/api";
 import type { BookmarkDTO } from "../../types";
 
 import { useAppVariants } from "#/variants.ts";
 const { variants } = useAppVariants();
+const bookmarkDescriptionHtmlOptions = {
+  linkClassName: "bookmark-description-link",
+};
 
 const bookmarks = ref<BookmarkDTO[]>([]);
 const isLoading = ref(true);
@@ -131,7 +134,12 @@ onMounted(async () => {
               <p
                 v-if="bookmark.description"
                 class="ui-text-readable mt-2 text-sm leading-6 whitespace-pre-wrap"
-                v-html="autolinkBookmarkDescription(bookmark.description)"
+                v-html="
+                  renderBookmarkDescriptionHtml(
+                    bookmark.description,
+                    bookmarkDescriptionHtmlOptions,
+                  )
+                "
               ></p>
             </div>
             <div class="shrink-0 text-right">

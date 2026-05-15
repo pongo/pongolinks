@@ -1,5 +1,9 @@
 import { Autolinker, type AutolinkerConfig } from "autolinker";
 
+export type RenderBookmarkDescriptionHtmlOptions = {
+  linkClassName?: string;
+};
+
 const bookmarkDescriptionLinkParsingOptions = {
   urls: {
     schemeMatches: true,
@@ -29,4 +33,27 @@ export function extractRelatedLinkUrls(description: string): string[] {
   }
 
   return [...urls];
+}
+
+export function renderBookmarkDescriptionHtml(
+  description: string,
+  options: RenderBookmarkDescriptionHtmlOptions = {},
+): string {
+  return Autolinker.link(description, {
+    ...bookmarkDescriptionLinkParsingOptions,
+    sanitizeHtml: true,
+    newWindow: true,
+    className: options.linkClassName,
+    stripPrefix: false,
+    stripTrailingSlash: false,
+    replaceFn: (match) => {
+      if (match.type !== "url" || match.getUrlMatchType() !== "scheme") {
+        return false;
+      }
+
+      const url = match.getUrl();
+
+      return url.startsWith("http://") || url.startsWith("https://");
+    },
+  });
 }
