@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import type { ApiErrorCode } from "#/shared/api/errors.ts";
-import { parseApiPayload } from "./api";
+import type { BookmarkListResponse } from "../types";
+import { bookmarkListQuery, parseApiPayload } from "./api";
 
 function apiErrorPayload(message: string, code: ApiErrorCode) {
   return {
@@ -15,6 +16,45 @@ function apiErrorPayload(message: string, code: ApiErrorCode) {
 }
 
 describe("bookmark API payload parsing", () => {
+  it("parses bookmark list pagination metadata", () => {
+    const result = parseApiPayload<BookmarkListResponse>({
+      isOk: true,
+      isErr: false,
+      value: {
+        bookmarks: [],
+        pagination: {
+          page: 1,
+          pageSize: 3,
+          totalCount: 0,
+          totalPages: 0,
+          hasPreviousPage: false,
+          hasNextPage: false,
+        },
+      },
+    });
+
+    expect(result).toMatchObject({
+      isOk: true,
+      value: {
+        bookmarks: [],
+        pagination: {
+          page: 1,
+          pageSize: 3,
+          totalCount: 0,
+          totalPages: 0,
+          hasPreviousPage: false,
+          hasNextPage: false,
+        },
+      },
+    });
+  });
+
+  it("omits page query for page 1 and sends it for later pages", () => {
+    expect(bookmarkListQuery(1)).toEqual({ $query: {} });
+    expect(bookmarkListQuery(0)).toEqual({ $query: {} });
+    expect(bookmarkListQuery(2)).toEqual({ $query: { page: "2" } });
+  });
+
   it("maps URL error payloads to the URL form field", () => {
     const result = parseApiPayload(
       apiErrorPayload("Bookmark URL is required", "bookmark.url_required"),

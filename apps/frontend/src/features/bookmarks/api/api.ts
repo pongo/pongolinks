@@ -6,7 +6,7 @@ import {
   parseEdenResponse,
 } from "#/shared/api/client.ts";
 import { ApiError, type ApiErrorCode, type FormErrors } from "#/shared/api/errors.ts";
-import type { BookmarkDTO, EditableBookmarkPayload } from "../types";
+import type { BookmarkDTO, BookmarkListResponse, EditableBookmarkPayload } from "../types";
 
 const apiErrorCodes = [
   "bookmark.url_required",
@@ -68,10 +68,14 @@ export function parseApiPayload<T>(payload: unknown): Result<T, ApiError> {
   });
 }
 
-export async function listBookmarks(): Promise<Result<{ bookmarks: BookmarkDTO[] }, ApiError>> {
+export function bookmarkListQuery(page: number): { $query: { page?: string } } {
+  return Number.isInteger(page) && page > 1 ? { $query: { page: String(page) } } : { $query: {} };
+}
+
+export async function listBookmarks(page = 1): Promise<Result<BookmarkListResponse, ApiError>> {
   try {
-    return parseEdenResponse<{ bookmarks: BookmarkDTO[] }, ApiError>(
-      await apiClient.api.bookmarks.get(),
+    return parseEdenResponse<BookmarkListResponse, ApiError>(
+      await apiClient.api.bookmarks.get(bookmarkListQuery(page)),
       {
         fallbackError,
         parseError: parseApiError,

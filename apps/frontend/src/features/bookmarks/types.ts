@@ -21,6 +21,20 @@ export type BookmarkDTO = {
   relatedLinks: RelatedLinkDTO[];
 };
 
+export type BookmarkListPagination = {
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+};
+
+export type BookmarkListResponse = {
+  bookmarks: BookmarkDTO[];
+  pagination: BookmarkListPagination;
+};
+
 export type EditableBookmarkPayload = {
   url: string;
   title: string;
