@@ -12,6 +12,10 @@ export type BackendConfig = {
     edgeUrl?: string;
     baseUrl?: string;
   };
+  traces: {
+    axiomToken?: string;
+    axiomDataset?: string;
+  };
 };
 
 const defaultFrontendDistPath = fileURLToPath(new URL("../../frontend/dist", import.meta.url));
@@ -29,5 +33,9 @@ export const config: BackendConfig = {
     orgId: env.AXIOM_ORG_ID,
     edgeUrl: env.AXIOM_EDGE_URL,
     baseUrl: env.AXIOM_URL,
+  },
+  traces: {
+    axiomToken: env.AXIOM_TRACES_TOKEN,
+    axiomDataset: env.AXIOM_TRACES_DATASET,
   },
 };

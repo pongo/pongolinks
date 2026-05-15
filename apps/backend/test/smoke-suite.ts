@@ -6,6 +6,8 @@ export function smokeSuiteEnv() {
     AXIOM_API_KEY: _axiomApiKey,
     AXIOM_DATASET: _axiomDataset,
     AXIOM_TOKEN: _axiomToken,
+    AXIOM_TRACES_DATASET: _axiomTracesDataset,
+    AXIOM_TRACES_TOKEN: _axiomTracesToken,
     ...env
   } = process.env;
 
