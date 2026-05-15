@@ -96,7 +96,7 @@ function submitForm() {
       <span class="ui-text-emphasis mb-2 block text-sm font-semibold">Description</span>
       <textarea
         v-model="form.description"
-        class="ui-field min-h-28 w-full resize-y border px-3 py-2 text-sm transition outline-none focus:ring-2"
+        class="ui-field field-sizing-content min-h-28 w-full resize-y border px-3 py-2 text-sm transition outline-none focus:ring-2"
         rows="4"
       />
     </label>

@@ -45,7 +45,6 @@ watch(
     isLoading.value = true;
     error.value = "";
 
-    await new Promise((resolve) => setTimeout(resolve, 2000));
     const result = await listBookmarks(page);
 
     if (!isCurrentRequest) {
