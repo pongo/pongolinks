@@ -33,6 +33,10 @@
 
 html {
   color-scheme: light;
+
+  /* prevent scrollbar from repositioning web page */
+  overflow-x: hidden;
+  margin-right: calc(100% - 100vw);
 }
 
 body {
