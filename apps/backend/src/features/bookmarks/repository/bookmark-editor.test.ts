@@ -59,7 +59,7 @@ async function withRepository(
   }
 }
 
-describe("Bookmark editor characterization", () => {
+describe("Bookmark editor", () => {
   it("rejects duplicate bookmark URLs on create", async () => {
     await withRepository(async ({ bookmarkEditor }) => {
       const first = await bookmarkEditor.create(editableBookmark());
