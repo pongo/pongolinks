@@ -50,7 +50,15 @@ function formatBookmarkDomain(url: string) {
     <li v-for="bookmark in bookmarks" :key="bookmark.id" class="py-4">
       <div class="flex items-start justify-between gap-4" :class="{ 'px-4': variants.bgBlue }">
         <div class="min-w-0">
-          <div class="flex flex-wrap items-center gap-2">
+          <div>
+            <span
+              v-if="bookmark.isPrivate"
+              aria-label="Private bookmark"
+              title="Private bookmark"
+              class="ui-text-soft relative top-px mr-[0.3em] inline-block"
+            >
+              <LockIcon class="size-3.5" aria-hidden="true" />
+            </span>
             <a
               class="ui-title-link text-base font-semibold wrap-break-word"
               :href="bookmark.url"
@@ -59,14 +67,6 @@ function formatBookmarkDomain(url: string) {
             >
               {{ bookmark.title }}
             </a>
-            <span
-              v-if="bookmark.isPrivate"
-              aria-label="Private bookmark"
-              title="Private bookmark"
-              class="ui-text-soft inline-flex items-center justify-center pt-px"
-            >
-              <LockIcon class="size-3.5" aria-hidden="true" />
-            </span>
           </div>
           <div class="ui-text-muted mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
             <span class="break-all">{{ formatBookmarkDomain(bookmark.url) }}</span>
