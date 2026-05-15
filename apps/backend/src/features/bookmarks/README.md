@@ -19,7 +19,7 @@ Keep database schema changes in `packages/db`. Keep Tag summary/read behavior in
 
 ## Testing
 
-Backend API behavior is covered by `bookmarks-api.test.ts`, which runs the Bun SQLite smoke suite in `bookmarks-api-smoke.ts`. Feature-local domain and utility tests live next to the modules they verify.
+Backend API behavior is covered by `bookmarks-api.test.ts`, which runs the Bun/Elysia smoke suite in `bookmarks-api-smoke.ts`. Feature-local repository, domain, and utility tests live next to the modules they verify.
 
 ## Conventions
 

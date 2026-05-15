@@ -63,19 +63,31 @@ function toBookmarkDTO(row: BookmarkWithTagsRow): BookmarkDTO {
 }
 
 function isUniqueUrlError(error: unknown) {
-  return (
-    error instanceof Error &&
-    (error.message.includes("UNIQUE constraint failed: bookmarks.url") ||
-      error.message.includes("bookmarks.url"))
+  return errorMessageChain(error).some(
+    (message) =>
+      message.includes("UNIQUE constraint failed: bookmarks.url") ||
+      message.includes("bookmarks.url"),
   );
 }
 
 function isUniqueTagNameLowerError(error: unknown) {
-  return (
-    error instanceof Error &&
-    (error.message.includes("UNIQUE constraint failed: tags.name_lower") ||
-      error.message.includes("tags.name_lower"))
+  return errorMessageChain(error).some(
+    (message) =>
+      message.includes("UNIQUE constraint failed: tags.name_lower") ||
+      message.includes("tags.name_lower"),
   );
+}
+
+function errorMessageChain(error: unknown): string[] {
+  const messages: string[] = [];
+  let current = error;
+
+  while (current instanceof Error) {
+    messages.push(current.message);
+    current = current.cause;
+  }
+
+  return messages;
 }
 
 export class BookmarkEditor {

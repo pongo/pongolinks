@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: ready-for-human
 
 # Keep API smoke tests runtime scoped
 
@@ -12,11 +12,11 @@ Keep Bun subprocess smoke tests only where they verify the Bun/Elysia API runtim
 
 ## Acceptance criteria
 
-- [ ] Bookmark API smoke tests still exercise the Bun/Elysia runtime path where needed.
-- [ ] Tag API smoke tests still exercise the Bun/Elysia runtime path where needed.
-- [ ] API smoke tests use the migrated local libSQL test database fixture successfully.
-- [ ] Repository/database-only assertions are not duplicated in API smoke scripts when direct Vitest coverage owns them.
-- [ ] Public API response shapes and error codes are unchanged.
+- [x] Bookmark API smoke tests still exercise the Bun/Elysia runtime path where needed.
+- [x] Tag API smoke tests still exercise the Bun/Elysia runtime path where needed.
+- [x] API smoke tests use the migrated local libSQL test database fixture successfully.
+- [x] Repository/database-only assertions are not duplicated in API smoke scripts when direct Vitest coverage owns them.
+- [x] Public API response shapes and error codes are unchanged.
 
 ## Blocked by
 

@@ -8,7 +8,7 @@ import type { EditableBookmarkData } from "../domain/contracts.ts";
 import { parseTagNames } from "../domain/tag-name.ts";
 import { createMigratedTestDb } from "../../../../test/test-db.ts";
 
-type TestDb = ReturnType<typeof createMigratedTestDb>;
+type TestDb = Awaited<ReturnType<typeof createMigratedTestDb>>;
 
 function assert(condition: unknown, message: string) {
   if (!condition) {
@@ -58,19 +58,17 @@ function editableBookmark(overrides: Partial<EditableBookmarkData> & { tagsText?
 }
 
 function bookmarkTagRowId(db: TestDb["db"], bookmarkId: number, tagId: number) {
-  const row = db
+  return db
     .select({ rowId: sql<number>`rowid` })
     .from(bookmarkTags)
     .where(and(eq(bookmarkTags.bookmarkId, bookmarkId), eq(bookmarkTags.tagId, tagId)))
     .get();
-
-  return row?.rowId;
 }
 
 async function withRepository(
   run: (context: { bookmarkEditor: BookmarkEditor; db: TestDb["db"] }) => Promise<void>,
 ) {
-  const database = createMigratedTestDb();
+  const database = await createMigratedTestDb();
 
   try {
     await run({
@@ -78,192 +76,200 @@ async function withRepository(
       db: database.db,
     });
   } finally {
-    database.sqlite.close();
+    database.close();
   }
 }
 
-await withRepository(async ({ bookmarkEditor }) => {
-  const first = await bookmarkEditor.create(editableBookmark());
-  unwrapResult(first);
+export async function runBookmarkEditorCharacterization() {
+  await withRepository(async ({ bookmarkEditor }) => {
+    const first = await bookmarkEditor.create(editableBookmark());
+    unwrapResult(first);
 
-  const duplicate = await bookmarkEditor.create(
-    editableBookmark({
-      title: "Duplicate",
-    }),
-  );
-
-  assertBookmarkError(duplicate, "bookmark.url_duplicate", 409, "duplicate create");
-});
-
-await withRepository(async ({ bookmarkEditor }) => {
-  const created = unwrapResult(
-    await bookmarkEditor.create(
+    const duplicate = await bookmarkEditor.create(
       editableBookmark({
-        description: "Primary https://example.com and related https://example.com/docs",
-        tagsText: "article lang-ru article",
+        title: "Duplicate",
       }),
-    ),
-  );
+    );
 
-  assert(created.tags.length === 2, "create should attach unique submitted tags");
-  assert(
-    expectDefined(created.tags[0], "create should return first tag").nameLower === "article",
-    "create should return sorted first tag",
-  );
-  assert(
-    expectDefined(created.tags[1], "create should return second tag").nameLower === "lang-ru",
-    "create should return sorted second tag",
-  );
-  assert(created.relatedLinks.length === 2, "create should insert extracted related links");
-  assert(
-    expectDefined(created.relatedLinks[0], "create should return first link").url ===
-      "https://example.com",
-    "create should return first link",
-  );
-  assert(
-    expectDefined(created.relatedLinks[1], "create should return second link").url ===
-      "https://example.com/docs",
-    "create should return second link",
-  );
-});
+    assertBookmarkError(duplicate, "bookmark.url_duplicate", 409, "duplicate create");
+  });
 
-await withRepository(async ({ bookmarkEditor }) => {
-  const first = unwrapResult(
-    await bookmarkEditor.create(
+  await withRepository(async ({ bookmarkEditor }) => {
+    const created = unwrapResult(
+      await bookmarkEditor.create(
+        editableBookmark({
+          description: "Primary https://example.com and related https://example.com/docs",
+          tagsText: "article lang-ru article",
+        }),
+      ),
+    );
+
+    assert(created.tags.length === 2, "create should attach unique submitted tags");
+    assert(
+      expectDefined(created.tags[0], "create should return first tag").nameLower === "article",
+      "create should return sorted first tag",
+    );
+    assert(
+      expectDefined(created.tags[1], "create should return second tag").nameLower === "lang-ru",
+      "create should return sorted second tag",
+    );
+    assert(created.relatedLinks.length === 2, "create should insert extracted related links");
+    assert(
+      expectDefined(created.relatedLinks[0], "create should return first link").url ===
+        "https://example.com",
+      "create should return first link",
+    );
+    assert(
+      expectDefined(created.relatedLinks[1], "create should return second link").url ===
+        "https://example.com/docs",
+      "create should return second link",
+    );
+  });
+
+  await withRepository(async ({ bookmarkEditor }) => {
+    const first = unwrapResult(
+      await bookmarkEditor.create(
+        editableBookmark({
+          url: unwrapResult(BookmarkUrl.from("https://example.com/one")),
+        }),
+      ),
+    );
+    const second = unwrapResult(
+      await bookmarkEditor.create(
+        editableBookmark({
+          url: unwrapResult(BookmarkUrl.from("https://example.com/two")),
+          title: "Two",
+        }),
+      ),
+    );
+
+    const duplicateUpdate = await bookmarkEditor.update(
+      unwrapResult(BookmarkId.from(second.id)),
       editableBookmark({
-        url: unwrapResult(BookmarkUrl.from("https://example.com/one")),
-      }),
-    ),
-  );
-  const second = unwrapResult(
-    await bookmarkEditor.create(
-      editableBookmark({
-        url: unwrapResult(BookmarkUrl.from("https://example.com/two")),
+        url: unwrapResult(BookmarkUrl.from(first.url)),
         title: "Two",
       }),
-    ),
-  );
-
-  const duplicateUpdate = await bookmarkEditor.update(
-    unwrapResult(BookmarkId.from(second.id)),
-    editableBookmark({
-      url: unwrapResult(BookmarkUrl.from(first.url)),
-      title: "Two",
-    }),
-  );
-  const missingUpdate = await bookmarkEditor.update(
-    unwrapResult(BookmarkId.from(999)),
-    editableBookmark({
-      url: unwrapResult(BookmarkUrl.from("https://example.com/missing")),
-      title: "Missing",
-    }),
-  );
-
-  assertBookmarkError(duplicateUpdate, "bookmark.url_duplicate", 409, "duplicate update");
-  assertBookmarkError(missingUpdate, "bookmark.not_found", 404, "missing update");
-});
-
-await withRepository(async ({ bookmarkEditor, db }) => {
-  const created = unwrapResult(
-    await bookmarkEditor.create(
+    );
+    const missingUpdate = await bookmarkEditor.update(
+      unwrapResult(BookmarkId.from(999)),
       editableBookmark({
-        url: unwrapResult(BookmarkUrl.from("https://example.com/edited")),
-        description: "Keep https://example.com/keep and remove https://example.com/remove",
-        tagsText: "alpha beta shared",
+        url: unwrapResult(BookmarkUrl.from("https://example.com/missing")),
+        title: "Missing",
       }),
-    ),
-  );
-  unwrapResult(
-    await bookmarkEditor.create(
-      editableBookmark({
-        url: unwrapResult(BookmarkUrl.from("https://example.com/other")),
-        title: "Other",
-        tagsText: "shared",
-      }),
-    ),
-  );
+    );
 
-  const beta = expectDefined(
-    await db.query.tags.findFirst({ where: eq(tags.nameLower, "beta") }),
-    "beta tag should exist before update",
-  );
-  const sharedBefore = expectDefined(
-    await db.query.tags.findFirst({ where: eq(tags.nameLower, "shared") }),
-    "shared tag should exist before update",
-  );
-
-  const betaLinkRowId = expectDefined(
-    bookmarkTagRowId(db, created.id, beta.id),
-    "beta bookmark tag link should exist before update",
-  );
-  const keptRelatedLinkId = expectDefined(
-    created.relatedLinks[0]?.id,
-    "kept related link should exist before update",
-  );
-  const removedRelatedLinkId = expectDefined(
-    created.relatedLinks[1]?.id,
-    "removed related link should exist before update",
-  );
-
-  const updated = unwrapResult(
-    await bookmarkEditor.update(
-      unwrapResult(BookmarkId.from(created.id)),
-      editableBookmark({
-        url: unwrapResult(BookmarkUrl.from("https://example.com/edited")),
-        title: "Edited",
-        description: "Keep https://example.com/keep and add https://example.com/add",
-        tagsText: "beta gamma",
-      }),
-    ),
-  );
-
-  const alphaAfterUpdate = await db.query.tags.findFirst({ where: eq(tags.nameLower, "alpha") });
-  const sharedAfterUpdate = await db.query.tags.findFirst({ where: eq(tags.nameLower, "shared") });
-  const betaLinkRowIdAfterUpdate = bookmarkTagRowId(db, created.id, beta.id);
-  const sharedLinksAfterUpdate = await db.query.bookmarkTags.findMany({
-    where: eq(bookmarkTags.tagId, sharedBefore.id),
-  });
-  const removedRelatedLinkAfterUpdate = await db.query.relatedLinks.findFirst({
-    where: eq(relatedLinks.id, removedRelatedLinkId),
-  });
-  const persistedBookmark = await db.query.bookmarks.findFirst({
-    where: eq(bookmarks.id, created.id),
+    assertBookmarkError(duplicateUpdate, "bookmark.url_duplicate", 409, "duplicate update");
+    assertBookmarkError(missingUpdate, "bookmark.not_found", 404, "missing update");
   });
 
-  assert(persistedBookmark?.title === "Edited", "update should persist editable bookmark fields");
-  assert(updated.tags.length === 2, "update should return final submitted tags");
-  assert(
-    expectDefined(updated.tags[0], "update should return first tag").nameLower === "beta",
-    "update should retain submitted beta tag",
-  );
-  assert(
-    expectDefined(updated.tags[1], "update should return second tag").nameLower === "gamma",
-    "update should attach submitted gamma tag",
-  );
-  assert(
-    betaLinkRowIdAfterUpdate === betaLinkRowId,
-    "update should retain existing bookmark tag link row",
-  );
-  assert(!alphaAfterUpdate, "update should delete detached orphan tag");
-  assert(sharedAfterUpdate?.id === sharedBefore.id, "update should preserve shared detached tag");
-  assert(sharedLinksAfterUpdate.length === 1, "shared tag should remain attached elsewhere");
-  assert(updated.relatedLinks.length === 2, "update should return final related links");
-  assert(
-    expectDefined(updated.relatedLinks[0], "update should return first related link").id ===
-      keptRelatedLinkId,
-    "update should retain existing related link row",
-  );
-  assert(
-    expectDefined(updated.relatedLinks[0], "update should return first related link").url ===
-      "https://example.com/keep",
-    "update should keep retained related link URL",
-  );
-  assert(!removedRelatedLinkAfterUpdate, "update should delete removed related link row");
-  assert(
-    expectDefined(updated.relatedLinks[1], "update should return second related link").url ===
-      "https://example.com/add",
-    "update should insert new related link",
-  );
-});
+  await withRepository(async ({ bookmarkEditor, db }) => {
+    const created = unwrapResult(
+      await bookmarkEditor.create(
+        editableBookmark({
+          url: unwrapResult(BookmarkUrl.from("https://example.com/edited")),
+          description: "Keep https://example.com/keep and remove https://example.com/remove",
+          tagsText: "alpha beta shared",
+        }),
+      ),
+    );
+    unwrapResult(
+      await bookmarkEditor.create(
+        editableBookmark({
+          url: unwrapResult(BookmarkUrl.from("https://example.com/other")),
+          title: "Other",
+          tagsText: "shared",
+        }),
+      ),
+    );
 
-console.log("bookmark editor characterization passed");
+    const beta = expectDefined(
+      await db.query.tags.findFirst({ where: eq(tags.nameLower, "beta") }),
+      "beta tag should exist before update",
+    );
+    const sharedBefore = expectDefined(
+      await db.query.tags.findFirst({ where: eq(tags.nameLower, "shared") }),
+      "shared tag should exist before update",
+    );
+
+    const betaLinkRow = expectDefined(
+      await bookmarkTagRowId(db, created.id, beta.id),
+      "beta bookmark tag link should exist before update",
+    );
+    const betaLinkRowId = betaLinkRow.rowId;
+    const keptRelatedLinkId = expectDefined(
+      created.relatedLinks[0]?.id,
+      "kept related link should exist before update",
+    );
+    const removedRelatedLinkId = expectDefined(
+      created.relatedLinks[1]?.id,
+      "removed related link should exist before update",
+    );
+
+    const updated = unwrapResult(
+      await bookmarkEditor.update(
+        unwrapResult(BookmarkId.from(created.id)),
+        editableBookmark({
+          url: unwrapResult(BookmarkUrl.from("https://example.com/edited")),
+          title: "Edited",
+          description: "Keep https://example.com/keep and add https://example.com/add",
+          tagsText: "beta gamma",
+        }),
+      ),
+    );
+
+    const alphaAfterUpdate = await db.query.tags.findFirst({ where: eq(tags.nameLower, "alpha") });
+    const sharedAfterUpdate = await db.query.tags.findFirst({
+      where: eq(tags.nameLower, "shared"),
+    });
+    const betaLinkRowIdAfterUpdate = (await bookmarkTagRowId(db, created.id, beta.id))?.rowId;
+    const sharedLinksAfterUpdate = await db.query.bookmarkTags.findMany({
+      where: eq(bookmarkTags.tagId, sharedBefore.id),
+    });
+    const removedRelatedLinkAfterUpdate = await db.query.relatedLinks.findFirst({
+      where: eq(relatedLinks.id, removedRelatedLinkId),
+    });
+    const persistedBookmark = await db.query.bookmarks.findFirst({
+      where: eq(bookmarks.id, created.id),
+    });
+
+    assert(persistedBookmark?.title === "Edited", "update should persist editable bookmark fields");
+    assert(updated.tags.length === 2, "update should return final submitted tags");
+    assert(
+      expectDefined(updated.tags[0], "update should return first tag").nameLower === "beta",
+      "update should retain submitted beta tag",
+    );
+    assert(
+      expectDefined(updated.tags[1], "update should return second tag").nameLower === "gamma",
+      "update should attach submitted gamma tag",
+    );
+    assert(
+      betaLinkRowIdAfterUpdate === betaLinkRowId,
+      "update should retain existing bookmark tag link row",
+    );
+    assert(!alphaAfterUpdate, "update should delete detached orphan tag");
+    assert(sharedAfterUpdate?.id === sharedBefore.id, "update should preserve shared detached tag");
+    assert(sharedLinksAfterUpdate.length === 1, "shared tag should remain attached elsewhere");
+    assert(updated.relatedLinks.length === 2, "update should return final related links");
+    assert(
+      expectDefined(updated.relatedLinks[0], "update should return first related link").id ===
+        keptRelatedLinkId,
+      "update should retain existing related link row",
+    );
+    assert(
+      expectDefined(updated.relatedLinks[0], "update should return first related link").url ===
+        "https://example.com/keep",
+      "update should keep retained related link URL",
+    );
+    assert(!removedRelatedLinkAfterUpdate, "update should delete removed related link row");
+    assert(
+      expectDefined(updated.relatedLinks[1], "update should return second related link").url ===
+        "https://example.com/add",
+      "update should insert new related link",
+    );
+  });
+}
+
+if (import.meta.main) {
+  await runBookmarkEditorCharacterization();
+  console.log("bookmark editor characterization passed");
+}

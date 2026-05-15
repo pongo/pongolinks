@@ -1,20 +1,9 @@
-import { spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-describe("Bookmark editor characterization", () => {
-  it("passes the Bun SQLite bookmark write characterization suite", () => {
-    const result = spawnSync(
-      "bun",
-      ["apps/backend/src/features/bookmarks/repository/bookmark-editor-characterization.ts"],
-      {
-        cwd: fileURLToPath(new URL("../../../../../..", import.meta.url)),
-        encoding: "utf8",
-      },
-    );
+import { runBookmarkEditorCharacterization } from "./bookmark-editor-characterization";
 
-    expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("bookmark editor characterization passed");
-    expect(result.status).toBe(0);
+describe("Bookmark editor characterization", () => {
+  it("passes the bookmark write characterization suite", async () => {
+    await expect(runBookmarkEditorCharacterization()).resolves.toBeUndefined();
   });
 });

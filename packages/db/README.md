@@ -4,6 +4,8 @@
 
 `@pongolinks/db` owns durable schema definitions, Drizzle relations, database client setup, and generated migrations for the SQLite database.
 
+Runtime database access uses Drizzle with `@libsql/client` against local SQLite storage. Callers pass `databasePath` into `createDb`; backend environment configuration remains `DATABASE_PATH`.
+
 ## Boundaries
 
 Schema and migration changes belong here. Backend features may import the package, but they should not define durable tables, relations, or migration files inside `apps/backend`.

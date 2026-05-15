@@ -33,9 +33,9 @@ Request parsing and value-object construction stay at the route/application edge
 
 Observability counts stay as internal telemetry in v0.9. `BookmarkEditor` may accept an optional editing logger/callback, but Tag and Related Link synchronization counts should not become part of the public API response or domain result.
 
-The project currently runs Vitest under Node while the database client uses `bun:sqlite`. v0.9 should not change the Drizzle SQLite driver. Focused `BookmarkEditor` integration coverage can follow the existing backend pattern: a Vitest wrapper launches a Bun smoke/integration script that uses the real migrated SQLite database fixture.
+Superseded by ADR-0004: the project now uses `@libsql/client` for local SQLite storage configured by `DATABASE_PATH`. Focused `BookmarkEditor` integration coverage should run directly in Vitest against the migrated test database fixture.
 
-Changing the database driver, including a possible move to `@libsql/client`, is out of scope for v0.9.
+Changing the database driver was out of scope for v0.9, but the later local libSQL driver migration supersedes that constraint.
 
 ## Out of Scope
 

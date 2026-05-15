@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 describe("Tag API", () => {
-  it("passes the Bun SQLite API smoke suite", () => {
+  it("passes the Bun/Elysia API smoke suite", () => {
     const result = spawnSync("bun", ["src/features/tags/tags-api-smoke.ts"], {
       cwd: fileURLToPath(new URL("../../..", import.meta.url)),
       encoding: "utf8",

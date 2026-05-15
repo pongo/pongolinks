@@ -20,9 +20,7 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@libsql/client": "^0.17.3",
     "drizzle-orm": "^0.45.2"
-  },
-  "devDependencies": {
-    "@libsql/client": "^0.17.3"
   }
 }

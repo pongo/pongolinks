@@ -29,14 +29,14 @@ function bookmarkPayload(overrides: Record<string, unknown> = {}) {
 }
 
 async function withApp(run: (context: { app: ReturnType<typeof createApp> }) => Promise<void>) {
-  const database = createMigratedTestDb();
+  const database = await createMigratedTestDb();
 
   try {
     await run({
       app: createApp({ db: database.db }),
     });
   } finally {
-    database.sqlite.close();
+    database.close();
   }
 }
 

@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: ready-for-human
 
 # Clean up obsolete Bun SQLite references
 
@@ -12,12 +12,12 @@ Remove or update stale active references to the old Bun SQLite driver after the 
 
 ## Acceptance criteria
 
-- [ ] Active source, test, package, and README guidance no longer points developers toward `bun:sqlite`.
-- [ ] Active testing guidance no longer says repository or database tests must use Bun subprocess wrappers.
-- [ ] Architecture planning notes that contradict ADR-0004 are updated or clearly marked as superseded.
-- [ ] Historical references are left alone when they are not likely to guide future implementation work.
-- [ ] `bun run typecheck` passes.
-- [ ] `bun run agent:test` passes.
+- [x] Active source, test, package, and README guidance no longer points developers toward `bun:sqlite`.
+- [x] Active testing guidance no longer says repository or database tests must use Bun subprocess wrappers.
+- [x] Architecture planning notes that contradict ADR-0004 are updated or clearly marked as superseded.
+- [x] Historical references are left alone when they are not likely to guide future implementation work.
+- [x] `bun run typecheck` passes.
+- [x] `bun run agent:test` passes.
 
 ## Blocked by
 

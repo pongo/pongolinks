@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: ready-for-human
 
 # Switch database client to local libSQL
 
@@ -12,12 +12,12 @@ Replace the Bun-only SQLite database driver with a local `@libsql/client` Drizzl
 
 ## Acceptance criteria
 
-- [ ] App and package source no longer import `bun:sqlite` or `drizzle-orm/bun-sqlite`.
-- [ ] The database package creates a Drizzle database through `@libsql/client` for local SQLite storage.
-- [ ] Backend configuration remains path-based through `DATABASE_PATH` / `databasePath`; remote Turso/libSQL configuration is not introduced.
-- [ ] The backend database type no longer depends on `BunSQLiteDatabase`.
-- [ ] Existing Bookmark, Tag, Related Link, and API Result behavior is preserved.
-- [ ] ADR-0004 remains accurate after the implementation.
+- [x] App and package source no longer import `bun:sqlite` or `drizzle-orm/bun-sqlite`.
+- [x] The database package creates a Drizzle database through `@libsql/client` for local SQLite storage.
+- [x] Backend configuration remains path-based through `DATABASE_PATH` / `databasePath`; remote Turso/libSQL configuration is not introduced.
+- [x] The backend database type no longer depends on `BunSQLiteDatabase`.
+- [x] Existing Bookmark, Tag, Related Link, and API Result behavior is preserved.
+- [x] ADR-0004 remains accurate after the implementation.
 
 ## Blocked by
 
