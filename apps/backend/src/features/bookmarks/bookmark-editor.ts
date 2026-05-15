@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, ne } from "drizzle-orm";
 import type { Result } from "@pongolinks/shared/result";
 import { Err, Ok } from "@pongolinks/shared/result";
 
@@ -6,6 +6,7 @@ import { bookmarks, bookmarkTags, relatedLinks, tags } from "@pongolinks/db/sche
 
 import type { AppDb } from "#/db/app-db.ts";
 import { ApiError, unexpectedError } from "#/http/result-response.ts";
+import type { BookmarkId } from "./domain/bookmark-id.ts";
 import type { BookmarkDTO, EditableBookmarkData } from "./domain/contracts.ts";
 import { extractRelatedLinks } from "./utils/extract-related-links.ts";
 import type { TagName } from "./domain/tag-name.ts";
@@ -21,8 +22,22 @@ type BookmarkWithTagsRow = BookmarkRow & {
   bookmarkTags: { tag: TagRow }[];
   relatedLinks: RelatedLinkRow[];
 };
+type BookmarkTagWithTagRow = {
+  bookmarkId: number;
+  tagId: number;
+  tag: TagRow;
+};
+type TagDiffCounts = {
+  submittedCount: number;
+  attachedCount: number;
+  detachedCount: number;
+  retainedCount: number;
+  attachedNames: string[];
+  detachedNames: string[];
+  deletedOrphanNames: string[];
+};
 
-type EditorDb = Pick<AppDb, "delete" | "insert" | "query">;
+type EditorDb = Pick<AppDb, "delete" | "insert" | "query" | "update">;
 
 function toBookmarkDTO(row: BookmarkWithTagsRow): BookmarkDTO {
   return {
@@ -124,6 +139,88 @@ export class BookmarkEditor {
     }
   }
 
+  async update(
+    id: BookmarkId,
+    input: EditableBookmarkData,
+    log?: BookmarkEditorLogger,
+  ): Promise<Result<BookmarkDTO, ApiError>> {
+    try {
+      const existing = await this.db.query.bookmarks.findFirst({
+        where: eq(bookmarks.id, id.value()),
+      });
+
+      if (!existing) {
+        return Err(new ApiError("Bookmark was not found", "bookmark.not_found", 404));
+      }
+
+      const duplicate = await this.db.query.bookmarks.findFirst({
+        where: and(eq(bookmarks.url, input.url.value()), ne(bookmarks.id, id.value())),
+      });
+
+      if (duplicate) {
+        return Err(new ApiError("Bookmark URL already exists", "bookmark.url_duplicate", 409));
+      }
+
+      const extractedRelatedLinks = extractRelatedLinks(input.description);
+      log?.set({
+        relatedLinks: {
+          extractedCount: extractedRelatedLinks.length,
+        },
+      });
+
+      let relatedLinkCounts = {
+        insertedCount: 0,
+        deletedCount: 0,
+        retainedCount: 0,
+      };
+      let tagDiffCounts: TagDiffCounts = {
+        submittedCount: input.tags.length,
+        attachedCount: 0,
+        detachedCount: 0,
+        retainedCount: 0,
+        attachedNames: [],
+        detachedNames: [],
+        deletedOrphanNames: [],
+      };
+
+      const row = await this.db.transaction(async (tx) => {
+        await tx
+          .update(bookmarks)
+          .set({
+            url: input.url.value(),
+            title: input.title,
+            description: input.description,
+            isPrivate: input.isPrivate,
+          })
+          .where(eq(bookmarks.id, id.value()))
+          .returning()
+          .get();
+
+        tagDiffCounts = await this.syncBookmarkTags(tx, id.value(), input.tags);
+        relatedLinkCounts = await this.syncRelatedLinks(tx, id.value(), extractedRelatedLinks);
+
+        return this.findBookmarkById(tx, id.value());
+      });
+
+      if (!row) {
+        return Err(new ApiError("Bookmark was not found", "bookmark.not_found", 404));
+      }
+
+      log?.set({
+        tags: tagDiffCounts,
+        relatedLinks: relatedLinkCounts,
+      });
+
+      return Ok(toBookmarkDTO(row));
+    } catch (error) {
+      if (isUniqueUrlError(error)) {
+        return Err(new ApiError("Bookmark URL already exists", "bookmark.url_duplicate", 409));
+      }
+
+      return Err(unexpectedError(error));
+    }
+  }
+
   private async findBookmarkById(db: EditorDb, id: number) {
     return db.query.bookmarks.findFirst({
       where: eq(bookmarks.id, id),
@@ -151,6 +248,32 @@ export class BookmarkEditor {
       .run();
   }
 
+  private async syncRelatedLinks(db: EditorDb, bookmarkId: number, nextUrls: string[]) {
+    const existingRows = await db.query.relatedLinks.findMany({
+      where: eq(relatedLinks.bookmarkId, bookmarkId),
+      orderBy: asc(relatedLinks.id),
+    });
+    const nextUrlSet = new Set(nextUrls);
+    const existingUrlSet = new Set(existingRows.map((row) => row.url));
+    const urlsToInsert = nextUrls.filter((url) => !existingUrlSet.has(url));
+    const rowsToDelete = existingRows.filter((row) => !nextUrlSet.has(row.url));
+    const urlsToDelete = rowsToDelete.map((row) => row.url);
+
+    for (const row of rowsToDelete) {
+      await db.delete(relatedLinks).where(eq(relatedLinks.id, row.id)).run();
+    }
+
+    await this.insertRelatedLinks(db, bookmarkId, urlsToInsert);
+
+    return {
+      insertedCount: urlsToInsert.length,
+      deletedCount: rowsToDelete.length,
+      retainedCount: existingRows.length - rowsToDelete.length,
+      urlsToInsert,
+      urlsToDelete,
+    };
+  }
+
   private async replaceBookmarkTags(db: EditorDb, bookmarkId: number, tagNames: TagName[]) {
     await db.delete(bookmarkTags).where(eq(bookmarkTags.bookmarkId, bookmarkId)).run();
 
@@ -165,6 +288,90 @@ export class BookmarkEditor {
         })
         .run();
     }
+  }
+
+  private async syncBookmarkTags(
+    db: EditorDb,
+    bookmarkId: number,
+    tagNames: TagName[],
+  ): Promise<TagDiffCounts> {
+    const existingRows = await this.findBookmarkTagsWithTags(db, bookmarkId);
+    const submittedTags: TagRow[] = [];
+
+    for (const tagName of tagNames) {
+      submittedTags.push(await this.findOrCreateTag(db, tagName));
+    }
+
+    const submittedNameLowerSet = new Set(submittedTags.map((tag) => tag.nameLower));
+    const existingByNameLower = new Map(existingRows.map((row) => [row.tag.nameLower, row]));
+    const tagsToAttach = submittedTags.filter((tag) => !existingByNameLower.has(tag.nameLower));
+    const rowsToDetach = existingRows.filter(
+      (row) => !submittedNameLowerSet.has(row.tag.nameLower),
+    );
+    const retainedCount = existingRows.length - rowsToDetach.length;
+
+    for (const tag of tagsToAttach) {
+      await db
+        .insert(bookmarkTags)
+        .values({
+          bookmarkId,
+          tagId: tag.id,
+        })
+        .run();
+    }
+
+    for (const row of rowsToDetach) {
+      await db
+        .delete(bookmarkTags)
+        .where(and(eq(bookmarkTags.bookmarkId, bookmarkId), eq(bookmarkTags.tagId, row.tagId)))
+        .run();
+    }
+
+    const deletedOrphanTags = await this.deleteOrphanTags(db, rowsToDetach);
+
+    return {
+      submittedCount: submittedTags.length,
+      attachedCount: tagsToAttach.length,
+      detachedCount: rowsToDetach.length,
+      retainedCount,
+      attachedNames: tagsToAttach.map((tag) => tag.name),
+      detachedNames: rowsToDetach.map((row) => row.tag.name),
+      deletedOrphanNames: deletedOrphanTags.map((tag) => tag.name),
+    };
+  }
+
+  private async findBookmarkTagsWithTags(
+    db: EditorDb,
+    bookmarkId: number,
+  ): Promise<BookmarkTagWithTagRow[]> {
+    return db.query.bookmarkTags.findMany({
+      where: eq(bookmarkTags.bookmarkId, bookmarkId),
+      with: {
+        tag: true,
+      },
+    });
+  }
+
+  private async deleteOrphanTags(
+    db: EditorDb,
+    detachedRows: BookmarkTagWithTagRow[],
+  ): Promise<TagRow[]> {
+    const deletedTags: TagRow[] = [];
+
+    for (const row of detachedRows) {
+      const remainingLink = await db.query.bookmarkTags.findFirst({
+        where: eq(bookmarkTags.tagId, row.tagId),
+      });
+
+      if (remainingLink) {
+        continue;
+      }
+
+      await db.delete(tags).where(eq(tags.id, row.tagId)).run();
+      deletedTags.push(row.tag);
+    }
+
+    return deletedTags;
   }
 
   private async findOrCreateTag(db: EditorDb, tagName: TagName): Promise<TagRow> {

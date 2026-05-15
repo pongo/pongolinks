@@ -205,7 +205,7 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
           tags: { count: tags.length },
         });
 
-        const result = await repository.update(id, { ...body, url, tags }, log);
+        const result = await bookmarkEditor.update(id, { ...body, url, tags }, log);
         if (result.isErr) {
           logApiError(log, result.error);
         } else {

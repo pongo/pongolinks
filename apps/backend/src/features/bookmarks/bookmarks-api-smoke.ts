@@ -633,7 +633,7 @@ await withApp(async ({ db }) => {
   });
 
   const logContexts: Record<string, unknown>[] = [];
-  const updateResult = await repository.update(
+  const updateResult = await bookmarkEditor.update(
     unwrapResult(BookmarkId.from(bookmark.id)),
     {
       ...bookmarkPayload({

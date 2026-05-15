@@ -133,7 +133,7 @@ await withRepository(async ({ bookmarkEditor }) => {
   );
 });
 
-await withRepository(async ({ bookmarkEditor, repository }) => {
+await withRepository(async ({ bookmarkEditor }) => {
   const first = unwrapResult(
     await bookmarkEditor.create(
       editableBookmark({
@@ -150,14 +150,14 @@ await withRepository(async ({ bookmarkEditor, repository }) => {
     ),
   );
 
-  const duplicateUpdate = await repository.update(
+  const duplicateUpdate = await bookmarkEditor.update(
     unwrapResult(BookmarkId.from(second.id)),
     editableBookmark({
       url: unwrapResult(BookmarkUrl.from(first.url)),
       title: "Two",
     }),
   );
-  const missingUpdate = await repository.update(
+  const missingUpdate = await bookmarkEditor.update(
     unwrapResult(BookmarkId.from(999)),
     editableBookmark({
       url: unwrapResult(BookmarkUrl.from("https://example.com/missing")),
@@ -169,7 +169,7 @@ await withRepository(async ({ bookmarkEditor, repository }) => {
   assertBookmarkError(missingUpdate, "bookmark.not_found", 404, "missing update");
 });
 
-await withRepository(async ({ bookmarkEditor, repository, db }) => {
+await withRepository(async ({ bookmarkEditor, db }) => {
   const created = unwrapResult(
     await bookmarkEditor.create(
       editableBookmark({
@@ -212,7 +212,7 @@ await withRepository(async ({ bookmarkEditor, repository, db }) => {
   );
 
   const updated = unwrapResult(
-    await repository.update(
+    await bookmarkEditor.update(
       unwrapResult(BookmarkId.from(created.id)),
       editableBookmark({
         url: unwrapResult(BookmarkUrl.from("https://example.com/edited")),
