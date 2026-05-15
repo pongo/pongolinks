@@ -13,6 +13,11 @@ Do not use this package as a dumping ground for convenience utilities, frontend-
 ## Entry Points
 
 - `src/index.ts` is the public package export.
+- `@pongolinks/shared/bookmark-description` owns Bookmark description link behavior shared by backend and frontend:
+  - `extractRelatedLinkUrls(description: string): string[]` extracts Related Link URL strings from explicit HTTP(S) URLs in Bookmark descriptions.
+  - `renderBookmarkDescriptionHtml(description, options?)` renders sanitized linked HTML for frontend `v-html`; pass `linkClassName` when the app owns link styling.
+
+Autolinker is a private implementation detail of the Bookmark description module. App workspaces should import the shared APIs instead of depending on Autolinker directly.
 
 ## Testing
 
