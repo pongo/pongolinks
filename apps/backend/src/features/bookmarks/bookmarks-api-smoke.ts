@@ -2,6 +2,7 @@ import { bookmarks, bookmarkTags, relatedLinks, tags } from "@pongolinks/db/sche
 import { and, eq, sql } from "drizzle-orm";
 
 import { APP_BASE_PATH, createApp } from "#/app.ts";
+import { BookmarkEditor } from "#/features/bookmarks/bookmark-editor.ts";
 import { BookmarkId } from "#/features/bookmarks/domain/bookmark-id.ts";
 import { BookmarkUrl } from "#/features/bookmarks/domain/bookmark-url.ts";
 import { BookmarksRepository } from "#/features/bookmarks/bookmarks-repository.ts";
@@ -608,10 +609,11 @@ await withApp(async ({ app, db }) => {
 });
 
 await withApp(async ({ db }) => {
+  const bookmarkEditor = new BookmarkEditor(db);
   const repository = new BookmarksRepository(db);
   const firstTags = unwrapResult(parseTagNames("Article beta"));
   const secondTags = unwrapResult(parseTagNames("article"));
-  const createResult = await repository.create({
+  const createResult = await bookmarkEditor.create({
     ...bookmarkPayload({
       description: "Keep https://example.com/keep and remove https://example.com/remove",
     }),
@@ -620,7 +622,7 @@ await withApp(async ({ db }) => {
   });
   const bookmark = unwrapResult(createResult);
 
-  await repository.create({
+  await bookmarkEditor.create({
     ...bookmarkPayload({
       url: "https://example.com/repository-second",
       title: "Second",

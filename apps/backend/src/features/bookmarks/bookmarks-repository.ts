@@ -7,15 +7,9 @@ import { bookmarks, bookmarkTags, relatedLinks, tags } from "@pongolinks/db/sche
 import type { AppDb } from "#/db/app-db.ts";
 import { ApiError, unexpectedError } from "#/http/result-response.ts";
 import type { BookmarkId } from "./domain/bookmark-id.ts";
-import type { BookmarkUrl } from "./domain/bookmark-url.ts";
-import type { BookmarkDTO, EditableBookmarkRequest } from "./domain/contracts.ts";
+import type { BookmarkDTO, EditableBookmarkData } from "./domain/contracts.ts";
 import { extractRelatedLinks } from "./utils/extract-related-links.ts";
 import type { TagName } from "./domain/tag-name.ts";
-
-export type EditableBookmarkData = Omit<EditableBookmarkRequest, "url" | "tagsText"> & {
-  url: BookmarkUrl;
-  tags: TagName[];
-};
 
 type BookmarkRow = typeof bookmarks.$inferSelect;
 type TagRow = typeof tags.$inferSelect;
@@ -117,64 +111,6 @@ export class BookmarksRepository {
 
       return Ok(toBookmarkDTO(row));
     } catch (error) {
-      return Err(unexpectedError(error));
-    }
-  }
-
-  async create(
-    input: EditableBookmarkData,
-    log?: RepositoryLogger,
-  ): Promise<Result<BookmarkDTO, ApiError>> {
-    try {
-      const existing = await this.db.query.bookmarks.findFirst({
-        where: eq(bookmarks.url, input.url.value()),
-      });
-
-      if (existing) {
-        return Err(new ApiError("Bookmark URL already exists", "bookmark.url_duplicate", 409));
-      }
-
-      const extractedRelatedLinks = extractRelatedLinks(input.description);
-      log?.set({
-        relatedLinks: {
-          extractedCount: extractedRelatedLinks.length,
-        },
-      });
-
-      const row = await this.db.transaction(async (tx) => {
-        const bookmark = await tx
-          .insert(bookmarks)
-          .values({
-            url: input.url.value(),
-            title: input.title,
-            description: input.description,
-            isPrivate: input.isPrivate,
-          })
-          .returning({ id: bookmarks.id })
-          .get();
-
-        await this.replaceBookmarkTags(tx, bookmark.id, input.tags);
-        await this.insertRelatedLinks(tx, bookmark.id, extractedRelatedLinks);
-
-        return this.findBookmarkById(tx, bookmark.id);
-      });
-
-      if (!row) {
-        return Err(unexpectedError(new Error("Created bookmark was not returned")));
-      }
-
-      log?.set({
-        relatedLinks: {
-          insertedCount: extractedRelatedLinks.length,
-        },
-      });
-
-      return Ok(toBookmarkDTO(row));
-    } catch (error) {
-      if (isUniqueUrlError(error)) {
-        return Err(new ApiError("Bookmark URL already exists", "bookmark.url_duplicate", 409));
-      }
-
       return Err(unexpectedError(error));
     }
   }
@@ -312,22 +248,6 @@ export class BookmarksRepository {
       urlsToInsert,
       urlsToDelete,
     };
-  }
-
-  private async replaceBookmarkTags(db: RepositoryDb, bookmarkId: number, tagNames: TagName[]) {
-    await db.delete(bookmarkTags).where(eq(bookmarkTags.bookmarkId, bookmarkId)).run();
-
-    for (const tagName of tagNames) {
-      const tag = await this.findOrCreateTag(db, tagName);
-
-      await db
-        .insert(bookmarkTags)
-        .values({
-          bookmarkId,
-          tagId: tag.id,
-        })
-        .run();
-    }
   }
 
   private async syncBookmarkTags(

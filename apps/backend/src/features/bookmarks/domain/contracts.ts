@@ -1,3 +1,6 @@
+import type { BookmarkUrl } from "./bookmark-url.ts";
+import type { TagName } from "./tag-name.ts";
+
 export type TagDTO = {
   id: number;
   name: string;
@@ -27,4 +30,9 @@ export type EditableBookmarkRequest = {
   description: string;
   isPrivate: boolean;
   tagsText: string;
+};
+
+export type EditableBookmarkData = Omit<EditableBookmarkRequest, "url" | "tagsText"> & {
+  url: BookmarkUrl;
+  tags: TagName[];
 };

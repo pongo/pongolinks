@@ -3,8 +3,9 @@ import { and, eq, sql } from "drizzle-orm";
 
 import { BookmarkId } from "#/features/bookmarks/domain/bookmark-id.ts";
 import { BookmarkUrl } from "#/features/bookmarks/domain/bookmark-url.ts";
+import { BookmarkEditor } from "#/features/bookmarks/bookmark-editor.ts";
+import type { EditableBookmarkData } from "#/features/bookmarks/domain/contracts.ts";
 import { BookmarksRepository } from "#/features/bookmarks/bookmarks-repository.ts";
-import type { EditableBookmarkData } from "#/features/bookmarks/bookmarks-repository.ts";
 import { parseTagNames } from "#/features/bookmarks/domain/tag-name.ts";
 import { createMigratedTestDb } from "../../../test/test-db";
 
@@ -68,12 +69,17 @@ function bookmarkTagRowId(db: TestDb["db"], bookmarkId: number, tagId: number) {
 }
 
 async function withRepository(
-  run: (context: { repository: BookmarksRepository; db: TestDb["db"] }) => Promise<void>,
+  run: (context: {
+    bookmarkEditor: BookmarkEditor;
+    repository: BookmarksRepository;
+    db: TestDb["db"];
+  }) => Promise<void>,
 ) {
   const database = createMigratedTestDb();
 
   try {
     await run({
+      bookmarkEditor: new BookmarkEditor(database.db),
       repository: new BookmarksRepository(database.db),
       db: database.db,
     });
@@ -82,11 +88,11 @@ async function withRepository(
   }
 }
 
-await withRepository(async ({ repository }) => {
-  const first = await repository.create(editableBookmark());
+await withRepository(async ({ bookmarkEditor }) => {
+  const first = await bookmarkEditor.create(editableBookmark());
   unwrapResult(first);
 
-  const duplicate = await repository.create(
+  const duplicate = await bookmarkEditor.create(
     editableBookmark({
       title: "Duplicate",
     }),
@@ -95,9 +101,9 @@ await withRepository(async ({ repository }) => {
   assertBookmarkError(duplicate, "bookmark.url_duplicate", 409, "duplicate create");
 });
 
-await withRepository(async ({ repository }) => {
+await withRepository(async ({ bookmarkEditor }) => {
   const created = unwrapResult(
-    await repository.create(
+    await bookmarkEditor.create(
       editableBookmark({
         description: "Primary https://example.com and related https://example.com/docs",
         tagsText: "article lang-ru article",
@@ -127,16 +133,16 @@ await withRepository(async ({ repository }) => {
   );
 });
 
-await withRepository(async ({ repository }) => {
+await withRepository(async ({ bookmarkEditor, repository }) => {
   const first = unwrapResult(
-    await repository.create(
+    await bookmarkEditor.create(
       editableBookmark({
         url: unwrapResult(BookmarkUrl.from("https://example.com/one")),
       }),
     ),
   );
   const second = unwrapResult(
-    await repository.create(
+    await bookmarkEditor.create(
       editableBookmark({
         url: unwrapResult(BookmarkUrl.from("https://example.com/two")),
         title: "Two",
@@ -163,9 +169,9 @@ await withRepository(async ({ repository }) => {
   assertBookmarkError(missingUpdate, "bookmark.not_found", 404, "missing update");
 });
 
-await withRepository(async ({ repository, db }) => {
+await withRepository(async ({ bookmarkEditor, repository, db }) => {
   const created = unwrapResult(
-    await repository.create(
+    await bookmarkEditor.create(
       editableBookmark({
         url: unwrapResult(BookmarkUrl.from("https://example.com/edited")),
         description: "Keep https://example.com/keep and remove https://example.com/remove",
@@ -174,7 +180,7 @@ await withRepository(async ({ repository, db }) => {
     ),
   );
   unwrapResult(
-    await repository.create(
+    await bookmarkEditor.create(
       editableBookmark({
         url: unwrapResult(BookmarkUrl.from("https://example.com/other")),
         title: "Other",

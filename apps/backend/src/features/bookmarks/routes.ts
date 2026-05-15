@@ -7,6 +7,7 @@ import { getRouteLogger, logApiError } from "#/http/route-logging.ts";
 import { ApiError, resultResponse, type ApiErrorCode } from "#/http/result-response.ts";
 import { BookmarkId } from "./domain/bookmark-id.ts";
 import { BookmarkUrl } from "./domain/bookmark-url.ts";
+import { BookmarkEditor } from "./bookmark-editor.ts";
 import { BookmarksRepository } from "./bookmarks-repository";
 import { parseTagNames } from "./domain/tag-name.ts";
 
@@ -87,6 +88,7 @@ function bookmarkValidationErrorResponse(error: unknown, set: { status?: number 
 }
 
 export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
+  const bookmarkEditor = new BookmarkEditor(db);
   const repository = new BookmarksRepository(db);
 
   return new Elysia({ name: "bookmark-routes" })
@@ -136,7 +138,7 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
           tags: { count: tags.length },
         });
 
-        const result = await repository.create({ ...body, url, tags }, log);
+        const result = await bookmarkEditor.create({ ...body, url, tags }, log);
         if (result.isErr) {
           logApiError(log, result.error);
         } else {
