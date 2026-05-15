@@ -123,7 +123,7 @@ export class BookmarkEditor {
           .returning({ id: bookmarks.id })
           .get();
 
-        await this.replaceBookmarkTags(tx, bookmark.id, input.tags);
+        await this.syncBookmarkTags(tx, bookmark.id, input.tags);
         await this.insertRelatedLinks(tx, bookmark.id, extractedRelatedLinks);
 
         return this.findBookmarkById(tx, bookmark.id);
@@ -274,22 +274,6 @@ export class BookmarkEditor {
       urlsToInsert,
       urlsToDelete,
     };
-  }
-
-  private async replaceBookmarkTags(db: EditorDb, bookmarkId: number, tagNames: TagName[]) {
-    await db.delete(bookmarkTags).where(eq(bookmarkTags.bookmarkId, bookmarkId)).run();
-
-    for (const tagName of tagNames) {
-      const tag = await this.findOrCreateTag(db, tagName);
-
-      await db
-        .insert(bookmarkTags)
-        .values({
-          bookmarkId,
-          tagId: tag.id,
-        })
-        .run();
-    }
   }
 
   private async syncBookmarkTags(
