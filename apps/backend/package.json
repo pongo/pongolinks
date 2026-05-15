@@ -18,7 +18,10 @@
     "format": "oxfmt ."
   },
   "dependencies": {
+    "@elysia/opentelemetry": "^1.4.12",
     "@elysiajs/static": "^1.4.10",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.218.0",
+    "@opentelemetry/sdk-trace-node": "^2.7.1",
     "@pongolinks/db": "workspace:*",
     "@pongolinks/shared": "workspace:*",
     "drizzle-orm": "^0.45.2",

@@ -9,6 +9,7 @@ import type { AppDb } from "./db/app-db";
 import { createBookmarkRoutes } from "./features/bookmarks/routes";
 import { createTagRoutes } from "./features/tags/routes";
 import { healthRoutes } from "./features/health/routes";
+import { createRequestLoggingOptions, createTracingPlugin } from "./observability";
 
 export type CreateAppOptions = {
   db?: AppDb;
@@ -54,8 +55,10 @@ function serveIndexHtml(frontendDistPath: string) {
 export function createApp(options: CreateAppOptions = {}) {
   const frontendDistPath = options.frontendDistPath ?? config.frontendDistPath;
   const app = new Elysia()
+    .use(createTracingPlugin())
     .use(
       evlog({
+        ...createRequestLoggingOptions(),
         include: [`${APP_BASE_PATH}/api/**`],
         exclude: [`${APP_BASE_PATH}/api/health`],
       }),

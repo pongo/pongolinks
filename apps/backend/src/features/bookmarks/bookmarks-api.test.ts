@@ -1,12 +1,9 @@
-import { spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import { runBackendSmokeSuite } from "../../../test/smoke-suite";
+
 function runSmokeSuite(fileName: string, expectedOutput: string) {
-  const result = spawnSync("bun", [`src/features/bookmarks/${fileName}`], {
-    cwd: fileURLToPath(new URL("../../..", import.meta.url)),
-    encoding: "utf8",
-  });
+  const result = runBackendSmokeSuite(`src/features/bookmarks/${fileName}`);
 
   expect(result.stderr).toBe("");
   expect(result.stdout).toContain(expectedOutput);
