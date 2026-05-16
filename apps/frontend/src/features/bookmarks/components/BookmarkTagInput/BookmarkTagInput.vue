@@ -148,6 +148,14 @@ function handleTagKeydown(event: KeyboardEvent) {
     closeTagSuggestions();
   }
 }
+
+function focusInput() {
+  tagsInput.value?.focus();
+}
+
+defineExpose({
+  focusInput,
+});
 </script>
 
 <template>

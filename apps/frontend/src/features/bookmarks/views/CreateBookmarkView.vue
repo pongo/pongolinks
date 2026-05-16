@@ -48,6 +48,7 @@ async function saveBookmark(payload: EditableBookmarkPayload) {
           :errors="errors"
           :is-saving="isSaving"
           :tag-suggestions="tagSuggestions"
+          initial-focus-target="url"
           submit-label="Create bookmark"
           @submit="saveBookmark"
         />
