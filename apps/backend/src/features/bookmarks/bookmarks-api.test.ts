@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { runBackendSmokeSuite } from "../../../test/smoke-suite";
+import { runBackendSmokeSuite } from "#test/smoke-suite.ts";
 
 function runSmokeSuite(fileName: string, expectedOutput: string) {
   const result = runBackendSmokeSuite(`src/features/bookmarks/${fileName}`);

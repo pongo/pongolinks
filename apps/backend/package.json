@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "imports": {
-    "#/*": "./src/*"
+    "#/*": "./src/*",
+    "#test/*": "./test/*"
   },
   "exports": {
     ".": "./src/index.ts",

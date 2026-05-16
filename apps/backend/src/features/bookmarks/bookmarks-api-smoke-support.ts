@@ -2,11 +2,11 @@ import { bookmarkTags } from "@pongolinks/db/schema";
 import { and, eq, sql } from "drizzle-orm";
 
 import { APP_BASE_PATH, createApp } from "#/app.ts";
-import { createMigratedTestDb } from "../../../test/test-db";
+import { createMigratedTestDb } from "#test/test-db.ts";
 
 export type TestDb = Awaited<ReturnType<typeof createMigratedTestDb>>;
 
-export function assert(condition: unknown, message: string) {
+export function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
     throw new Error(message);
   }

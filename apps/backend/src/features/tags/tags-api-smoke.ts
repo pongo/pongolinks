@@ -1,7 +1,7 @@
 import { APP_BASE_PATH, createApp } from "#/app.ts";
-import { createMigratedTestDb } from "../../../test/test-db";
+import { createMigratedTestDb } from "#test/test-db.ts";
 
-function assert(condition: unknown, message: string) {
+function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
     throw new Error(message);
   }

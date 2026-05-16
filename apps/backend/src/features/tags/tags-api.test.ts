@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { runBackendSmokeSuite } from "../../../test/smoke-suite";
+import { runBackendSmokeSuite } from "#test/smoke-suite.ts";
 
 describe("Tag API", () => {
   it("passes the Bun/Elysia API smoke suite", () => {
