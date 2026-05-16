@@ -113,7 +113,7 @@ watch(
 
         <BookmarkList v-else :bookmarks="bookmarks" />
 
-        <BookmarkListPagination :is-loading="isLoading" :pagination="pagination" />
+        <BookmarkListPagination :pagination="pagination" />
       </template>
     </section>
   </main>

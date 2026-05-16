@@ -6,15 +6,9 @@ import { RouterLink, type RouteLocationRaw } from "vue-router";
 import type { BookmarkListPagination } from "../../types";
 import { createPaginationWindow, type PaginationWindowItem } from "./pagination-window";
 
-const props = withDefaults(
-  defineProps<{
-    isLoading?: boolean;
-    pagination: BookmarkListPagination;
-  }>(),
-  {
-    isLoading: false,
-  },
-);
+const props = defineProps<{
+  pagination: BookmarkListPagination;
+}>();
 
 const paginationItems = computed(() =>
   createPaginationWindow({
@@ -22,26 +16,6 @@ const paginationItems = computed(() =>
     totalPages: props.pagination.totalPages,
   }),
 );
-
-const paginationLinkClass = computed(() => ({
-  "cursor-wait opacity-50 pointer-events-none": props.isLoading,
-}));
-
-const inactivePaginationLinkClass = computed(() => [
-  "ui-muted-link ui-border-subtle",
-  paginationLinkClass.value,
-]);
-
-const previousNextPaginationLinkClass = computed(() => [
-  "ui-muted-link ui-border-subtle",
-  paginationLinkClass.value,
-]);
-
-function pagePaginationLinkClass(page: number) {
-  return page === props.pagination.page
-    ? ["ui-action", paginationLinkClass.value]
-    : inactivePaginationLinkClass.value;
-}
 
 function bookmarkListRoute(page: number): RouteLocationRaw {
   return page <= 1 ? "/" : { path: "/", query: { page: String(page) } };
@@ -70,17 +44,13 @@ function paginationItemKey(item: PaginationWindowItem) {
     <nav
       v-if="pagination.totalPages > 1"
       class="flex items-center gap-1"
-      :class="{ 'cursor-wait': isLoading }"
       aria-label="Bookmark pages"
-      :aria-busy="isLoading"
     >
       <RouterLink
         v-if="pagination.hasPreviousPage"
-        class="inline-flex size-9 items-center justify-center border text-sm font-semibold"
-        :class="previousNextPaginationLinkClass"
+        class="ui-muted-link ui-border-subtle inline-flex size-9 items-center justify-center border text-sm font-semibold"
         :to="previousPageRoute()"
         aria-label="Previous page"
-        :aria-disabled="isLoading"
       >
         <ChevronLeftIcon class="size-4" aria-hidden="true" />
       </RouterLink>
@@ -89,25 +59,22 @@ function paginationItemKey(item: PaginationWindowItem) {
         <RouterLink
           v-if="item.type === 'page'"
           class="inline-flex size-9 items-center justify-center border text-sm font-semibold transition"
-          :class="pagePaginationLinkClass(item.page)"
+          :class="item.page === pagination.page ? 'ui-action' : 'ui-muted-link ui-border-subtle'"
           :to="bookmarkListRoute(item.page)"
           :aria-current="item.page === pagination.page ? 'page' : undefined"
-          :aria-disabled="isLoading"
         >
           {{ item.page }}
         </RouterLink>
         <span v-else class="ui-text-muted inline-flex size-9 items-center justify-center">
-          ...
+          &hellip;
         </span>
       </template>
 
       <RouterLink
         v-if="pagination.hasNextPage"
-        class="inline-flex size-9 items-center justify-center border text-sm font-semibold"
-        :class="previousNextPaginationLinkClass"
+        class="ui-muted-link ui-border-subtle inline-flex size-9 items-center justify-center border text-sm font-semibold"
         :to="nextPageRoute()"
         aria-label="Next page"
-        :aria-disabled="isLoading"
       >
         <ChevronRightIcon class="size-4" aria-hidden="true" />
       </RouterLink>
