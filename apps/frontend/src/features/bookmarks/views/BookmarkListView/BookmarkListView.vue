@@ -72,10 +72,10 @@ watch(
       <header class="mb-7 flex items-center justify-between gap-4">
         <div>
           <p class="ui-link text-xs font-bold tracking-normal uppercase">pongolinks</p>
-          <h1 class="ui-text-strong mt-1 text-2xl font-bold">Bookmarks</h1>
+          <h1 class="ui-text-strong mt-1 text-2xl font-bold select-none">Bookmarks</h1>
         </div>
         <RouterLink
-          class="ui-action inline-flex min-h-10 items-center justify-center px-4 text-sm font-semibold transition"
+          class="ui-action inline-flex min-h-10 items-center justify-center px-4 text-sm font-semibold transition select-none"
           to="/bookmarks/new"
         >
           New bookmark

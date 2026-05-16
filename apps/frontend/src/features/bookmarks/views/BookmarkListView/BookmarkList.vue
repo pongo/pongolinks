@@ -88,7 +88,7 @@ function formatBookmarkDomain(url: string) {
         </div>
         <div class="shrink-0 text-right">
           <RouterLink
-            class="ui-muted-link text-sm font-semibold"
+            class="ui-muted-link text-sm font-semibold select-none"
             :to="`/bookmarks/${bookmark.id}/edit`"
           >
             Edit

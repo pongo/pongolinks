@@ -43,7 +43,7 @@ function paginationItemKey(item: PaginationWindowItem) {
 
     <nav
       v-if="pagination.totalPages > 1"
-      class="flex items-center gap-1"
+      class="flex items-center gap-1 select-none"
       aria-label="Bookmark pages"
     >
       <RouterLink
