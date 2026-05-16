@@ -1,4 +1,4 @@
-import { desc, sql } from "drizzle-orm";
+import { asc, desc, sql } from "drizzle-orm";
 import {
   check,
   index,
@@ -43,10 +43,15 @@ export const tags = sqliteTable(
 
     // Normalized value maintained by the app layer for Unicode-friendly lookup
     nameLower: text("name_lower").notNull().unique(),
+
+    // Maintained by database triggers on `bookmark_tags`
+    usageCount: integer("usage_count").notNull().default(0),
   },
   (table) => [
     check("tags_name_not_empty", sql`${table.name} <> ''`),
     check("tags_name_lower_not_empty", sql`${table.nameLower} <> ''`),
+    check("tags_usage_count_non_negative", sql`${table.usageCount} >= 0`),
+    index("idx_tags_usage_count_name").on(desc(table.usageCount), asc(table.nameLower)),
   ],
 );
 

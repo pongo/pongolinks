@@ -3,6 +3,7 @@
 ## Responsibility
 
 This directory owns backend behavior around Tag summary reads, including the Tag HTTP route, Result response mapping, and backend-facing orchestration for Tag list persistence.
+Tag Popularity is stored as a denormalized counter in `tags.usage_count` and maintained by database triggers on `bookmark_tags`.
 
 ## Boundaries
 

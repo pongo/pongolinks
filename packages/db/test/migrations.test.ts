@@ -4,7 +4,7 @@ import { migrate } from "drizzle-orm/libsql/migrator";
 import { describe, expect, it } from "vitest";
 
 import { createDb } from "../src";
-import { bookmarks, relatedLinks } from "../src/schema";
+import { bookmarks, bookmarkTags, relatedLinks, tags } from "../src/schema";
 
 const migrationsFolder = fileURLToPath(new URL("../drizzle/migrations", import.meta.url));
 
@@ -37,7 +37,15 @@ describe("database migrations", () => {
 
       expect(triggers).not.toContain("update_bookmarks_updated_at");
       expect(triggers).toEqual(
-        expect.arrayContaining(["bookmarks_ai", "bookmarks_bu", "bookmarks_au", "bookmarks_bd"]),
+        expect.arrayContaining([
+          "bookmarks_ai",
+          "bookmarks_bu",
+          "bookmarks_au",
+          "bookmarks_bd",
+          "tags_usage_count_ai",
+          "tags_usage_count_ad",
+          "tags_usage_count_au_tag_id",
+        ]),
       );
 
       const bookmarkIndexesResult = await client.execute("PRAGMA index_list('bookmarks')");
@@ -59,6 +67,26 @@ describe("database migrations", () => {
       expect(bookmarkListIndexColumns).toEqual([
         { name: "updated_at", desc: 1 },
         { name: "id", desc: 1 },
+      ]);
+
+      const tagIndexesResult = await client.execute("PRAGMA index_list('tags')");
+      const tagIndexNames = tagIndexesResult.rows.map((index) => String(index.name));
+
+      expect(tagIndexNames).toContain("idx_tags_usage_count_name");
+
+      const tagPopularityIndexResult = await client.execute(
+        "PRAGMA index_xinfo('idx_tags_usage_count_name')",
+      );
+      const tagPopularityIndexColumns = tagPopularityIndexResult.rows
+        .filter((column) => Number(column.key) === 1)
+        .map((column) => ({
+          name: String(column.name),
+          desc: Number(column.desc),
+        }));
+
+      expect(tagPopularityIndexColumns).toEqual([
+        { name: "usage_count", desc: 1 },
+        { name: "name_lower", desc: 0 },
       ]);
 
       const initialUpdatedAt = "2000-01-01 00:00:00";
@@ -108,6 +136,54 @@ describe("database migrations", () => {
           url: "https://example.com/related",
         })
         .run();
+
+      const { id: secondTagId } = await db
+        .insert(tags)
+        .values({ name: "Gamma", nameLower: "gamma" })
+        .returning({ id: tags.id })
+        .get();
+
+      const { id: firstTagId } = await db
+        .insert(tags)
+        .values({ name: "Alpha", nameLower: "alpha" })
+        .returning({ id: tags.id })
+        .get();
+
+      await db
+        .insert(bookmarkTags)
+        .values({ bookmarkId: firstBookmarkId, tagId: firstTagId })
+        .run();
+
+      const firstTagAfterInsert = await db.query.tags.findFirst({
+        where: eq(tags.id, firstTagId),
+      });
+      expect(firstTagAfterInsert?.usageCount).toBe(1);
+
+      await db
+        .update(bookmarkTags)
+        .set({ tagId: secondTagId })
+        .where(eq(bookmarkTags.bookmarkId, firstBookmarkId))
+        .run();
+
+      const firstTagAfterMove = await db.query.tags.findFirst({
+        where: eq(tags.id, firstTagId),
+      });
+      const secondTagAfterMove = await db.query.tags.findFirst({
+        where: eq(tags.id, secondTagId),
+      });
+      expect(firstTagAfterMove?.usageCount).toBe(0);
+      expect(secondTagAfterMove?.usageCount).toBe(1);
+
+      await db.delete(bookmarkTags).where(eq(bookmarkTags.bookmarkId, firstBookmarkId)).run();
+
+      const secondTagAfterDelete = await db.query.tags.findFirst({
+        where: eq(tags.id, secondTagId),
+      });
+      expect(secondTagAfterDelete?.usageCount).toBe(0);
+
+      await expect(
+        db.update(tags).set({ usageCount: -1 }).where(eq(tags.id, secondTagId)).run(),
+      ).rejects.toThrow();
 
       await expect(
         db

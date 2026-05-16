@@ -36,6 +36,13 @@
       "when": 1778847941078,
       "tag": "0004_bookmarks_updated_at_id_index",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1778957682805,
+      "tag": "0005_thin_starhawk",
+      "breakpoints": true
     }
   ]
 }

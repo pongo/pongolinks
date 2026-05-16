@@ -1,0 +1,305 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "ef3d159b-d206-4ff7-a758-6ead17322abd",
+  "prevId": "359e53f3-6b47-4afd-9690-0be479ebaba8",
+  "tables": {
+    "bookmark_tags": {
+      "name": "bookmark_tags",
+      "columns": {
+        "bookmark_id": {
+          "name": "bookmark_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tag_id": {
+          "name": "tag_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_bookmark_tags_tag_id": {
+          "name": "idx_bookmark_tags_tag_id",
+          "columns": ["tag_id"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "bookmark_tags_bookmark_id_bookmarks_id_fk": {
+          "name": "bookmark_tags_bookmark_id_bookmarks_id_fk",
+          "tableFrom": "bookmark_tags",
+          "tableTo": "bookmarks",
+          "columnsFrom": ["bookmark_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "bookmark_tags_tag_id_tags_id_fk": {
+          "name": "bookmark_tags_tag_id_tags_id_fk",
+          "tableFrom": "bookmark_tags",
+          "tableTo": "tags",
+          "columnsFrom": ["tag_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "bookmark_tags_bookmark_id_tag_id_pk": {
+          "columns": ["bookmark_id", "tag_id"],
+          "name": "bookmark_tags_bookmark_id_tag_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "bookmarks": {
+      "name": "bookmarks",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "''"
+        },
+        "is_private": {
+          "name": "is_private",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "bookmarks_url_unique": {
+          "name": "bookmarks_url_unique",
+          "columns": ["url"],
+          "isUnique": true
+        },
+        "idx_bookmarks_updated_at_id": {
+          "name": "idx_bookmarks_updated_at_id",
+          "columns": ["\"updated_at\" desc", "\"id\" desc"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "bookmarks_url_not_empty": {
+          "name": "bookmarks_url_not_empty",
+          "value": "\"bookmarks\".\"url\" <> ''"
+        },
+        "bookmarks_title_not_empty": {
+          "name": "bookmarks_title_not_empty",
+          "value": "\"bookmarks\".\"title\" <> ''"
+        },
+        "bookmarks_is_private_boolean": {
+          "name": "bookmarks_is_private_boolean",
+          "value": "\"bookmarks\".\"is_private\" IN (0, 1)"
+        }
+      }
+    },
+    "related_links": {
+      "name": "related_links",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "bookmark_id": {
+          "name": "bookmark_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "related_links_bookmark_id_url_unique": {
+          "name": "related_links_bookmark_id_url_unique",
+          "columns": ["bookmark_id", "url"],
+          "isUnique": true
+        },
+        "idx_related_links_bookmark_id": {
+          "name": "idx_related_links_bookmark_id",
+          "columns": ["bookmark_id"],
+          "isUnique": false
+        },
+        "idx_related_links_url": {
+          "name": "idx_related_links_url",
+          "columns": ["url"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "related_links_bookmark_id_bookmarks_id_fk": {
+          "name": "related_links_bookmark_id_bookmarks_id_fk",
+          "tableFrom": "related_links",
+          "tableTo": "bookmarks",
+          "columnsFrom": ["bookmark_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "related_links_url_not_empty": {
+          "name": "related_links_url_not_empty",
+          "value": "\"related_links\".\"url\" <> ''"
+        }
+      }
+    },
+    "tags": {
+      "name": "tags",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name_lower": {
+          "name": "name_lower",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "usage_count": {
+          "name": "usage_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        }
+      },
+      "indexes": {
+        "tags_name_lower_unique": {
+          "name": "tags_name_lower_unique",
+          "columns": ["name_lower"],
+          "isUnique": true
+        },
+        "idx_tags_usage_count_name": {
+          "name": "idx_tags_usage_count_name",
+          "columns": ["\"usage_count\" desc", "\"name_lower\" asc"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "tags_name_not_empty": {
+          "name": "tags_name_not_empty",
+          "value": "\"tags\".\"name\" <> ''"
+        },
+        "tags_name_lower_not_empty": {
+          "name": "tags_name_lower_not_empty",
+          "value": "\"tags\".\"name_lower\" <> ''"
+        },
+        "tags_usage_count_non_negative": {
+          "name": "tags_usage_count_non_negative",
+          "value": "\"tags\".\"usage_count\" >= 0"
+        }
+      }
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {
+      "idx_bookmarks_updated_at_id": {
+        "columns": {
+          "\"updated_at\" desc": {
+            "isExpression": true
+          },
+          "\"id\" desc": {
+            "isExpression": true
+          }
+        }
+      },
+      "idx_tags_usage_count_name": {
+        "columns": {
+          "\"usage_count\" desc": {
+            "isExpression": true
+          },
+          "\"name_lower\" asc": {
+            "isExpression": true
+          }
+        }
+      }
+    }
+  }
+}
