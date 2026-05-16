@@ -2,12 +2,13 @@ import { asc, desc, eq, sql } from "drizzle-orm";
 import type { Result } from "@pongolinks/shared/result";
 import { Err, Ok } from "@pongolinks/shared/result";
 
-import { bookmarks, relatedLinks, tags } from "@pongolinks/db/schema";
+import { bookmarks, relatedLinks } from "@pongolinks/db/schema";
 
 import type { AppDb } from "#/db/app-db.ts";
 import { ApiError, unexpectedError } from "#/http/result-response.ts";
 import type { BookmarkId } from "../domain/bookmark-id.ts";
 import type { BookmarkDTO } from "../domain/contracts.ts";
+import { toBookmarkDTO } from "./bookmark-dto.ts";
 import {
   BOOKMARK_LIST_PAGE_SIZE,
   bookmarkListOffset,
@@ -15,38 +16,7 @@ import {
   type PaginatedBookmarkList,
 } from "../pagination.ts";
 
-type BookmarkRow = typeof bookmarks.$inferSelect;
-type TagRow = typeof tags.$inferSelect;
-type RelatedLinkRow = typeof relatedLinks.$inferSelect;
-type BookmarkWithTagsRow = BookmarkRow & {
-  bookmarkTags: { tag: TagRow }[];
-  relatedLinks: RelatedLinkRow[];
-};
-
 type RepositoryDb = Pick<AppDb, "query">;
-
-function toBookmarkDTO(row: BookmarkWithTagsRow): BookmarkDTO {
-  return {
-    id: row.id,
-    url: row.url,
-    title: row.title,
-    description: row.description,
-    isPrivate: row.isPrivate,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-    tags: row.bookmarkTags
-      .map(({ tag }) => ({
-        id: tag.id,
-        name: tag.name,
-        nameLower: tag.nameLower,
-      }))
-      .sort((left, right) => left.nameLower.localeCompare(right.nameLower)),
-    relatedLinks: row.relatedLinks.map((relatedLink) => ({
-      id: relatedLink.id,
-      url: relatedLink.url,
-    })),
-  };
-}
 
 export class BookmarkReadRepository {
   constructor(private readonly db: AppDb) {}

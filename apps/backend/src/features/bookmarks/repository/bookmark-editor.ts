@@ -10,18 +10,13 @@ import { ApiError, unexpectedError } from "#/http/result-response.ts";
 import type { BookmarkId } from "../domain/bookmark-id.ts";
 import type { BookmarkDTO, EditableBookmarkData } from "../domain/contracts.ts";
 import type { TagName } from "../domain/tag-name.ts";
+import { toBookmarkDTO } from "./bookmark-dto.ts";
 
 export type BookmarkEditorLogger = {
   set: (context: Record<string, unknown>) => void;
 };
 
-type BookmarkRow = typeof bookmarks.$inferSelect;
 type TagRow = typeof tags.$inferSelect;
-type RelatedLinkRow = typeof relatedLinks.$inferSelect;
-type BookmarkWithTagsRow = BookmarkRow & {
-  bookmarkTags: { tag: TagRow }[];
-  relatedLinks: RelatedLinkRow[];
-};
 type BookmarkTagWithTagRow = {
   bookmarkId: number;
   tagId: number;
@@ -41,29 +36,6 @@ type TagDiffCounts = {
 };
 
 type EditorDb = Pick<AppDb, "delete" | "insert" | "query" | "update">;
-
-function toBookmarkDTO(row: BookmarkWithTagsRow): BookmarkDTO {
-  return {
-    id: row.id,
-    url: row.url,
-    title: row.title,
-    description: row.description,
-    isPrivate: row.isPrivate,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-    tags: row.bookmarkTags
-      .map(({ tag }) => ({
-        id: tag.id,
-        name: tag.name,
-        nameLower: tag.nameLower,
-      }))
-      .sort((left, right) => left.nameLower.localeCompare(right.nameLower)),
-    relatedLinks: row.relatedLinks.map((relatedLink) => ({
-      id: relatedLink.id,
-      url: relatedLink.url,
-    })),
-  };
-}
 
 function isUniqueUrlError(error: unknown) {
   return errorMessageChain(error).some(
