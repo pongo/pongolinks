@@ -2,11 +2,32 @@ import { clean as tidyUrl } from "tidy-url";
 
 import type { EditableBookmarkPayload } from "../types";
 import type { BookmarkFormInitialFocusTarget } from "../components/bookmark-form-state";
+import type { BookmarkUrlCheckBookmark, BookmarkUrlCheckResult } from "#/features/search/types.ts";
 
 export type CreateBookmarkState =
-  | { kind: "manual-entry" }
+  | { kind: "checking"; url: string; title: string; closeAfterCreate: boolean }
   | { kind: "choose-url"; originalUrl: string; cleanedUrl: string; title: string }
-  | { kind: "create-form"; initialUrl: string; initialTitle: string; focusTarget: BookmarkFormInitialFocusTarget };
+  | {
+      kind: "duplicate-bookmark";
+      bookmark: BookmarkUrlCheckBookmark;
+      initialUrl: string;
+      initialTitle: string;
+      closeAfterCreate: boolean;
+    }
+  | {
+      kind: "related-link-matches";
+      bookmarks: BookmarkUrlCheckBookmark[];
+      initialUrl: string;
+      initialTitle: string;
+      closeAfterCreate: boolean;
+    }
+  | {
+      kind: "create-form";
+      initialUrl: string;
+      initialTitle: string;
+      focusTarget: BookmarkFormInitialFocusTarget;
+      closeAfterCreate: boolean;
+    };
 
 export type CreateBookmarkQueryInput = {
   url?: string | string[];
@@ -33,7 +54,13 @@ function parseAbsoluteHttpUrl(value: string) {
 export function resolveCreateBookmarkState(input: CreateBookmarkQueryInput): CreateBookmarkState {
   const incomingUrl = pickFirst(input.url);
   if (incomingUrl === undefined) {
-    return { kind: "manual-entry" };
+    return {
+      kind: "create-form",
+      initialUrl: "",
+      initialTitle: "",
+      focusTarget: "url",
+      closeAfterCreate: false,
+    };
   }
 
   const incomingTitle = pickFirst(input.title)?.trim() ?? "";
@@ -45,16 +72,17 @@ export function resolveCreateBookmarkState(input: CreateBookmarkQueryInput): Cre
       initialUrl: incomingUrl,
       initialTitle: incomingTitle,
       focusTarget: "url",
+      closeAfterCreate: true,
     };
   }
 
   const cleanedUrl = tidyUrl(parsedIncoming.toString()).url;
   if (cleanedUrl === parsedIncoming.toString()) {
     return {
-      kind: "create-form",
-      initialUrl: parsedIncoming.toString(),
-      initialTitle: incomingTitle,
-      focusTarget: "tags",
+      kind: "checking",
+      url: parsedIncoming.toString(),
+      title: incomingTitle,
+      closeAfterCreate: true,
     };
   }
 
@@ -69,12 +97,65 @@ export function resolveCreateBookmarkState(input: CreateBookmarkQueryInput): Cre
 export function chooseBookmarkCreateUrl(
   state: Extract<CreateBookmarkState, { kind: "choose-url" }>,
   choice: "original" | "cleaned",
+): Extract<CreateBookmarkState, { kind: "checking" }> {
+  return {
+    kind: "checking",
+    url: choice === "original" ? state.originalUrl : state.cleanedUrl,
+    title: state.title,
+    closeAfterCreate: true,
+  };
+}
+
+export function resolveCheckedBookmarkState(
+  checkResult: BookmarkUrlCheckResult,
+  checkingState: Extract<CreateBookmarkState, { kind: "checking" }>,
+):
+  | Exclude<CreateBookmarkState, { kind: "checking" }>
+  | { kind: "redirect-edit"; bookmarkId: number } {
+  if (checkResult.status === "exact-bookmark") {
+    return { kind: "redirect-edit", bookmarkId: checkResult.bookmark.id };
+  }
+
+  if (checkResult.status === "alternate-protocol-bookmark") {
+    return {
+      kind: "duplicate-bookmark",
+      bookmark: checkResult.bookmark,
+      initialUrl: checkingState.url,
+      initialTitle: checkingState.title,
+      closeAfterCreate: checkingState.closeAfterCreate,
+    };
+  }
+
+  if (checkResult.status === "related-link") {
+    return {
+      kind: "related-link-matches",
+      bookmarks: checkResult.bookmarks,
+      initialUrl: checkingState.url,
+      initialTitle: checkingState.title,
+      closeAfterCreate: checkingState.closeAfterCreate,
+    };
+  }
+
+  return {
+    kind: "create-form",
+    initialUrl: checkingState.url,
+    initialTitle: checkingState.title,
+    focusTarget: "tags",
+    closeAfterCreate: checkingState.closeAfterCreate,
+  };
+}
+
+export function continueAfterDuplicateOrRelated(
+  state:
+    | Extract<CreateBookmarkState, { kind: "duplicate-bookmark" }>
+    | Extract<CreateBookmarkState, { kind: "related-link-matches" }>,
 ): Extract<CreateBookmarkState, { kind: "create-form" }> {
   return {
     kind: "create-form",
-    initialUrl: choice === "original" ? state.originalUrl : state.cleanedUrl,
-    initialTitle: state.title,
+    initialUrl: state.initialUrl,
+    initialTitle: state.initialTitle,
     focusTarget: "tags",
+    closeAfterCreate: state.closeAfterCreate,
   };
 }
 

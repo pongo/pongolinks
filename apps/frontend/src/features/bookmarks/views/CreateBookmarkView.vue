@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from "vue";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
 import type { FormErrors } from "#/shared/api/errors.ts";
+import { checkBookmarkUrl } from "#/features/search/api.ts";
 import { listTags } from "#/features/tags/api.ts";
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
 import { createBookmark } from "../api/api";
@@ -10,16 +11,20 @@ import BookmarkForm from "../components/BookmarkForm.vue";
 import type { EditableBookmarkPayload } from "../types";
 import {
   chooseBookmarkCreateUrl,
+  continueAfterDuplicateOrRelated,
   createInitialBookmarkPayload,
+  resolveCheckedBookmarkState,
   resolveCreateBookmarkState,
   type CreateBookmarkState,
 } from "./create-bookmark-flow";
+import { handleCreateBookmarkSuccess } from "./create-bookmark-success";
 import { diffUrls } from "./url-diff";
 
 const route = useRoute();
 const router = useRouter();
 const errors = ref<FormErrors>({});
 const isSaving = ref(false);
+const isChecking = ref(false);
 const tagSuggestions = ref<TagSummaryDTO[]>([]);
 const state = ref<CreateBookmarkState>(
   resolveCreateBookmarkState({
@@ -28,7 +33,9 @@ const state = ref<CreateBookmarkState>(
   }),
 );
 const urlChoiceDiff = computed(() =>
-  state.value.kind === "choose-url" ? diffUrls(state.value.originalUrl, state.value.cleanedUrl) : null,
+  state.value.kind === "choose-url"
+    ? diffUrls(state.value.originalUrl, state.value.cleanedUrl)
+    : null,
 );
 const formInitialValues = computed(() =>
   state.value.kind === "create-form" ? createInitialBookmarkPayload(state.value) : undefined,
@@ -38,10 +45,10 @@ const formInitialFocusTarget = computed(() =>
 );
 
 onMounted(async () => {
-  const result = await listTags();
+  const [tagsResult] = await Promise.all([listTags(), runUrlCheckIfNeeded()]);
 
-  if (result.isOk) {
-    tagSuggestions.value = result.value.tags;
+  if (tagsResult.isOk) {
+    tagSuggestions.value = tagsResult.value.tags;
   }
 });
 
@@ -52,7 +59,21 @@ async function saveBookmark(payload: EditableBookmarkPayload) {
   const result = await createBookmark(payload);
 
   if (result.isOk) {
-    await router.push("/");
+    if (state.value.kind !== "create-form") {
+      await router.push("/");
+    } else {
+      await handleCreateBookmarkSuccess({
+        closeAfterCreate: state.value.closeAfterCreate,
+        closeWindow: () => window.close(),
+        isWindowClosed: () => window.closed,
+        navigateToList: async () => {
+          await router.push("/");
+        },
+        wait: async (ms) => {
+          await new Promise((resolve) => setTimeout(resolve, ms));
+        },
+      });
+    }
   } else {
     errors.value = result.error.formErrors;
   }
@@ -66,6 +87,7 @@ function chooseOriginalUrl() {
   }
 
   state.value = chooseBookmarkCreateUrl(state.value, "original");
+  void runUrlCheckIfNeeded();
 }
 
 function chooseCleanedUrl() {
@@ -74,6 +96,58 @@ function chooseCleanedUrl() {
   }
 
   state.value = chooseBookmarkCreateUrl(state.value, "cleaned");
+  void runUrlCheckIfNeeded();
+}
+
+function createAnywayFromDuplicate() {
+  if (state.value.kind !== "duplicate-bookmark") {
+    return;
+  }
+
+  state.value = continueAfterDuplicateOrRelated(state.value);
+}
+
+function createAnywayFromRelatedLinks() {
+  if (state.value.kind !== "related-link-matches") {
+    return;
+  }
+
+  state.value = continueAfterDuplicateOrRelated(state.value);
+}
+
+async function runUrlCheckIfNeeded() {
+  if (state.value.kind !== "checking" || isChecking.value) {
+    return;
+  }
+
+  isChecking.value = true;
+  errors.value = {};
+
+  const checkingState = state.value;
+  const result = await checkBookmarkUrl(checkingState.url);
+
+  if (result.isErr) {
+    state.value = {
+      kind: "create-form",
+      initialUrl: checkingState.url,
+      initialTitle: checkingState.title,
+      focusTarget: "url",
+      closeAfterCreate: checkingState.closeAfterCreate,
+    };
+    errors.value = result.error.formErrors;
+    isChecking.value = false;
+    return;
+  }
+
+  const next = resolveCheckedBookmarkState(result.value, checkingState);
+  if (next.kind === "redirect-edit") {
+    await router.replace(`/bookmarks/${next.bookmarkId}/edit`);
+    isChecking.value = false;
+    return;
+  }
+
+  state.value = next;
+  isChecking.value = false;
 }
 </script>
 
@@ -108,7 +182,9 @@ function chooseCleanedUrl() {
         </div>
 
         <div
-          v-if="urlChoiceDiff && (urlChoiceDiff.nonQueryChanged || urlChoiceDiff.queryDiffs.length > 0)"
+          v-if="
+            urlChoiceDiff && (urlChoiceDiff.nonQueryChanged || urlChoiceDiff.queryDiffs.length > 0)
+          "
           class="ui-border ui-surface mt-5 border px-4 py-4"
         >
           <p class="ui-text-emphasis text-sm font-semibold">Detected changes</p>
@@ -138,6 +214,70 @@ function chooseCleanedUrl() {
               </span>
             </li>
           </ul>
+        </div>
+      </div>
+
+      <div v-else-if="state.kind === 'checking'" class="py-6">
+        <p class="ui-text-muted text-sm">Checking existing bookmarks...</p>
+      </div>
+
+      <div v-else-if="state.kind === 'duplicate-bookmark'" class="py-6">
+        <div class="ui-border ui-surface border px-4 py-4">
+          <p class="ui-text-emphasis text-sm font-semibold">Possible duplicate bookmark</p>
+          <p class="ui-text-muted mt-2 text-sm">
+            A bookmark with the same URL and alternate HTTP protocol already exists.
+          </p>
+          <a
+            class="ui-link mt-3 block text-sm font-semibold break-all"
+            :href="state.bookmark.url"
+            rel="noreferrer"
+            target="_blank"
+          >
+            {{ state.bookmark.url }}
+          </a>
+          <div class="mt-4 flex flex-wrap gap-3">
+            <RouterLink
+              class="ui-action inline-flex min-h-10 items-center justify-center px-4 text-sm font-semibold transition"
+              :to="`/bookmarks/${state.bookmark.id}/edit`"
+            >
+              Edit existing bookmark
+            </RouterLink>
+            <button
+              class="ui-border ui-surface ui-text-emphasis inline-flex min-h-10 items-center justify-center border px-4 text-sm font-semibold transition"
+              type="button"
+              @click="createAnywayFromDuplicate"
+            >
+              Create separate bookmark
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div v-else-if="state.kind === 'related-link-matches'" class="py-6">
+        <div class="ui-border ui-surface border px-4 py-4">
+          <p class="ui-text-emphasis text-sm font-semibold">Related links found in bookmarks</p>
+          <ul class="mt-4 space-y-3">
+            <li
+              v-for="bookmark in state.bookmarks"
+              :key="bookmark.id"
+              class="ui-border-subtle border p-3"
+            >
+              <RouterLink
+                class="ui-link text-sm font-semibold"
+                :to="`/bookmarks/${bookmark.id}/edit`"
+              >
+                {{ bookmark.title }}
+              </RouterLink>
+              <p class="ui-text-muted mt-1 text-sm break-all">{{ bookmark.url }}</p>
+            </li>
+          </ul>
+          <button
+            class="ui-border ui-surface ui-text-emphasis mt-4 inline-flex min-h-10 items-center justify-center border px-4 text-sm font-semibold transition"
+            type="button"
+            @click="createAnywayFromRelatedLinks"
+          >
+            Create a new bookmark anyway
+          </button>
         </div>
       </div>
 

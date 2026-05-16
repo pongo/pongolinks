@@ -31,7 +31,10 @@ await withApp(async ({ app }) => {
   assert(response.status === 200, "exact match should return 200");
   assert(body.isOk === true, "exact match should return Ok result");
   assert(body.value.status === "exact-bookmark", "exact match should return exact-bookmark");
-  assert(body.value.bookmark.url === "https://example.com/exact", "exact match should return bookmark");
+  assert(
+    body.value.bookmark.url === "https://example.com/exact",
+    "exact match should return bookmark",
+  );
 });
 
 await withApp(async ({ app }) => {
@@ -78,7 +81,9 @@ await withApp(async ({ app }) => {
     description: "See https://related.example.com/doc",
   });
 
-  const response = await app.handle(request("/api/search/check?url=https://related.example.com/doc"));
+  const response = await app.handle(
+    request("/api/search/check?url=https://related.example.com/doc"),
+  );
   const body = await response.json();
 
   assert(response.status === 200, "related link match should return 200");
