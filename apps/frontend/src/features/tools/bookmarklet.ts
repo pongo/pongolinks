@@ -20,7 +20,7 @@ function normalizeBasePath(basePath: string) {
 export function createBookmarkletHref(options: CreateBookmarkletHrefOptions) {
   const basePath = normalizeBasePath(options.appBasePath);
   const targetUrl = `${options.appOrigin}${basePath}${BOOKMARK_CREATE_PATH}`;
-  const openUrlExpression = `"${targetUrl}?url=" + encodeURIComponent(location.href) + "&title=" + encodeURIComponent(document.title)`;
+  const escapedTargetUrl = JSON.stringify(targetUrl);
 
-  return `javascript:window.open(${openUrlExpression}, "_blank", "noopener")`;
+  return `javascript:(()=>{const u=new URL(${escapedTargetUrl});u.searchParams.set("url",location.href);u.searchParams.set("title",document.title);window.open(u.toString(),"_blank","noopener");})();`;
 }

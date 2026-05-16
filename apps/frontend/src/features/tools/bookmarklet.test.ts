@@ -18,7 +18,7 @@ describe("bookmarklet href", () => {
       appBasePath: "/pongolinks/",
     });
 
-    expect(href).toContain('?url=" + encodeURIComponent(location.href)');
+    expect(href).toContain('searchParams.set("url",location.href)');
   });
 
   it("passes document title as title query parameter", () => {
@@ -27,7 +27,7 @@ describe("bookmarklet href", () => {
       appBasePath: "/pongolinks/",
     });
 
-    expect(href).toContain('"&title=" + encodeURIComponent(document.title)');
+    expect(href).toContain('searchParams.set("title",document.title)');
   });
 
   it("does not derive target from the saved page origin", () => {
