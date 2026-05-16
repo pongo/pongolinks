@@ -1,21 +1,5 @@
-import { APP_BASE_PATH, createApp } from "#/app.ts";
-import { createMigratedTestDb } from "#test/test-db.ts";
-
-function assert(condition: unknown, message: string): asserts condition {
-  if (!condition) {
-    throw new Error(message);
-  }
-}
-
-function request(path: string, init?: RequestInit) {
-  return new Request(`http://localhost${APP_BASE_PATH}${path}`, {
-    headers: {
-      "content-type": "application/json",
-      ...init?.headers,
-    },
-    ...init,
-  });
-}
+import { createApp } from "#/app.ts";
+import { assert, request, withApp } from "#test/api-smoke-support.ts";
 
 function bookmarkPayload(overrides: Record<string, unknown> = {}) {
   return {
@@ -26,18 +10,6 @@ function bookmarkPayload(overrides: Record<string, unknown> = {}) {
     tagsText: "",
     ...overrides,
   };
-}
-
-async function withApp(run: (context: { app: ReturnType<typeof createApp> }) => Promise<void>) {
-  const database = await createMigratedTestDb();
-
-  try {
-    await run({
-      app: createApp({ db: database.db }),
-    });
-  } finally {
-    database.close();
-  }
 }
 
 async function createBookmark(app: ReturnType<typeof createApp>, payload: Record<string, unknown>) {

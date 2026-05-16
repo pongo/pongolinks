@@ -1,26 +1,7 @@
 import { bookmarkTags } from "@pongolinks/db/schema";
 import { and, eq, sql } from "drizzle-orm";
 
-import { APP_BASE_PATH, createApp } from "#/app.ts";
-import { createMigratedTestDb } from "#test/test-db.ts";
-
-export type TestDb = Awaited<ReturnType<typeof createMigratedTestDb>>;
-
-export function assert(condition: unknown, message: string): asserts condition {
-  if (!condition) {
-    throw new Error(message);
-  }
-}
-
-export function request(path: string, init?: RequestInit) {
-  return new Request(`http://localhost${APP_BASE_PATH}${path}`, {
-    headers: {
-      "content-type": "application/json",
-      ...init?.headers,
-    },
-    ...init,
-  });
-}
+import { assert, type TestDb, request, withApp } from "#test/api-smoke-support.ts";
 
 export function bookmarkPayload(overrides: Record<string, unknown> = {}) {
   return {
@@ -50,17 +31,4 @@ export function bookmarkTagRowId(db: TestDb["db"], bookmarkId: number, tagId: nu
     .get();
 }
 
-export async function withApp(
-  run: (context: { app: ReturnType<typeof createApp>; db: TestDb["db"] }) => Promise<void>,
-) {
-  const database = await createMigratedTestDb();
-
-  try {
-    await run({
-      app: createApp({ db: database.db }),
-      db: database.db,
-    });
-  } finally {
-    database.close();
-  }
-}
+export { assert, request, withApp };
