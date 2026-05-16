@@ -25,6 +25,10 @@ _Avoid_: child bookmark, attachment, reference
 A bookmark intentionally hidden from public-facing views or exports.
 _Avoid_: secret link, hidden item
 
+**Bookmarklet**:
+A browser bookmark tool that starts saving the current page as a Bookmark.
+_Avoid_: extension, browser plugin, capture link
+
 ## Relationships
 
 - A **Bookmark** can have zero or more **Tags**
@@ -33,6 +37,7 @@ _Avoid_: secret link, hidden item
 - A **Bookmark** can have zero or more **Related Links**
 - A **Related Link** belongs to exactly one **Bookmark**
 - A **Private Bookmark** is a specialization of **Bookmark**
+- A **Bookmarklet** can start creating one **Bookmark**
 - A URL can identify at most one **Bookmark**
 
 ## Rules

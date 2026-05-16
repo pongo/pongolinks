@@ -9,6 +9,7 @@ import type { AppDb } from "./db/app-db";
 import { createBookmarkRoutes } from "./features/bookmarks/routes";
 import { createTagRoutes } from "./features/tags/routes";
 import { healthRoutes } from "./features/health/routes";
+import { createSearchRoutes } from "./features/search/routes";
 import { createRequestLoggingOptions, createTracingPlugin } from "./observability";
 
 export type CreateAppOptions = {
@@ -21,7 +22,11 @@ export const APP_BASE_PATH = "/pongolinks";
 
 function createApiRoutes(db: AppDb) {
   return new Elysia().group("/api", (api) =>
-    api.use(healthRoutes).use(createBookmarkRoutes({ db })).use(createTagRoutes({ db })),
+    api
+      .use(healthRoutes)
+      .use(createBookmarkRoutes({ db }))
+      .use(createTagRoutes({ db }))
+      .use(createSearchRoutes({ db })),
   );
 }
 

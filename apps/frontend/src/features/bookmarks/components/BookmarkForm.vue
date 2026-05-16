@@ -1,14 +1,21 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from "vue";
+import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
 
 import type { FormErrors } from "#/shared/api/errors.ts";
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
 import type { BookmarkDTO, EditableBookmarkPayload } from "../types";
 import BookmarkTagInput from "./BookmarkTagInput/BookmarkTagInput.vue";
+import type {
+  BookmarkFormInitialCreateValues,
+  BookmarkFormInitialFocusTarget,
+} from "./bookmark-form-state";
+import { resolveBookmarkFormInitialPayload } from "./bookmark-form-state";
 
 const props = defineProps<{
   bookmark?: BookmarkDTO;
   errors?: FormErrors;
+  initialCreateValues?: BookmarkFormInitialCreateValues;
+  initialFocusTarget?: BookmarkFormInitialFocusTarget;
   isDeleting?: boolean;
   isSaving: boolean;
   showDelete?: boolean;
@@ -21,23 +28,19 @@ const emit = defineEmits<{
   submit: [payload: EditableBookmarkPayload];
 }>();
 
-const form = reactive<EditableBookmarkPayload>({
-  url: "",
-  title: "",
-  description: "",
-  isPrivate: false,
-  tagsText: "",
-});
+const urlInput = ref<HTMLInputElement>();
+const tagsInput = ref<InstanceType<typeof BookmarkTagInput>>();
+const form = reactive<EditableBookmarkPayload>(resolveBookmarkFormInitialPayload(props));
 
 watch(
-  () => props.bookmark,
-  (bookmark) => {
-    form.url = bookmark?.url ?? "";
-    form.title = bookmark?.title ?? "";
-    form.description = bookmark?.description ?? "";
-    form.isPrivate = bookmark?.isPrivate ?? false;
-    const tagsText = bookmark?.tags.map((tag) => tag.name).join(" ") ?? "";
-    form.tagsText = tagsText ? `${tagsText} ` : "";
+  () => [props.bookmark, props.initialCreateValues],
+  () => {
+    const next = resolveBookmarkFormInitialPayload(props);
+    form.url = next.url;
+    form.title = next.title;
+    form.description = next.description;
+    form.isPrivate = next.isPrivate;
+    form.tagsText = next.tagsText;
   },
   { immediate: true },
 );
@@ -66,6 +69,22 @@ function deleteBookmark() {
 
   emit("delete");
 }
+
+async function autofocus() {
+  if (props.initialFocusTarget == null) return;
+
+  const focusByTarget: Record<BookmarkFormInitialFocusTarget, () => void> = {
+    tags: () => tagsInput.value?.focusInput(),
+    url: () => urlInput.value?.focus(),
+  };
+
+  await nextTick();
+  focusByTarget[props.initialFocusTarget]();
+}
+
+onMounted(async () => {
+  await autofocus();
+});
 </script>
 
 <template>
@@ -77,6 +96,7 @@ function deleteBookmark() {
     <label class="block">
       <span class="ui-text-emphasis mb-2 block text-sm font-semibold">URL</span>
       <input
+        ref="urlInput"
         v-model="form.url"
         class="ui-field w-full border px-3 py-2 text-sm transition outline-none focus:ring-2"
         type="url"
@@ -117,7 +137,7 @@ function deleteBookmark() {
       />
     </label>
 
-    <BookmarkTagInput v-model="form.tagsText" :tag-suggestions="tagSuggestions" />
+    <BookmarkTagInput ref="tagsInput" v-model="form.tagsText" :tag-suggestions="tagSuggestions" />
 
     <label class="ui-text-emphasis flex items-center gap-3 text-sm font-semibold">
       <input v-model="form.isPrivate" class="ui-checkbox-accent size-4" type="checkbox" />
