@@ -16,9 +16,9 @@ import {
   resolveCheckedBookmarkState,
   resolveCreateBookmarkState,
   type CreateBookmarkState,
-} from "../create-bookmark-flow";
-import { handleCreateBookmarkSuccess } from "../create-bookmark-success";
-import { diffUrls } from "../url-diff";
+} from "./create-bookmark-flow.ts";
+import { handleCreateBookmarkSuccess } from "./create-bookmark-success.ts";
+import { diffUrls } from "./url-diff.ts";
 import CreateBookmarkCheckingPanel from "./CreateBookmarkCheckingPanel.vue";
 import CreateBookmarkDuplicatePanel from "./CreateBookmarkDuplicatePanel.vue";
 import CreateBookmarkRelatedLinksPanel from "./CreateBookmarkRelatedLinksPanel.vue";
@@ -158,7 +158,7 @@ async function runUrlCheckIfNeeded() {
 <template>
   <main class="ui-page-text min-h-screen px-4 py-8 sm:px-6">
     <section class="mx-auto max-w-3xl">
-      <RouterLink class="ui-link text-sm font-semibold" to="/"> Back to bookmarks </RouterLink>
+      <RouterLink class="ui-link text-sm font-semibold" to="/"> Back to bookmarks</RouterLink>
       <h1 class="ui-text-strong mt-5 text-2xl font-bold">New bookmark</h1>
 
       <CreateBookmarkUrlChoicePanel

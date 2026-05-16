@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { handleCreateBookmarkSuccess } from "./create-bookmark-success";
+import { handleCreateBookmarkSuccess } from "./create-bookmark-success.ts";
 
 describe("create bookmark success behavior", () => {
   it("navigates to list for manual create", async () => {

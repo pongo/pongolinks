@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { diffUrls } from "./url-diff";
+import { diffUrls } from "./url-diff.ts";
 
 describe("url diff", () => {
   it("highlights removed query parameters", () => {

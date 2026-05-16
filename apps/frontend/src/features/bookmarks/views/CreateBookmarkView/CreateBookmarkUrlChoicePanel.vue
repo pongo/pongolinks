@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { UrlDiffSummary } from "../url-diff";
+import type { UrlDiffSummary } from "./url-diff.ts";
 
 defineProps<{
   originalUrl: string;

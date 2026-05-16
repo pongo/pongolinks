@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterLink } from "vue-router";
 
-import type { CreateBookmarkState } from "../create-bookmark-flow";
+import type { CreateBookmarkState } from "./create-bookmark-flow.ts";
 
 type RelatedLinksState = Extract<CreateBookmarkState, { kind: "related-link-matches" }>;
 

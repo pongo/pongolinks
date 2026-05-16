@@ -6,7 +6,7 @@ import {
   createInitialBookmarkPayload,
   resolveCheckedBookmarkState,
   resolveCreateBookmarkState,
-} from "./create-bookmark-flow";
+} from "./create-bookmark-flow.ts";
 
 describe("create bookmark flow", () => {
   it("trims incoming title from query", () => {
