@@ -115,6 +115,12 @@ watch(
 
         <BookmarkListPagination :pagination="pagination" />
       </template>
+
+      <footer class="mt-8 flex justify-end">
+        <RouterLink class="ui-muted-link text-sm font-semibold select-none" to="/tools">
+          Tools
+        </RouterLink>
+      </footer>
     </section>
   </main>
 </template>
