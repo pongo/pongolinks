@@ -1,4 +1,4 @@
-import type { BookmarkUrl } from "./bookmark-url.ts";
+import type { BookmarkUrl } from "#/domain/bookmark-url.ts";
 import type { TagName } from "./tag-name.ts";
 
 export type TagDTO = {

@@ -2,7 +2,7 @@ import { Elysia } from "elysia";
 import { z } from "zod";
 
 import type { AppDb } from "#/db/app-db.ts";
-import { BookmarkUrl } from "#/features/bookmarks/domain/bookmark-url.ts";
+import { BookmarkUrl } from "#/domain/bookmark-url.ts";
 import { getRouteLogger, logApiError } from "#/http/route-logging.ts";
 import { resultResponse } from "#/http/result-response.ts";
 import { SearchRepository } from "./search-repository.ts";

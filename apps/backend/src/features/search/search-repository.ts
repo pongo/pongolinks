@@ -5,8 +5,8 @@ import { Err, Ok } from "@pongolinks/shared/result";
 import { bookmarks, relatedLinks } from "@pongolinks/db/schema";
 
 import type { AppDb } from "#/db/app-db.ts";
+import type { BookmarkUrl } from "#/domain/bookmark-url.ts";
 import { type ApiError, unexpectedError } from "#/http/result-response.ts";
-import type { BookmarkUrl } from "#/features/bookmarks/domain/bookmark-url.ts";
 import type { BookmarkUrlCheckBookmark, BookmarkUrlCheckResult } from "./contracts.ts";
 
 function flipProtocol(url: string) {

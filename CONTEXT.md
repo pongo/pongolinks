@@ -8,6 +8,10 @@ pongolinks is a personal bookmark library for saving, organizing, and rediscover
 A saved primary link with title, description, visibility, timestamps, and optional organization metadata.
 _Avoid_: link, favorite, item
 
+**Bookmark URL**:
+The primary HTTP(S) URL that identifies a Bookmark.
+_Avoid_: link URL, saved URL, item URL
+
 **Tag**:
 A reusable label attached to bookmarks for organization and filtering.
 A Tag name is a single whitespace-free token; spaces separate multiple Tags in text entry.
@@ -38,7 +42,7 @@ _Avoid_: extension, browser plugin, capture link
 - A **Related Link** belongs to exactly one **Bookmark**
 - A **Private Bookmark** is a specialization of **Bookmark**
 - A **Bookmarklet** can start creating one **Bookmark**
-- A URL can identify at most one **Bookmark**
+- A **Bookmark URL** can identify at most one **Bookmark**
 
 ## Rules
 
