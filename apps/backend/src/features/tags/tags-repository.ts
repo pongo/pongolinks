@@ -1,4 +1,4 @@
-import { asc, desc, sql } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 import type { Result } from "@pongolinks/shared/result";
 import { Err, Ok } from "@pongolinks/shared/result";
 
@@ -13,18 +13,19 @@ export class TagsRepository {
 
   async list(): Promise<Result<{ tags: TagSummaryDTO[] }, ApiError>> {
     try {
-      const usageCount = sql<number>`count(${bookmarkTags.bookmarkId})`;
+      const usageCountSubQuery = this.db
+        .$count(bookmarkTags, eq(bookmarkTags.tagId, tags.id))
+        .as("usageCount");
+
       const rows = await this.db
         .select({
           id: tags.id,
           name: tags.name,
           nameLower: tags.nameLower,
-          usageCount,
+          usageCount: usageCountSubQuery,
         })
         .from(tags)
-        .leftJoin(bookmarkTags, sql`${bookmarkTags.tagId} = ${tags.id}`)
-        .groupBy(tags.id)
-        .orderBy(desc(usageCount), asc(tags.nameLower))
+        .orderBy(desc(usageCountSubQuery), asc(tags.nameLower))
         .all();
 
       return Ok({ tags: rows });
