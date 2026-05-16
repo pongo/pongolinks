@@ -163,7 +163,7 @@ async function runUrlCheckIfNeeded() {
 
         <div class="mt-4 grid gap-4">
           <button
-            class="ui-border ui-surface ui-text-emphasis w-full border px-4 py-4 text-left"
+            class="ui-border ui-surface ui-suggestion-hover ui-text-emphasis w-full border px-4 py-4 text-left transition"
             type="button"
             @click="chooseOriginalUrl"
           >
@@ -172,7 +172,7 @@ async function runUrlCheckIfNeeded() {
           </button>
 
           <button
-            class="ui-border ui-surface ui-text-emphasis w-full border px-4 py-4 text-left"
+            class="ui-border ui-surface ui-suggestion-hover ui-text-emphasis w-full border px-4 py-4 text-left transition"
             type="button"
             @click="chooseCleanedUrl"
           >
@@ -243,7 +243,7 @@ async function runUrlCheckIfNeeded() {
               Edit existing bookmark
             </RouterLink>
             <button
-              class="ui-border ui-surface ui-text-emphasis inline-flex min-h-10 items-center justify-center border px-4 text-sm font-semibold transition"
+              class="ui-border ui-surface ui-suggestion-hover ui-text-emphasis inline-flex min-h-10 items-center justify-center border px-4 text-sm font-semibold transition"
               type="button"
               @click="createAnywayFromDuplicate"
             >
@@ -272,7 +272,7 @@ async function runUrlCheckIfNeeded() {
             </li>
           </ul>
           <button
-            class="ui-border ui-surface ui-text-emphasis mt-4 inline-flex min-h-10 items-center justify-center border px-4 text-sm font-semibold transition"
+            class="ui-border ui-surface ui-suggestion-hover ui-text-emphasis mt-4 inline-flex min-h-10 items-center justify-center border px-4 text-sm font-semibold transition"
             type="button"
             @click="createAnywayFromRelatedLinks"
           >
