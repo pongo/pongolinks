@@ -20,6 +20,7 @@ describe("TagName", () => {
 
     expect(result.isOk).toBe(true);
     if (result.isOk) {
+      expect(result.value.name()).toBe("Article");
       expect(result.value.nameLower()).toBe("article");
     }
   });
