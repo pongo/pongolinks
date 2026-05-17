@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { RouterLink, useRoute } from "vue-router";
+import { RouterLink, useRoute, useRouter } from "vue-router";
 
 import { listBookmarks } from "../../api/api";
 import type {
@@ -10,9 +10,19 @@ import type {
 import { useDelayedFlag } from "#/shared/useDelayedFlag.ts";
 import BookmarkList from "./BookmarkList.vue";
 import BookmarkListPagination from "./BookmarkListPagination.vue";
-import { normalizeBookmarkListPageQuery } from "./pagination-window";
+import BookmarkListSearchField from "./BookmarkListSearchField.vue";
+import {
+  isFilterActive,
+  parseBookmarkListRouteQuery,
+  parseMiniQueryToState,
+  renderMiniQueryFromState,
+  toggleDomainFilter,
+  toggleIncludedTagFilter,
+  toBookmarkListRouteQuery,
+} from "./bookmark-list-query-state";
 
 const route = useRoute();
+const router = useRouter();
 const bookmarks = ref<BookmarkDTO[]>([]);
 const pagination = ref<BookmarkListPaginationState>({
   page: 1,
@@ -24,16 +34,35 @@ const pagination = ref<BookmarkListPaginationState>({
 });
 const isLoading = ref(true);
 const error = ref("");
-const currentPage = computed(() => normalizeBookmarkListPageQuery(route.query.page));
+const queryState = computed(() => parseBookmarkListRouteQuery(route.query));
+const searchText = ref("");
 const { isDelayed, start: startLoadingDelay, stop: stopLoadingDelay } = useDelayedFlag(1000);
+const isSearchActive = computed(() => isFilterActive(queryState.value));
 const shouldShowLoadingMessage = computed(
   () => isLoading.value && isDelayed.value && bookmarks.value.length === 0,
 );
 const shouldShowBookmarkContent = computed(() => !isLoading.value || bookmarks.value.length > 0);
+const isNoMatchingBookmarks = computed(
+  () => bookmarks.value.length === 0 && pagination.value.totalCount === 0 && isSearchActive.value,
+);
+const isNoBookmarksYet = computed(
+  () => bookmarks.value.length === 0 && pagination.value.totalCount === 0 && !isSearchActive.value,
+);
 
 watch(
-  currentPage,
-  async (page, _previousPage, onCleanup) => {
+  queryState,
+  (nextState) => {
+    const nextText = renderMiniQueryFromState(nextState);
+    if (nextText !== searchText.value) {
+      searchText.value = nextText;
+    }
+  },
+  { immediate: true },
+);
+
+watch(
+  queryState,
+  async (state, _previousState, onCleanup) => {
     let isCurrentRequest = true;
     startLoadingDelay();
 
@@ -45,7 +74,13 @@ watch(
     isLoading.value = true;
     error.value = "";
 
-    const result = await listBookmarks(page);
+    const result = await listBookmarks({
+      q: state.q ?? undefined,
+      tag: state.tags.length > 0 ? state.tags : undefined,
+      domain: state.domain ?? undefined,
+      url: state.url ?? undefined,
+      page: state.page,
+    });
 
     if (!isCurrentRequest) {
       return;
@@ -64,6 +99,45 @@ watch(
   },
   { immediate: true },
 );
+
+async function submitSearch() {
+  const next = parseMiniQueryToState(searchText.value);
+  await router.push({
+    path: "/",
+    query: toBookmarkListRouteQuery({
+      ...next,
+      page: 1,
+    }),
+  });
+}
+
+async function clearSearch() {
+  searchText.value = "";
+  await router.push("/");
+}
+
+function renderMiniQueryForContinuedInput(state: typeof queryState.value) {
+  const nextText = renderMiniQueryFromState(state);
+  return nextText === "" ? "" : `${nextText} `;
+}
+
+async function onTagClick(tagName: string) {
+  const nextState = toggleIncludedTagFilter(queryState.value, tagName);
+  await router.push({
+    path: "/",
+    query: toBookmarkListRouteQuery(nextState),
+  });
+  searchText.value = renderMiniQueryForContinuedInput(nextState);
+}
+
+async function onDomainClick(domain: string) {
+  const nextState = toggleDomainFilter(queryState.value, domain);
+  await router.push({
+    path: "/",
+    query: toBookmarkListRouteQuery(nextState),
+  });
+  searchText.value = renderMiniQueryForContinuedInput(nextState);
+}
 </script>
 
 <template>
@@ -82,6 +156,13 @@ watch(
         </RouterLink>
       </header>
 
+      <BookmarkListSearchField
+        v-model="searchText"
+        :is-search-active="isSearchActive"
+        @submit="submitSearch"
+        @clear="clearSearch"
+      />
+
       <p v-if="error" class="ui-danger-banner border-l-4 px-4 py-3 text-sm font-medium">
         {{ error }}
       </p>
@@ -93,13 +174,21 @@ watch(
           class="ui-border ui-surface border border-dashed px-5 py-8"
         >
           <h2 class="ui-text-strong text-lg font-semibold">
-            {{ pagination.totalCount === 0 ? "No bookmarks yet" : "No bookmarks on this page" }}
+            {{
+              isNoMatchingBookmarks
+                ? "No matching bookmarks"
+                : isNoBookmarksYet
+                  ? "No bookmarks yet"
+                  : "No bookmarks on this page"
+            }}
           </h2>
           <p class="ui-text-muted mt-2 text-sm">
             {{
-              pagination.totalCount === 0
-                ? "Save the first link you want to keep close."
-                : "Choose another page to continue browsing saved links."
+              isNoMatchingBookmarks
+                ? "Try another search or clear filters."
+                : isNoBookmarksYet
+                  ? "Save the first link you want to keep close."
+                  : "Choose another page to continue browsing saved links."
             }}
           </p>
           <RouterLink
@@ -111,9 +200,15 @@ watch(
           </RouterLink>
         </div>
 
-        <BookmarkList v-else :bookmarks="bookmarks" />
+        <BookmarkList
+          v-else
+          :bookmarks="bookmarks"
+          :query-state="queryState"
+          @tag-click="onTagClick"
+          @domain-click="onDomainClick"
+        />
 
-        <BookmarkListPagination :pagination="pagination" />
+        <BookmarkListPagination :pagination="pagination" :query-state="queryState" />
       </template>
 
       <footer class="ui-border-subtle mt-8 flex justify-end border-t pt-4">

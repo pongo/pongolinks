@@ -10,8 +10,8 @@ import { ApiError, resultResponse, type ApiErrorCode } from "#/http/result-respo
 import { BookmarkId } from "./domain/bookmark-id.ts";
 import { BookmarkEditor } from "./repository/bookmark-editor.ts";
 import { BookmarkReadRepository } from "./repository/bookmark-read-repository.ts";
+import { parseBookmarkListFiltersQuery } from "./bookmark-list-filters-query.ts";
 import { parseTagNames } from "./domain/tag-name.ts";
-import { normalizeBookmarkListPage } from "./pagination.ts";
 
 export type BookmarkRoutesOptions = {
   db: AppDb;
@@ -236,8 +236,16 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
           const { query, set } = context;
           const log = getRouteLogger(context);
 
-          const page = normalizeBookmarkListPage(query.page);
-          const result = await bookmarkReads.list(page);
+          const parsedFilters = parseBookmarkListFiltersQuery(query);
+          if (parsedFilters.isErr) {
+            logApiError(log, parsedFilters.error);
+            return resultResponse(parsedFilters, set);
+          }
+
+          const result = await bookmarkReads.list(
+            parsedFilters.value.page,
+            parsedFilters.value.filters,
+          );
           if (result.isErr) {
             logApiError(log, result.error);
           } else {
@@ -251,6 +259,10 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
         },
         {
           query: z.object({
+            q: z.string().optional(),
+            tag: z.union([z.string(), z.array(z.string())]).optional(),
+            domain: z.string().optional(),
+            url: z.string().optional(),
             page: z.string().optional(),
           }),
         },

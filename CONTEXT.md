@@ -21,6 +21,14 @@ _Avoid_: category, folder, label
 The number of current Bookmarks a Tag is attached to.
 _Avoid_: weight, rank, score
 
+**Bookmark Filter**:
+A strict condition that includes or excludes Bookmarks from a Bookmark list.
+_Avoid_: search term, query term
+
+**Bookmark Search Query**:
+Free-form text used to rediscover Bookmarks by matching their searchable content.
+_Avoid_: filter, tag filter
+
 **Related Link**:
 A secondary explicit HTTP(S) URL automatically extracted from a Bookmark description because it provides nearby or supporting context.
 _Avoid_: child bookmark, attachment, reference
@@ -38,6 +46,8 @@ _Avoid_: extension, browser plugin, capture link
 - A **Bookmark** can have zero or more **Tags**
 - A **Tag** can belong to zero or more **Bookmarks**
 - **Tag Popularity** is counted from a **Tag**'s current Bookmark attachments
+- A **Bookmark Filter** can include or exclude Bookmarks by their organization metadata or Bookmark URL host
+- A **Bookmark Search Query** can match a Bookmark's searchable content without requiring exact organization metadata
 - A **Bookmark** can have zero or more **Related Links**
 - A **Related Link** belongs to exactly one **Bookmark**
 - A **Private Bookmark** is a specialization of **Bookmark**

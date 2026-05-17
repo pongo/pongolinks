@@ -4,10 +4,13 @@ import { computed } from "vue";
 import { RouterLink, type RouteLocationRaw } from "vue-router";
 
 import type { BookmarkListPagination } from "../../types";
+import type { BookmarkListRouteState } from "./bookmark-list-query-state";
 import { createPaginationWindow, type PaginationWindowItem } from "./pagination-window";
+import { toBookmarkListRouteQuery } from "./bookmark-list-query-state";
 
 const props = defineProps<{
   pagination: BookmarkListPagination;
+  queryState: BookmarkListRouteState;
 }>();
 
 const paginationItems = computed(() =>
@@ -18,7 +21,13 @@ const paginationItems = computed(() =>
 );
 
 function bookmarkListRoute(page: number): RouteLocationRaw {
-  return page <= 1 ? "/" : { path: "/", query: { page: String(page) } };
+  return {
+    path: "/",
+    query: toBookmarkListRouteQuery({
+      ...props.queryState,
+      page: page <= 1 ? 1 : page,
+    }),
+  };
 }
 
 function previousPageRoute(): RouteLocationRaw {

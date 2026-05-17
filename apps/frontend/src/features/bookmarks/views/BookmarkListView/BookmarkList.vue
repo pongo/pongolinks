@@ -1,14 +1,21 @@
 <script setup lang="ts">
 import { LockIcon } from "@lucide/vue";
+import { APP_BASE_PATH } from "@pongolinks/shared/app-config";
 import { renderBookmarkDescriptionHtml } from "@pongolinks/shared/bookmark-description";
 import { RouterLink } from "vue-router";
 
 import type { BookmarkDTO } from "../../types";
+import type { BookmarkListRouteState } from "./bookmark-list-query-state";
 
 import { useAppVariants } from "#/variants.ts";
 
-defineProps<{
+const props = defineProps<{
   bookmarks: BookmarkDTO[];
+  queryState: BookmarkListRouteState;
+}>();
+const emit = defineEmits<{
+  tagClick: [tagName: string];
+  domainClick: [domain: string];
 }>();
 
 const { variants } = useAppVariants();
@@ -40,6 +47,20 @@ function formatBookmarkDomain(url: string) {
     return url;
   }
 }
+
+function isIncludedTagActive(tagName: string) {
+  const lower = tagName.toLocaleLowerCase("und");
+  return props.queryState.tags.some(
+    (tag) => !tag.startsWith("-") && tag.toLocaleLowerCase("und") === lower,
+  );
+}
+
+function isDomainActive(domain: string) {
+  return (
+    props.queryState.domain !== null &&
+    props.queryState.domain.toLocaleLowerCase("und") === domain.toLocaleLowerCase("und")
+  );
+}
 </script>
 
 <template>
@@ -69,14 +90,28 @@ function formatBookmarkDomain(url: string) {
             </a>
           </div>
           <div class="ui-text-muted mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-            <span class="break-all">{{ formatBookmarkDomain(bookmark.url) }}</span>
-            <span
+            <a
+              class="cursor-pointer break-all hover:underline"
+              :class="{
+                'ui-tag ui-tag-active border px-1.5 py-0.5 hover:no-underline!': isDomainActive(
+                  formatBookmarkDomain(bookmark.url),
+                ),
+              }"
+              :href="`${APP_BASE_PATH}/?domain=${encodeURIComponent(formatBookmarkDomain(bookmark.url))}`"
+              @click.left.exact.prevent="emit('domainClick', formatBookmarkDomain(bookmark.url))"
+            >
+              {{ formatBookmarkDomain(bookmark.url) }}
+            </a>
+            <a
               v-for="tag in bookmark.tags"
               :key="tag.id"
               class="ui-tag inline-flex max-w-full items-center border px-1.5 py-0.5 text-xs"
+              :class="{ 'ui-tag-active': isIncludedTagActive(tag.name) }"
+              :href="`${APP_BASE_PATH}/t/${encodeURIComponent(tag.nameLower)}`"
+              @click.left.exact.prevent="emit('tagClick', tag.name)"
             >
               {{ tag.name }}
-            </span>
+            </a>
           </div>
           <p
             v-if="bookmark.description"

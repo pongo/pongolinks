@@ -182,7 +182,7 @@ defineExpose({
       <ul
         v-if="tagSuggestionsOpen"
         :id="tagListboxId"
-        class="ui-border-subtle ui-surface absolute z-10 mt-1 max-h-56 w-full overflow-y-auto border py-1 shadow-sm"
+        class="ui-border-subtle ui-surface absolute z-10 mt-1 max-h-70 w-full overflow-y-auto border py-1 shadow-sm"
         role="listbox"
       >
         <li

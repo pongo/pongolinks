@@ -1,30 +1,5 @@
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
-
-export type TokenRange = {
-  start: number;
-  end: number;
-  value: string;
-};
-
-export function currentTagToken(value: string, cursor: number): TokenRange {
-  const safeCursor = Math.min(Math.max(cursor, 0), value.length);
-  let start = safeCursor;
-  let end = safeCursor;
-
-  while (start > 0 && !/\s/.test(value[start - 1] ?? "")) {
-    start -= 1;
-  }
-
-  while (end < value.length && !/\s/.test(value[end] ?? "")) {
-    end += 1;
-  }
-
-  return {
-    start,
-    end,
-    value: value.slice(start, end),
-  };
-}
+import { currentToken, replaceCurrentToken, type TokenRange } from "../tag-token-autocomplete";
 
 export function suggestTags(
   tags: TagSummaryDTO[],
@@ -32,8 +7,8 @@ export function suggestTags(
   cursor: number,
   limit = 7,
 ): TagSummaryDTO[] {
-  const token = currentTagToken(value, cursor);
-  const queryLower = token.value.toLocaleLowerCase();
+  const token = currentToken(value, cursor);
+  const queryLower = token.value.toLocaleLowerCase("und");
 
   if (!queryLower) {
     return [];
@@ -44,7 +19,7 @@ export function suggestTags(
     .concat(" ", value.slice(token.end))
     .split(/\s+/)
     .filter(Boolean)
-    .map((tag) => tag.toLocaleLowerCase());
+    .map((tag) => tag.toLocaleLowerCase("und"));
   const otherTokenSet = new Set(otherTokens);
 
   return tags
@@ -62,14 +37,5 @@ export function replaceCurrentTagToken(
   cursor: number,
   tagName: string,
 ): { value: string; cursor: number } {
-  const token = currentTagToken(value, cursor);
-  const before = value.slice(0, token.start);
-  const after = value.slice(token.end).replace(/^\s+/, "");
-  const inserted = `${tagName} `;
-  const nextValue = `${before}${inserted}${after}`;
-
-  return {
-    value: nextValue,
-    cursor: before.length + inserted.length,
-  };
+  return replaceCurrentToken(value, cursor, tagName);
 }
