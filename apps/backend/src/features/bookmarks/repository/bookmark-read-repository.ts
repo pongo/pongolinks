@@ -19,7 +19,7 @@ import {
 } from "../pagination.ts";
 
 type RepositoryDb = Pick<AppDb, "query">;
-type BookmarkListFilters = {
+export type BookmarkListFilters = {
   qTokens: string[];
   includeTagNamesLower: string[];
   excludeTagNamesLower: string[];
