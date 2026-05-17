@@ -1,5 +1,7 @@
 # Bookmarks Frontend Feature
 
+See `/docs/architecture.md` for project-wide vertical slice, import boundary, and frontend adapter rules.
+
 ## Responsibility
 
 This directory owns frontend behavior around Bookmarks, including route-level screens, reusable Bookmark UI, Bookmark
@@ -10,22 +12,3 @@ API adapters, and Bookmark-specific helper logic.
 Keep durable schema and migration changes in `packages/db`. Keep backend HTTP route behavior in the backend Bookmark
 feature. Keep Tag feature behavior in `features/tags`; Bookmark views may consume Tag summaries for the Bookmark editing
 workflow.
-
-## Entry Points
-
-- `api/` contains frontend API adapter functions for Bookmark endpoints.
-- `components/` contains reusable Bookmark UI that is not a route screen.
-- `components/BookmarkTagInput/` contains the Bookmark form Tag input and autocomplete helpers private to that
-  component.
-- `views/` contains route-level Bookmark screens registered from `src/router.ts`.
-- `views/BookmarkListView/` contains the Bookmark list screen and helpers private to that screen.
-- `types.ts` contains small Bookmark DTO and editable payload types shared within the slice.
-
-## Testing
-
-Add frontend tests next to the Bookmark component or adapter they verify, or use an app-level test location if the
-behavior crosses feature boundaries.
-
-## Conventions
-
-User-facing text must be in English. Use `Bookmark`, `Tag`, and `Related Link` according to `CONTEXT.md`.

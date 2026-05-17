@@ -1,5 +1,6 @@
 - проект использует архитектуру вертикальных срезов
 - монорепа bun workspaces и turborepo
+- See `/docs/architecture.md` for the project-wide architecture rules, import boundaries, error handling policy, and verification commands
 
 - apps/backend — Bun/Elysia server
 - apps/frontend — Vue SPA with Elysia Eden
