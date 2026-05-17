@@ -89,6 +89,36 @@ function bookmarkValidationErrorResponse(error: unknown, set: { status?: number 
   return Err(apiError);
 }
 
+function normalizeQueryTag(rawTag: string) {
+  const trimmed = rawTag.trim();
+  const isExcluded = trimmed.startsWith("-");
+  const value = isExcluded ? trimmed.slice(1) : trimmed;
+  const parsed = parseTagNames(value);
+  if (parsed.isErr) {
+    return parsed;
+  }
+
+  if (parsed.value.length !== 1) {
+    return Err(
+      new ApiError(
+        "Tag filters must be non-empty names without whitespace",
+        "bookmark.tags_invalid",
+        400,
+      ),
+    );
+  }
+  const tag = parsed.value[0];
+  if (!tag) {
+    return Err(new ApiError("Tag filters are invalid", "bookmark.validation_invalid", 400));
+  }
+
+  if (tag.nameLower().startsWith("-")) {
+    return Err(new ApiError("Tag filters are invalid", "bookmark.validation_invalid", 400));
+  }
+
+  return parsed;
+}
+
 export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
   const bookmarkEditor = new BookmarkEditor(db);
   const bookmarkReads = new BookmarkReadRepository(db);
@@ -237,7 +267,90 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
           const log = getRouteLogger(context);
 
           const page = normalizeBookmarkListPage(query.page);
-          const result = await bookmarkReads.list(page);
+          const qTokens =
+            typeof query.q === "string"
+              ? query.q
+                  .trim()
+                  .split(/\s+/u)
+                  .filter((token) => token.length > 0)
+              : [];
+          const domain = typeof query.domain === "string" ? query.domain.trim() : "";
+          const rawTags = Array.isArray(query.tag)
+            ? query.tag
+            : typeof query.tag === "string"
+              ? [query.tag]
+              : [];
+          const urlValue = typeof query.url === "string" ? query.url : undefined;
+
+          const hasUrlMode = typeof urlValue === "string" && urlValue.trim() !== "";
+          const hasMixedMode =
+            hasUrlMode && (qTokens.length > 0 || domain !== "" || rawTags.length > 0);
+          if (hasMixedMode) {
+            const mixedModeError = Err(
+              new ApiError(
+                "URL lookup mode cannot be combined with other filters",
+                "bookmark.validation_invalid",
+                400,
+              ),
+            );
+            logApiError(log, mixedModeError.error);
+            return resultResponse(mixedModeError, set);
+          }
+
+          const includeTagNamesLower = new Set<string>();
+          const excludeTagNamesLower = new Set<string>();
+          for (const rawTag of rawTags) {
+            const parsedTag = normalizeQueryTag(rawTag);
+            if (parsedTag.isErr) {
+              logApiError(log, parsedTag.error);
+              return resultResponse(parsedTag, set);
+            }
+
+            const trimmed = rawTag.trim();
+            const tagNameLower = parsedTag.value[0]?.nameLower();
+            if (!tagNameLower) {
+              const invalidTag = Err(
+                new ApiError("Tag filters are invalid", "bookmark.validation_invalid", 400),
+              );
+              logApiError(log, invalidTag.error);
+              return resultResponse(invalidTag, set);
+            }
+
+            if (trimmed.startsWith("-")) {
+              excludeTagNamesLower.add(tagNameLower);
+            } else {
+              includeTagNamesLower.add(tagNameLower);
+            }
+          }
+
+          const contradictoryTag = [...includeTagNamesLower].find((tag) =>
+            excludeTagNamesLower.has(tag),
+          );
+          if (contradictoryTag) {
+            const contradictionError = Err(
+              new ApiError(
+                "Tag filters cannot include and exclude the same tag",
+                "bookmark.validation_invalid",
+                400,
+              ),
+            );
+            logApiError(log, contradictionError.error);
+            return resultResponse(contradictionError, set);
+          }
+
+          const url = hasUrlMode ? BookmarkUrl.from(urlValue) : null;
+          if (url?.isErr) {
+            logApiError(log, url.error);
+            return resultResponse(url, set);
+          }
+
+          const result = await bookmarkReads.list(page, {
+            qTokens,
+            includeTagNamesLower: [...includeTagNamesLower].sort((a, b) => a.localeCompare(b)),
+            excludeTagNamesLower: [...excludeTagNamesLower].sort((a, b) => a.localeCompare(b)),
+            domain: domain === "" ? null : domain.toLocaleLowerCase("und"),
+            url: url?.value ?? null,
+          });
           if (result.isErr) {
             logApiError(log, result.error);
           } else {
@@ -251,6 +364,10 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
         },
         {
           query: z.object({
+            q: z.string().optional(),
+            tag: z.union([z.string(), z.array(z.string())]).optional(),
+            domain: z.string().optional(),
+            url: z.string().optional(),
             page: z.string().optional(),
           }),
         },

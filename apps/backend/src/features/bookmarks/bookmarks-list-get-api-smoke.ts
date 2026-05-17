@@ -364,4 +364,197 @@ await withApp(async ({ app, db }) => {
   );
 });
 
+await withApp(async ({ app }) => {
+  const includeTagError = await app.handle(request("/api/bookmarks?tag=has%20space"));
+  const includeTagBody = await includeTagError.json();
+  assert(includeTagError.status === 400, "invalid tag filter should return 400");
+  assert(includeTagBody.error.code === "bookmark.tags_invalid", "invalid tag filter should fail");
+
+  const conflictError = await app.handle(request("/api/bookmarks?tag=sqlite&tag=-sqlite"));
+  const conflictBody = await conflictError.json();
+  assert(conflictError.status === 400, "contradictory tags should return 400");
+  assert(
+    conflictBody.error.code === "bookmark.validation_invalid",
+    "contradictory tags should return validation error",
+  );
+
+  const mixedUrlError = await app.handle(
+    request("/api/bookmarks?url=https%3A%2F%2Fexample.com&tag=sqlite"),
+  );
+  const mixedUrlBody = await mixedUrlError.json();
+  assert(mixedUrlError.status === 400, "mixed url mode should return 400");
+  assert(
+    mixedUrlBody.error.code === "bookmark.validation_invalid",
+    "mixed url mode should return validation error",
+  );
+});
+
+await withApp(async ({ app, db }) => {
+  const first = await db
+    .insert(bookmarks)
+    .values({
+      url: "https://example.com/sqlite-and-vue",
+      title: "SQLite Guide",
+      description: "Includes https://ref.example.com/sqlite",
+      updatedAt: "2026-02-01 00:00:00",
+    })
+    .returning({ id: bookmarks.id })
+    .get();
+  const second = await db
+    .insert(bookmarks)
+    .values({
+      url: "https://example.com/vue-only",
+      title: "Vue Notes",
+      description: "Mentions sqlite and references https://ref.example.com/vue",
+      updatedAt: "2026-02-02 00:00:00",
+    })
+    .returning({ id: bookmarks.id })
+    .get();
+  const third = await db
+    .insert(bookmarks)
+    .values({
+      url: "https://sub.example.com/no-match",
+      title: "Other",
+      description: "Unrelated",
+      updatedAt: "2026-02-03 00:00:00",
+    })
+    .returning({ id: bookmarks.id })
+    .get();
+
+  const insertedTags = await db
+    .insert(tags)
+    .values([
+      { name: "SQLite", nameLower: "sqlite" },
+      { name: "Vue", nameLower: "vue" },
+      { name: "Old", nameLower: "old" },
+    ])
+    .returning({ id: tags.id, nameLower: tags.nameLower })
+    .all();
+  const tagByLower = new Map(insertedTags.map((tag) => [tag.nameLower, tag.id] as const));
+  await db
+    .insert(bookmarkTags)
+    .values([
+      { bookmarkId: first.id, tagId: tagByLower.get("sqlite")! },
+      { bookmarkId: first.id, tagId: tagByLower.get("vue")! },
+      { bookmarkId: second.id, tagId: tagByLower.get("vue")! },
+      { bookmarkId: second.id, tagId: tagByLower.get("old")! },
+      { bookmarkId: third.id, tagId: tagByLower.get("sqlite")! },
+    ])
+    .run();
+
+  const qResponse = await app.handle(request("/api/bookmarks?q=sqlite%20guide"));
+  const qBody = await qResponse.json();
+  assert(qResponse.status === 200, "q filter should return 200");
+  assert(qBody.value.bookmarks.length === 1, "q filter should use AND semantics");
+  assert(qBody.value.bookmarks[0].id === first.id, "q should match title/description tokens");
+
+  const qUrlResponse = await app.handle(request("/api/bookmarks?q=vue-only"));
+  const qUrlBody = await qUrlResponse.json();
+  assert(qUrlResponse.status === 200, "q URL filter should return 200");
+  assert(qUrlBody.value.bookmarks[0].id === second.id, "q should match bookmark URL");
+
+  const qRelatedResponse = await app.handle(request("/api/bookmarks?q=ref.example.com%2Fsqlite"));
+  const qRelatedBody = await qRelatedResponse.json();
+  assert(qRelatedResponse.status === 200, "q related-link filter should return 200");
+  assert(qRelatedBody.value.bookmarks[0].id === first.id, "q should match related link URL");
+
+  const qTagResponse = await app.handle(request("/api/bookmarks?q=vie"));
+  const qTagBody = await qTagResponse.json();
+  assert(qTagResponse.status === 200, "q tag filter should return 200");
+  assert(qTagBody.value.bookmarks.length === 0, "q should not fuzzy-match unrelated token");
+
+  const tagResponse = await app.handle(request("/api/bookmarks?tag=Vue&tag=sqlite&tag=vue"));
+  const tagBody = await tagResponse.json();
+  assert(tagResponse.status === 200, "include tags filter should return 200");
+  assert(tagBody.value.bookmarks.length === 1, "include tags should use AND and dedupe");
+  assert(tagBody.value.bookmarks[0].id === first.id, "include tags should return matching row");
+
+  const excludeTagResponse = await app.handle(request("/api/bookmarks?tag=vue&tag=-old"));
+  const excludeTagBody = await excludeTagResponse.json();
+  assert(excludeTagResponse.status === 200, "exclude tag filter should return 200");
+  assert(excludeTagBody.value.bookmarks.length === 1, "exclude tag should filter out old row");
+  assert(excludeTagBody.value.bookmarks[0].id === first.id, "exclude tag should keep non-excluded");
+
+  const domainResponse = await app.handle(request("/api/bookmarks?domain=example.com"));
+  const domainBody = await domainResponse.json();
+  assert(domainResponse.status === 200, "domain filter should return 200");
+  assert(domainBody.value.bookmarks.length === 2, "domain should match exact host only");
+  assert(
+    !domainBody.value.bookmarks.some((bookmark: { id: number }) => bookmark.id === third.id),
+    "domain should not match subdomains",
+  );
+  assert(domainBody.value.pagination.totalCount === 2, "domain pagination should reflect filters");
+
+  const domainPorted = await db
+    .insert(bookmarks)
+    .values({
+      url: "http://example.com:8080/ported",
+      title: "Ported",
+      updatedAt: "2026-02-04 00:00:00",
+    })
+    .returning({ id: bookmarks.id })
+    .get();
+  const domainPortResponse = await app.handle(request("/api/bookmarks?domain=example.com"));
+  const domainPortBody = await domainPortResponse.json();
+  assert(domainPortResponse.status === 200, "domain with port should return 200");
+  assert(
+    domainPortBody.value.bookmarks.some(
+      (bookmark: { id: number }) => bookmark.id === domainPorted.id,
+    ),
+    "domain should match optional ports",
+  );
+});
+
+await withApp(async ({ app }) => {
+  await app.handle(
+    request("/api/bookmarks", {
+      method: "POST",
+      body: JSON.stringify({
+        url: "https://example.com/exact-check",
+        title: "Exact",
+        description: "Includes http://related.example.com/url-match",
+        isPrivate: false,
+        tagsText: "",
+      }),
+    }),
+  );
+
+  const exactResponse = await app.handle(
+    request("/api/bookmarks?url=https%3A%2F%2Fexample.com%2Fexact-check"),
+  );
+  const exactBody = await exactResponse.json();
+  assert(exactResponse.status === 200, "exact url lookup should return 200");
+  assert(exactBody.value.bookmarks.length === 1, "exact url lookup should return one row");
+  assert(
+    exactBody.value.bookmarks[0].url === "https://example.com/exact-check",
+    "exact url lookup should return exact bookmark",
+  );
+
+  const alternateResponse = await app.handle(
+    request("/api/bookmarks?url=http%3A%2F%2Fexample.com%2Fexact-check"),
+  );
+  const alternateBody = await alternateResponse.json();
+  assert(alternateResponse.status === 200, "alternate url lookup should return 200");
+  assert(
+    alternateBody.value.bookmarks[0].url === "https://example.com/exact-check",
+    "alternate url lookup should resolve bookmark",
+  );
+
+  const relatedResponse = await app.handle(
+    request("/api/bookmarks?url=https%3A%2F%2Frelated.example.com%2Furl-match"),
+  );
+  const relatedBody = await relatedResponse.json();
+  assert(relatedResponse.status === 200, "related url lookup should return 200");
+  assert(relatedBody.value.bookmarks.length === 1, "related url lookup should return bookmarks");
+  assert(
+    relatedBody.value.pagination.totalCount === 1,
+    "url lookup pagination should reflect filtered result",
+  );
+  assert(Array.isArray(relatedBody.value.bookmarks[0].tags), "url lookup should include tags");
+  assert(
+    Array.isArray(relatedBody.value.bookmarks[0].relatedLinks),
+    "url lookup should include related links",
+  );
+});
+
 console.log("bookmark list/get api smoke passed");
