@@ -203,3 +203,30 @@ export function toggleDomainFilter(
     page: 1,
   };
 }
+
+export function parseTagShortcutInput(input: string) {
+  const tokens = input
+    .split(/[\s+/]+/u)
+    .map((token) => token.trim())
+    .filter((token) => token.length > 0);
+
+  return dedupeTags(tokens);
+}
+
+export function buildTagShortcutReplaceTarget(rawInput: string) {
+  const tags = parseTagShortcutInput(rawInput);
+  if (tags.length === 0) {
+    return { path: "/" as const };
+  }
+
+  return {
+    path: "/" as const,
+    query: toBookmarkListRouteQuery({
+      q: null,
+      tags,
+      domain: null,
+      url: null,
+      page: 1,
+    }),
+  };
+}

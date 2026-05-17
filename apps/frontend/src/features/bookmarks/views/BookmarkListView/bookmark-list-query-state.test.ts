@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildTagShortcutReplaceTarget,
   isFilterActive,
   parseBookmarkListRouteQuery,
   parseMiniQueryToState,
+  parseTagShortcutInput,
   renderMiniQueryFromState,
   toggleDomainFilter,
   toggleIncludedTagFilter,
@@ -181,5 +183,30 @@ describe("bookmark list query state", () => {
     expect(unset.tags).toEqual(["vue", "-old"]);
     expect(unset.q).toBe("sqlite");
     expect(unset.page).toBe(1);
+  });
+
+  it("parses tag shortcut input with whitespace, plus and slash separators", () => {
+    expect(parseTagShortcutInput("sqlite vue -old")).toEqual(["sqlite", "vue", "-old"]);
+    expect(parseTagShortcutInput("sqlite+vue+-old")).toEqual(["sqlite", "vue", "-old"]);
+    expect(parseTagShortcutInput("sqlite/vue/-old")).toEqual(["sqlite", "vue", "-old"]);
+  });
+
+  it("ignores empty shortcut tokens and keeps include/exclude prefixes", () => {
+    expect(parseTagShortcutInput("  sqlite  +  / -old  ")).toEqual(["sqlite", "-old"]);
+  });
+
+  it("builds replace target for non-empty shortcut input", () => {
+    expect(buildTagShortcutReplaceTarget("sqlite+vue+-old")).toEqual({
+      path: "/",
+      query: {
+        tag: ["sqlite", "vue", "-old"],
+      },
+    });
+  });
+
+  it("builds root replace target for empty shortcut input", () => {
+    expect(buildTagShortcutReplaceTarget("   + /  ")).toEqual({
+      path: "/",
+    });
   });
 });
