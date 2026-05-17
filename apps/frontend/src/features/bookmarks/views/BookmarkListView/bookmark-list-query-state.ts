@@ -155,3 +155,51 @@ export function toBookmarkListRouteQuery(state: BookmarkListRouteState): Locatio
 export function isFilterActive(state: BookmarkListRouteState) {
   return Boolean(state.q || state.domain || state.url || state.tags.length > 0);
 }
+
+export function toggleIncludedTagFilter(
+  state: BookmarkListRouteState,
+  tagName: string,
+): BookmarkListRouteState {
+  const normalized = tagName.trim();
+  if (!normalized) {
+    return state;
+  }
+
+  const lower = normalized.toLocaleLowerCase("und");
+  const existingIndex = state.tags.findIndex(
+    (tag) => !tag.startsWith("-") && tag.toLocaleLowerCase("und") === lower,
+  );
+
+  const nextTags =
+    existingIndex >= 0
+      ? state.tags.filter((_tag, index) => index !== existingIndex)
+      : dedupeTags([...state.tags, normalized]);
+
+  return {
+    ...state,
+    tags: nextTags,
+    url: null,
+    page: 1,
+  };
+}
+
+export function toggleDomainFilter(
+  state: BookmarkListRouteState,
+  domain: string,
+): BookmarkListRouteState {
+  const normalized = domain.trim();
+  if (!normalized) {
+    return state;
+  }
+
+  const sameDomain =
+    state.domain !== null &&
+    state.domain.toLocaleLowerCase("und") === normalized.toLocaleLowerCase("und");
+
+  return {
+    ...state,
+    domain: sameDomain ? null : normalized,
+    url: null,
+    page: 1,
+  };
+}

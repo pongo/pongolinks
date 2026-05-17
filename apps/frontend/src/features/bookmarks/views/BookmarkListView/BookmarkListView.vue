@@ -15,6 +15,8 @@ import {
   parseBookmarkListRouteQuery,
   parseMiniQueryToState,
   renderMiniQueryFromState,
+  toggleDomainFilter,
+  toggleIncludedTagFilter,
   toBookmarkListRouteQuery,
 } from "./bookmark-list-query-state";
 
@@ -112,6 +114,22 @@ async function clearSearch() {
   searchText.value = "";
   await router.push("/");
 }
+
+async function onTagClick(tagName: string) {
+  const nextState = toggleIncludedTagFilter(queryState.value, tagName);
+  await router.push({
+    path: "/",
+    query: toBookmarkListRouteQuery(nextState),
+  });
+}
+
+async function onDomainClick(domain: string) {
+  const nextState = toggleDomainFilter(queryState.value, domain);
+  await router.push({
+    path: "/",
+    query: toBookmarkListRouteQuery(nextState),
+  });
+}
 </script>
 
 <template>
@@ -183,7 +201,13 @@ async function clearSearch() {
           </RouterLink>
         </div>
 
-        <BookmarkList v-else :bookmarks="bookmarks" />
+        <BookmarkList
+          v-else
+          :bookmarks="bookmarks"
+          :query-state="queryState"
+          @tag-click="onTagClick"
+          @domain-click="onDomainClick"
+        />
 
         <BookmarkListPagination :pagination="pagination" :query-state="queryState" />
       </template>

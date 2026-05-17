@@ -5,6 +5,8 @@ import {
   parseBookmarkListRouteQuery,
   parseMiniQueryToState,
   renderMiniQueryFromState,
+  toggleDomainFilter,
+  toggleIncludedTagFilter,
   toBookmarkListRouteQuery,
 } from "./bookmark-list-query-state";
 
@@ -127,5 +129,57 @@ describe("bookmark list query state", () => {
         page: 1,
       }),
     ).toBe(true);
+  });
+
+  it("toggles include tag filter and resets page while clearing url mode", () => {
+    const added = toggleIncludedTagFilter(
+      {
+        q: "sqlite",
+        tags: ["vue"],
+        domain: "example.com",
+        url: "https://example.com",
+        page: 3,
+      },
+      "react",
+    );
+    expect(added).toEqual({
+      q: "sqlite",
+      tags: ["vue", "react"],
+      domain: "example.com",
+      url: null,
+      page: 1,
+    });
+
+    const removed = toggleIncludedTagFilter(added, "react");
+    expect(removed.tags).toEqual(["vue"]);
+    expect(removed.page).toBe(1);
+    expect(removed.url).toBeNull();
+  });
+
+  it("toggles domain filter and resets page while preserving q/tags", () => {
+    const set = toggleDomainFilter(
+      {
+        q: "sqlite",
+        tags: ["vue", "-old"],
+        domain: null,
+        url: "https://example.com",
+        page: 4,
+      },
+      "example.com",
+    );
+
+    expect(set).toEqual({
+      q: "sqlite",
+      tags: ["vue", "-old"],
+      domain: "example.com",
+      url: null,
+      page: 1,
+    });
+
+    const unset = toggleDomainFilter(set, "example.com");
+    expect(unset.domain).toBeNull();
+    expect(unset.tags).toEqual(["vue", "-old"]);
+    expect(unset.q).toBe("sqlite");
+    expect(unset.page).toBe(1);
   });
 });

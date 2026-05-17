@@ -4,11 +4,17 @@ import { renderBookmarkDescriptionHtml } from "@pongolinks/shared/bookmark-descr
 import { RouterLink } from "vue-router";
 
 import type { BookmarkDTO } from "../../types";
+import type { BookmarkListRouteState } from "./bookmark-list-query-state";
 
 import { useAppVariants } from "#/variants.ts";
 
-defineProps<{
+const props = defineProps<{
   bookmarks: BookmarkDTO[];
+  queryState: BookmarkListRouteState;
+}>();
+const emit = defineEmits<{
+  tagClick: [tagName: string];
+  domainClick: [domain: string];
 }>();
 
 const { variants } = useAppVariants();
@@ -40,6 +46,20 @@ function formatBookmarkDomain(url: string) {
     return url;
   }
 }
+
+function isIncludedTagActive(tagName: string) {
+  const lower = tagName.toLocaleLowerCase("und");
+  return props.queryState.tags.some(
+    (tag) => !tag.startsWith("-") && tag.toLocaleLowerCase("und") === lower,
+  );
+}
+
+function isDomainActive(domain: string) {
+  return (
+    props.queryState.domain !== null &&
+    props.queryState.domain.toLocaleLowerCase("und") === domain.toLocaleLowerCase("und")
+  );
+}
 </script>
 
 <template>
@@ -69,14 +89,28 @@ function formatBookmarkDomain(url: string) {
             </a>
           </div>
           <div class="ui-text-muted mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-            <span class="break-all">{{ formatBookmarkDomain(bookmark.url) }}</span>
-            <span
+            <button
+              type="button"
+              class="break-all underline decoration-dotted underline-offset-2"
+              :class="{
+                'ui-action px-1 py-0.5 no-underline': isDomainActive(
+                  formatBookmarkDomain(bookmark.url),
+                ),
+              }"
+              @click="emit('domainClick', formatBookmarkDomain(bookmark.url))"
+            >
+              {{ formatBookmarkDomain(bookmark.url) }}
+            </button>
+            <button
               v-for="tag in bookmark.tags"
               :key="tag.id"
+              type="button"
               class="ui-tag inline-flex max-w-full items-center border px-1.5 py-0.5 text-xs"
+              :class="{ 'ui-action': isIncludedTagActive(tag.name) }"
+              @click="emit('tagClick', tag.name)"
             >
               {{ tag.name }}
-            </span>
+            </button>
           </div>
           <p
             v-if="bookmark.description"
