@@ -3,6 +3,21 @@ import { bookmarks, bookmarkTags, relatedLinks, tags } from "@pongolinks/db/sche
 import { assert, request, withApp } from "./bookmarks-api-smoke-support";
 import { BOOKMARK_LIST_PAGE_SIZE } from "./pagination";
 
+function assertPrivateRevalidationHeaders(response: Response) {
+  const etag = response.headers.get("etag");
+  const cacheControl = response.headers.get("cache-control");
+  const vary = response.headers.get("vary");
+
+  assert(etag, "cacheable response should include etag");
+  assert(
+    cacheControl === "private, no-cache",
+    "cacheable response should require private revalidation",
+  );
+  assert(vary?.includes("Authorization"), "cacheable response should vary by Authorization");
+
+  return etag;
+}
+
 await withApp(async ({ app, db }) => {
   await db
     .insert(bookmarks)
@@ -46,6 +61,53 @@ await withApp(async ({ app, db }) => {
     body.value.bookmarks[0].relatedLinks.length === 0,
     "list should return empty related links when none exist",
   );
+});
+
+await withApp(async ({ app, db }) => {
+  await db
+    .insert(bookmarks)
+    .values({
+      url: "https://example.com/cacheable",
+      title: "Cacheable",
+      updatedAt: "2020-01-01 00:00:00",
+    })
+    .run();
+
+  const response = await app.handle(request("/api/bookmarks"));
+  const etag = assertPrivateRevalidationHeaders(response);
+
+  const revalidatedResponse = await app.handle(
+    request("/api/bookmarks", {
+      headers: {
+        "if-none-match": etag,
+      },
+    }),
+  );
+  const revalidatedBody = await revalidatedResponse.text();
+
+  assert(revalidatedResponse.status === 304, "matching bookmark list etag should return 304");
+  assert(revalidatedBody.length === 0, "304 bookmark list response should not include a body");
+
+  await db
+    .insert(bookmarks)
+    .values({
+      url: "https://example.com/cacheable-new",
+      title: "Cacheable New",
+      updatedAt: "2021-01-01 00:00:00",
+    })
+    .run();
+
+  const changedResponse = await app.handle(
+    request("/api/bookmarks", {
+      headers: {
+        "if-none-match": etag,
+      },
+    }),
+  );
+  const changedEtag = assertPrivateRevalidationHeaders(changedResponse);
+
+  assert(changedResponse.status === 200, "changed bookmark list should return 200");
+  assert(changedEtag !== etag, "changed bookmark list should return a new etag");
 });
 
 await withApp(async ({ app, db }) => {
@@ -220,6 +282,7 @@ await withApp(async ({ app, db }) => {
 await withApp(async ({ app }) => {
   const response = await app.handle(request("/api/bookmarks"));
   const body = await response.json();
+  const etag = assertPrivateRevalidationHeaders(response);
 
   assert(response.status === 200, "empty list should return 200");
   assert(body.value.bookmarks.length === 0, "empty list should return no bookmarks");
@@ -231,6 +294,16 @@ await withApp(async ({ app }) => {
     "empty list should not have previous page",
   );
   assert(body.value.pagination.hasNextPage === false, "empty list should not have next page");
+
+  const revalidatedResponse = await app.handle(
+    request("/api/bookmarks", {
+      headers: {
+        "if-none-match": etag,
+      },
+    }),
+  );
+
+  assert(revalidatedResponse.status === 304, "empty bookmark list etag should return 304");
 });
 
 await withApp(async ({ app }) => {
@@ -274,6 +347,11 @@ await withApp(async ({ app, db }) => {
   const body = await response.json();
 
   assert(response.status === 200, "get with tags should return 200");
+  assert(!response.headers.has("etag"), "get bookmark by id should not include etag");
+  assert(
+    !response.headers.has("cache-control"),
+    "get bookmark by id should not include cache-control",
+  );
   assert(body.value.tags[0].nameLower === "alpha", "get should sort tags by nameLower");
   assert(body.value.tags[1].nameLower === "zed", "get should return all tags");
   assert(

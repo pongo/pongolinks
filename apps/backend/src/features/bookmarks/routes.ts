@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import type { AppDb } from "#/db/app-db.ts";
 import { BookmarkUrl } from "#/domain/bookmark-url.ts";
+import { privateApiRevalidationCache } from "#/http/cache.ts";
 import { getRouteLogger, logApiError } from "#/http/route-logging.ts";
 import { ApiError, resultResponse, type ApiErrorCode } from "#/http/result-response.ts";
 import { BookmarkId } from "./domain/bookmark-id.ts";
@@ -98,31 +99,6 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
         return bookmarkValidationErrorResponse(error, set);
       }
     })
-    .get(
-      "/bookmarks",
-      async (context) => {
-        const { query, set } = context;
-        const log = getRouteLogger(context);
-
-        const page = normalizeBookmarkListPage(query.page);
-        const result = await bookmarkReads.list(page);
-        if (result.isErr) {
-          logApiError(log, result.error);
-        } else {
-          log.set({
-            bookmarks: { count: result.value.bookmarks.length },
-            pagination: result.value.pagination,
-          });
-        }
-
-        return resultResponse(result, set);
-      },
-      {
-        query: z.object({
-          page: z.string().optional(),
-        }),
-      },
-    )
     .post(
       "/bookmarks",
       async (context) => {
@@ -252,5 +228,32 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
       {
         params: bookmarkIdParamsSchema,
       },
+    )
+    .use(
+      new Elysia({ name: "bookmark-cacheable-read-routes" }).use(privateApiRevalidationCache()).get(
+        "/bookmarks",
+        async (context) => {
+          const { query, set } = context;
+          const log = getRouteLogger(context);
+
+          const page = normalizeBookmarkListPage(query.page);
+          const result = await bookmarkReads.list(page);
+          if (result.isErr) {
+            logApiError(log, result.error);
+          } else {
+            log.set({
+              bookmarks: { count: result.value.bookmarks.length },
+              pagination: result.value.pagination,
+            });
+          }
+
+          return resultResponse(result, set);
+        },
+        {
+          query: z.object({
+            page: z.string().optional(),
+          }),
+        },
+      ),
     );
 }

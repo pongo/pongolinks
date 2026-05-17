@@ -24,9 +24,9 @@ function createApiRoutes(db: AppDb) {
   return new Elysia().group("/api", (api) =>
     api
       .use(healthRoutes)
+      .use(createSearchRoutes({ db }))
       .use(createBookmarkRoutes({ db }))
-      .use(createTagRoutes({ db }))
-      .use(createSearchRoutes({ db })),
+      .use(createTagRoutes({ db })),
   );
 }
 

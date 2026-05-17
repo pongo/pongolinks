@@ -29,6 +29,8 @@ await withApp(async ({ app }) => {
   const body = await response.json();
 
   assert(response.status === 200, "exact match should return 200");
+  assert(!response.headers.has("etag"), "search check should not include etag");
+  assert(!response.headers.has("cache-control"), "search check should not include cache-control");
   assert(body.isOk === true, "exact match should return Ok result");
   assert(body.value.status === "exact-bookmark", "exact match should return exact-bookmark");
   assert(
