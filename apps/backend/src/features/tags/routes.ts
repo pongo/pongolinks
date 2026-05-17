@@ -98,20 +98,6 @@ export function createTagRoutes({ db }: TagRoutesOptions) {
         return tagValidationErrorResponse(error, set);
       }
     })
-    .use(privateApiRevalidationCache())
-    .get("/tags", async (context) => {
-      const { set } = context;
-      const log = getRouteLogger(context);
-
-      const result = await repository.list();
-      if (result.isErr) {
-        logApiError(log, result.error);
-      } else {
-        log.set({ tags: { count: result.value.tags.length } });
-      }
-
-      return resultResponse(result, set);
-    })
     .get("/tags/untagged-bookmarks", async (context) => {
       const { set } = context;
       const log = getRouteLogger(context);
@@ -187,5 +173,22 @@ export function createTagRoutes({ db }: TagRoutesOptions) {
       {
         params: tagIdParamsSchema,
       },
+    )
+    .use(
+      new Elysia({ name: "tag-cacheable-read-routes" })
+        .use(privateApiRevalidationCache())
+        .get("/tags", async (context) => {
+          const { set } = context;
+          const log = getRouteLogger(context);
+
+          const result = await repository.list();
+          if (result.isErr) {
+            logApiError(log, result.error);
+          } else {
+            log.set({ tags: { count: result.value.tags.length } });
+          }
+
+          return resultResponse(result, set);
+        }),
     );
 }
