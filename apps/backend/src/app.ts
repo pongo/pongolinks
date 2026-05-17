@@ -3,6 +3,7 @@ import { Elysia } from "elysia";
 import { evlog } from "evlog/elysia";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { APP_BASE_PATH } from "@pongolinks/shared/app-config";
 
 import { config } from "./config";
 import type { AppDb } from "./db/app-db";
@@ -18,7 +19,7 @@ export type CreateAppOptions = {
   serveFrontend?: boolean;
 };
 
-export const APP_BASE_PATH = "/pongolinks";
+export { APP_BASE_PATH };
 
 function createApiRoutes(db: AppDb) {
   return new Elysia().group("/api", (api) =>

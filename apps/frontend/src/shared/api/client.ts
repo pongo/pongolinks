@@ -1,9 +1,10 @@
 import { edenTreaty } from "@elysiajs/eden";
 import type { EdenTreaty } from "@elysiajs/eden/treaty";
 import type { ApiRoutes } from "@pongolinks/backend/contract";
+import { APP_BASE_PATH } from "@pongolinks/shared/app-config";
 import { Err, type Result, isResult } from "@pongolinks/shared/result";
 
-export const apiClient: EdenTreaty.Create<ApiRoutes> = edenTreaty<ApiRoutes>("/pongolinks");
+export const apiClient: EdenTreaty.Create<ApiRoutes> = edenTreaty<ApiRoutes>(APP_BASE_PATH);
 
 export type EdenApiResponse = {
   data: unknown;
