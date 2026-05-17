@@ -4,6 +4,7 @@ import { APP_BASE_PATH } from "@pongolinks/shared/app-config";
 import { computed, nextTick, onMounted, ref } from "vue";
 import type { ComponentPublicInstance } from "vue";
 
+import { useDelayedFlag } from "#/shared/useDelayedFlag.ts";
 import { deleteTag, listTags, updateTag } from "../api";
 import type { TagSummaryDTO } from "../types";
 
@@ -16,6 +17,7 @@ const editingTag = ref<TagSummaryDTO | null>(null);
 const editingName = ref("");
 const editingError = ref("");
 const editingNameInput = ref<HTMLInputElement | null>(null);
+const { isDelayed, start: startLoadingDelay, stop: stopLoadingDelay } = useDelayedFlag(500);
 
 function setEditingNameInputRef(element: Element | ComponentPublicInstance | null) {
   if (element instanceof HTMLInputElement) {
@@ -39,16 +41,22 @@ const isEmptyState = computed(() => !isLoading.value && tags.value.length === 0)
 const isFilterEmptyState = computed(
   () => !isLoading.value && tags.value.length > 0 && filteredTags.value.length === 0,
 );
+const shouldShowLoadingMessage = computed(
+  () => isLoading.value && isDelayed.value && tags.value.length === 0,
+);
 
 onMounted(async () => {
   await loadTags();
 });
 
 async function loadTags() {
+  startLoadingDelay();
   isLoading.value = true;
   error.value = "";
 
   const result = await listTags();
+  stopLoadingDelay();
+
   if (result.isErr) {
     error.value = result.error.formErrors.form ?? result.error.message;
   } else {
@@ -135,7 +143,7 @@ async function onDelete(tag: TagSummaryDTO) {
       type="text"
     />
 
-    <p v-if="isLoading" class="ui-text-muted mt-4 text-sm">Loading tags...</p>
+    <p v-if="shouldShowLoadingMessage" class="ui-text-muted mt-4 text-sm">Loading tags...</p>
     <p v-else-if="isEmptyState" class="ui-text-muted mt-4 text-sm">No tags yet.</p>
     <p v-else-if="isFilterEmptyState" class="ui-text-muted mt-4 text-sm">
       No tags match this filter.
