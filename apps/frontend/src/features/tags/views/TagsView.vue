@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { PencilIcon, Trash2Icon } from "@lucide/vue";
 import { APP_BASE_PATH } from "@pongolinks/shared/app-config";
-import { computed, onMounted, ref } from "vue";
+import { computed, nextTick, onMounted, ref } from "vue";
+import type { ComponentPublicInstance } from "vue";
 import { RouterLink } from "vue-router";
 
 import { deleteTag, listTags, listUntaggedBookmarks, updateTag } from "../api";
@@ -18,6 +19,18 @@ const isSaving = ref(false);
 const editingTag = ref<TagSummaryDTO | null>(null);
 const editingName = ref("");
 const editingError = ref("");
+const editingNameInput = ref<HTMLInputElement | null>(null);
+
+function setEditingNameInputRef(
+  element: Element | ComponentPublicInstance | null,
+) {
+  if (element instanceof HTMLInputElement) {
+    editingNameInput.value = element;
+    return;
+  }
+
+  editingNameInput.value = null;
+}
 
 const filteredTags = computed(() => {
   const token = filterText.value.trim().toLocaleLowerCase("und");
@@ -64,20 +77,22 @@ async function loadPageData() {
   isLoading.value = false;
 }
 
-function openEditDialog(tag: TagSummaryDTO) {
+async function openEditDialog(tag: TagSummaryDTO) {
   editingTag.value = tag;
   editingName.value = tag.name;
   editingError.value = "";
+  await nextTick();
+  editingNameInput.value?.focus();
 }
 
-function closeEditDialog() {
+function closeEditInline() {
   editingTag.value = null;
   editingName.value = "";
   editingError.value = "";
   isSaving.value = false;
 }
 
-async function saveEdit() {
+async function saveEditInline() {
   if (!editingTag.value) {
     return;
   }
@@ -92,8 +107,21 @@ async function saveEdit() {
     return;
   }
 
-  closeEditDialog();
+  closeEditInline();
   await reloadTagsAndMaybeUntagged();
+}
+
+function onEditInputKeydown(event: KeyboardEvent) {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    void saveEditInline();
+    return;
+  }
+
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeEditInline();
+  }
 }
 
 async function onDelete(tag: TagSummaryDTO) {
@@ -203,6 +231,7 @@ async function reloadTagsAndMaybeUntagged() {
                   class="tag-icon-button"
                   type="button"
                   :aria-label="`Edit tag ${tag.name}`"
+                  :disabled="isSaving"
                   @click="openEditDialog(tag)"
                 >
                   <PencilIcon class="size-4" aria-hidden="true" />
@@ -211,6 +240,7 @@ async function reloadTagsAndMaybeUntagged() {
                   class="tag-icon-button tag-icon-button-danger"
                   type="button"
                   :aria-label="`Delete tag ${tag.name}`"
+                  :disabled="isSaving || editingTag?.id === tag.id"
                   @click="onDelete(tag)"
                 >
                   <Trash2Icon class="size-4" aria-hidden="true" />
@@ -218,7 +248,38 @@ async function reloadTagsAndMaybeUntagged() {
               </div>
               <span class="ui-text-muted text-xs">{{ tag.usageCount }}</span>
             </div>
+
+            <div v-if="editingTag?.id === tag.id" class="tag-inline-editor min-w-0">
+              <div class="tag-inline-editor-controls">
+                <input
+                  :ref="setEditingNameInputRef"
+                  v-model="editingName"
+                  class="ui-field tag-inline-editor-input min-h-10 border px-3 text-sm"
+                  type="text"
+                  :disabled="isSaving"
+                  @keydown="onEditInputKeydown"
+                />
+                <button
+                  class="ui-action inline-flex min-h-10 items-center justify-center px-3 text-sm font-semibold transition"
+                  type="button"
+                  :disabled="isSaving"
+                  @click="saveEditInline"
+                >
+                  Save
+                </button>
+                <button
+                  class="ui-border ui-text-emphasis inline-flex min-h-10 items-center justify-center border px-3 text-sm font-semibold transition hover:bg-slate-50"
+                  type="button"
+                  :disabled="isSaving"
+                  @click="closeEditInline"
+                >
+                  Cancel
+                </button>
+              </div>
+              <p v-if="editingError" class="ui-danger-text mt-1 text-sm">{{ editingError }}</p>
+            </div>
             <a
+              v-else
               class="tag-row-link min-w-0 text-sm font-semibold"
               :href="`${APP_BASE_PATH}/t/${encodeURIComponent(tag.nameLower)}`"
             >
@@ -226,38 +287,6 @@ async function reloadTagsAndMaybeUntagged() {
             </a>
           </li>
         </ul>
-      </section>
-
-      <section v-if="editingTag" class="ui-border ui-surface mt-6 border px-5 py-5">
-        <h2 class="ui-text-strong text-lg font-semibold">Edit tag</h2>
-        <label class="ui-text-emphasis mt-3 block text-sm font-semibold" for="edit-tag-name"
-          >Name</label
-        >
-        <input
-          id="edit-tag-name"
-          v-model="editingName"
-          class="ui-field mt-2 block min-h-10 w-full border px-3 text-sm"
-          type="text"
-        />
-        <p v-if="editingError" class="ui-danger-text mt-2 text-sm">{{ editingError }}</p>
-        <div class="mt-4 flex items-center gap-2">
-          <button
-            class="ui-action inline-flex min-h-10 items-center justify-center px-4 text-sm font-semibold transition"
-            type="button"
-            :disabled="isSaving"
-            @click="saveEdit"
-          >
-            Save
-          </button>
-          <button
-            class="ui-border ui-text-emphasis inline-flex min-h-10 items-center justify-center border px-4 text-sm font-semibold transition hover:bg-slate-50"
-            type="button"
-            :disabled="isSaving"
-            @click="closeEditDialog"
-          >
-            Cancel
-          </button>
-        </div>
       </section>
     </section>
   </main>
@@ -296,5 +325,21 @@ async function reloadTagsAndMaybeUntagged() {
 .tag-icon-button-danger:focus-visible {
   border-color: var(--ui-danger-border);
   color: var(--ui-danger-text-readable);
+}
+
+.tag-inline-editor {
+  flex: 1;
+}
+
+.tag-inline-editor-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.tag-inline-editor-input {
+  flex: 1;
+  min-width: 12rem;
 }
 </style>
