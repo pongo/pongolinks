@@ -164,7 +164,7 @@ async function reloadTagsAndMaybeUntagged() {
           <p v-if="untaggedTotalCount === 0" class="ui-text-muted text-sm">
             No untagged bookmarks.
           </p>
-          <ul v-else class="ui-border-subtle divide-y border-y">
+          <ul v-else class="ui-border-subtle">
             <li v-for="bookmark in untaggedBookmarks" :key="bookmark.id" class="py-2">
               <RouterLink
                 class="ui-link text-sm font-semibold"
@@ -195,23 +195,10 @@ async function reloadTagsAndMaybeUntagged() {
         <p v-else-if="isFilterEmptyState" class="ui-text-muted mt-4 text-sm">
           No tags match this filter.
         </p>
-        <ul v-else class="ui-border-subtle mt-4 divide-y border-y">
-          <li
-            v-for="tag in filteredTags"
-            :key="tag.id"
-            class="group flex items-center justify-between gap-4 py-2"
-          >
-            <a
-              class="tag-row-link min-w-0 text-sm font-semibold"
-              :href="`${APP_BASE_PATH}/t/${encodeURIComponent(tag.nameLower)}`"
-            >
-              {{ tag.name }}
-            </a>
+        <ul v-else class="ui-border-subtle mt-4">
+          <li v-for="tag in filteredTags" :key="tag.id" class="group flex items-center gap-4">
             <div class="flex items-center gap-3">
-              <span class="ui-text-muted text-xs">{{ tag.usageCount }}</span>
-              <div
-                class="flex items-center gap-1 opacity-0 transition group-focus-within:opacity-100 group-hover:opacity-100"
-              >
+              <div class="flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
                 <button
                   class="tag-icon-button"
                   type="button"
@@ -229,7 +216,14 @@ async function reloadTagsAndMaybeUntagged() {
                   <Trash2Icon class="size-4" aria-hidden="true" />
                 </button>
               </div>
+              <span class="ui-text-muted text-xs">{{ tag.usageCount }}</span>
             </div>
+            <a
+              class="tag-row-link min-w-0 text-sm font-semibold"
+              :href="`${APP_BASE_PATH}/t/${encodeURIComponent(tag.nameLower)}`"
+            >
+              {{ tag.name }}
+            </a>
           </li>
         </ul>
       </section>
