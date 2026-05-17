@@ -116,12 +116,18 @@ async function clearSearch() {
   await router.push("/");
 }
 
+function renderMiniQueryForContinuedInput(state: typeof queryState.value) {
+  const nextText = renderMiniQueryFromState(state);
+  return nextText === "" ? "" : `${nextText} `;
+}
+
 async function onTagClick(tagName: string) {
   const nextState = toggleIncludedTagFilter(queryState.value, tagName);
   await router.push({
     path: "/",
     query: toBookmarkListRouteQuery(nextState),
   });
+  searchText.value = renderMiniQueryForContinuedInput(nextState);
 }
 
 async function onDomainClick(domain: string) {
@@ -130,6 +136,7 @@ async function onDomainClick(domain: string) {
     path: "/",
     query: toBookmarkListRouteQuery(nextState),
   });
+  searchText.value = renderMiniQueryForContinuedInput(nextState);
 }
 </script>
 
