@@ -15,6 +15,7 @@ _Avoid_: link URL, saved URL, item URL
 **Tag**:
 A reusable label attached to bookmarks for organization and filtering.
 A Tag name is a single whitespace-free token; spaces separate multiple Tags in text entry.
+Changing a Tag name keeps the same Tag identity when its normalized name is unchanged.
 _Avoid_: category, folder, label
 
 **Tag Popularity**:
@@ -59,6 +60,7 @@ _Avoid_: extension, browser plugin, capture link
 - **Related Links** are synchronized from explicit HTTP(S) URLs in the Bookmark description by adding newly extracted URLs and removing URLs that are no longer present.
 - **Tags** attached to a Bookmark are synchronized from submitted Tag text by attaching newly submitted Tags and detaching Tags that are no longer submitted.
 - A **Tag** with no attached Bookmarks is removed.
+- Changing a **Tag** name to a different normalized name replaces the original Tag by transferring Bookmark attachments to the replacement Tag and removing the original Tag.
 
 ## Example dialogue
 
