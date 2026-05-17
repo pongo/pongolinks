@@ -148,70 +148,83 @@ async function onDelete(tag: TagSummaryDTO) {
     <p v-else-if="isFilterEmptyState" class="ui-text-muted mt-4 text-sm">
       No tags match this filter.
     </p>
-    <ul v-else class="ui-border-subtle mt-4">
-      <li v-for="tag in filteredTags" :key="tag.id" class="group flex items-center gap-4">
-        <div class="flex items-center gap-3">
-          <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100">
-            <button
-              class="tag-icon-button"
-              type="button"
-              :aria-label="`Edit tag ${tag.name}`"
-              :disabled="isSaving"
-              @click="openEditDialog(tag)"
-            >
-              <PencilIcon class="size-4" aria-hidden="true" />
-            </button>
-            <button
-              class="tag-icon-button tag-icon-button-danger"
-              type="button"
-              :aria-label="`Delete tag ${tag.name}`"
-              :disabled="isSaving || editingTag?.id === tag.id"
-              @click="onDelete(tag)"
-            >
-              <Trash2Icon class="size-4" aria-hidden="true" />
-            </button>
-          </div>
-          <span class="ui-text-muted text-xs">{{ tag.usageCount }}</span>
-        </div>
+    <table v-else class="ui-border-subtle mt-4 w-full border-collapse text-left">
+      <tbody>
+        <tr v-for="tag in filteredTags" :key="tag.id" class="group border-b border-transparent">
+          <!-- Column 1: Action buttons (Edit & Delete) -->
+          <td class="w-20 pr-4 align-middle">
+            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100">
+              <button
+                class="tag-icon-button"
+                type="button"
+                :aria-label="`Edit tag ${tag.name}`"
+                :disabled="isSaving"
+                @click="openEditDialog(tag)"
+              >
+                <PencilIcon class="size-4" aria-hidden="true" />
+              </button>
+              <button
+                class="tag-icon-button tag-icon-button-danger"
+                type="button"
+                :aria-label="`Delete tag ${tag.name}`"
+                :disabled="isSaving || editingTag?.id === tag.id"
+                @click="onDelete(tag)"
+              >
+                <Trash2Icon class="size-4" aria-hidden="true" />
+              </button>
+            </div>
+          </td>
 
-        <div v-if="editingTag?.id === tag.id" class="tag-inline-editor min-w-0">
-          <div class="tag-inline-editor-controls">
-            <input
-              :ref="setEditingNameInputRef"
-              v-model="editingName"
-              class="ui-field tag-inline-editor-input min-h-10 border px-3 text-sm"
-              type="text"
-              :disabled="isSaving"
-              @keydown="onEditInputKeydown"
-            />
-            <button
-              class="ui-action inline-flex min-h-10 items-center justify-center px-3 text-sm font-semibold transition"
-              type="button"
-              :disabled="isSaving"
-              @click="saveEditInline"
+          <!-- Column 2: Usage count -->
+          <td class="w-16 pr-4 align-middle">
+            <span class="ui-text-muted text-xs">{{ tag.usageCount }}</span>
+          </td>
+
+          <!-- Column 3: Tag name OR Inline editor -->
+          <td class="w-full min-w-0 align-middle">
+            <!-- Inline editor view -->
+            <div v-if="editingTag?.id === tag.id" class="tag-inline-editor w-full min-w-0">
+              <div class="tag-inline-editor-controls flex gap-2">
+                <input
+                  :ref="setEditingNameInputRef"
+                  v-model="editingName"
+                  class="ui-field tag-inline-editor-input min-h-10 w-full border px-3 text-sm"
+                  type="text"
+                  :disabled="isSaving"
+                  @keydown="onEditInputKeydown"
+                />
+                <button
+                  class="ui-action inline-flex min-h-10 shrink-0 items-center justify-center px-3 text-sm font-semibold transition"
+                  type="button"
+                  :disabled="isSaving"
+                  @click="saveEditInline"
+                >
+                  Save
+                </button>
+                <button
+                  class="ui-border ui-text-emphasis inline-flex min-h-10 shrink-0 items-center justify-center border px-3 text-sm font-semibold transition hover:bg-slate-50"
+                  type="button"
+                  :disabled="isSaving"
+                  @click="closeEditInline"
+                >
+                  Cancel
+                </button>
+              </div>
+              <p v-if="editingError" class="ui-danger-text mt-1 text-sm">{{ editingError }}</p>
+            </div>
+
+            <!-- Default link view -->
+            <a
+              v-else
+              class="tag-row-link min-w-0 text-sm font-semibold"
+              :href="`${APP_BASE_PATH}/t/${encodeURIComponent(tag.nameLower)}`"
             >
-              Save
-            </button>
-            <button
-              class="ui-border ui-text-emphasis inline-flex min-h-10 items-center justify-center border px-3 text-sm font-semibold transition hover:bg-slate-50"
-              type="button"
-              :disabled="isSaving"
-              @click="closeEditInline"
-            >
-              Cancel
-            </button>
-          </div>
-          <p v-if="editingError" class="ui-danger-text mt-1 text-sm">{{ editingError }}</p>
-        </div>
-        <a
-          v-else
-          class="tag-row-link min-w-0 text-sm font-semibold"
-          :href="`${APP_BASE_PATH}/t/${encodeURIComponent(tag.nameLower)}`"
-        >
-          {{ tag.name }}
-        </a>
-      </li>
-    </ul>
+              {{ tag.name }}
+            </a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </section>
 </template>
 
