@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import { X } from "@lucide/vue";
 
 import { listTags } from "#/features/tags/api.ts";
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
@@ -135,7 +136,7 @@ function onSearchKeydown(event: KeyboardEvent) {
         ref="searchInput"
         :value="modelValue"
         type="text"
-        class="ui-border-subtle ui-surface min-h-10 w-full border px-3 text-sm"
+        class="ui-border-subtle ui-surface min-h-10 w-full border pr-8 pl-3 text-sm"
         placeholder="Search: sqlite #vue -#old @example.com"
         aria-label="Search bookmarks"
         autocomplete="off"
@@ -149,6 +150,16 @@ function onSearchKeydown(event: KeyboardEvent) {
         @focus="onSearchInput"
         @keydown="onSearchKeydown"
       />
+      <button
+        v-if="isSearchActive"
+        type="button"
+        class="ui-muted-link absolute top-px right-0 flex h-full w-8 cursor-pointer items-center justify-center text-xl select-none"
+        aria-label="Clear search"
+        title="Clear search"
+        @click="emit('clear')"
+      >
+        <X :size="16" />
+      </button>
       <ul
         v-if="tagSuggestionsOpen"
         :id="searchTagListboxId"
@@ -174,9 +185,4 @@ function onSearchKeydown(event: KeyboardEvent) {
     </div>
     <button class="ui-action min-h-10 px-4 text-sm font-semibold" type="submit">Search</button>
   </form>
-  <div v-if="isSearchActive" class="mb-5">
-    <button type="button" class="ui-muted-link text-sm font-semibold" @click="emit('clear')">
-      Clear search
-    </button>
-  </div>
 </template>
