@@ -146,6 +146,7 @@ async function onDelete(tag: TagSummaryDTO) {
       class="ui-field mt-2 block min-h-10 w-full border px-3 text-sm"
       placeholder="Filter by tag name"
       type="text"
+      autocomplete="off"
     />
 
     <p v-if="shouldShowLoadingMessage" class="ui-text-muted mt-4 text-sm">Loading tags...</p>
