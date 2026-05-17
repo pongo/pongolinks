@@ -1,18 +1,14 @@
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
 import { currentToken, replaceCurrentToken, type TokenRange } from "../tag-token-autocomplete";
 
-export function currentTagToken(value: string, cursor: number): TokenRange {
-  return currentToken(value, cursor);
-}
-
 export function suggestTags(
   tags: TagSummaryDTO[],
   value: string,
   cursor: number,
   limit = 7,
 ): TagSummaryDTO[] {
-  const token = currentTagToken(value, cursor);
-  const queryLower = token.value.toLocaleLowerCase();
+  const token = currentToken(value, cursor);
+  const queryLower = token.value.toLocaleLowerCase("und");
 
   if (!queryLower) {
     return [];
@@ -23,7 +19,7 @@ export function suggestTags(
     .concat(" ", value.slice(token.end))
     .split(/\s+/)
     .filter(Boolean)
-    .map((tag) => tag.toLocaleLowerCase());
+    .map((tag) => tag.toLocaleLowerCase("und"));
   const otherTokenSet = new Set(otherTokens);
 
   return tags
