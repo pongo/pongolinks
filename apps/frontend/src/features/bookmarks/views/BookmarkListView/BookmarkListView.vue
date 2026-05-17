@@ -149,17 +149,17 @@ async function onDomainClick(domain: string) {
         </RouterLink>
       </header>
 
-      <p v-if="error" class="ui-danger-banner border-l-4 px-4 py-3 text-sm font-medium">
-        {{ error }}
-      </p>
-      <p v-else-if="shouldShowLoadingMessage" class="ui-text-muted text-sm">Loading bookmarks...</p>
-
       <BookmarkListSearchField
         v-model="searchText"
         :is-search-active="isSearchActive"
         @submit="submitSearch"
         @clear="clearSearch"
       />
+
+      <p v-if="error" class="ui-danger-banner border-l-4 px-4 py-3 text-sm font-medium">
+        {{ error }}
+      </p>
+      <p v-else-if="shouldShowLoadingMessage" class="ui-text-muted text-sm">Loading bookmarks...</p>
 
       <template v-else-if="shouldShowBookmarkContent">
         <div

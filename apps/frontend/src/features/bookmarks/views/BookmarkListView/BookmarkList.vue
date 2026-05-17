@@ -91,9 +91,9 @@ function isDomainActive(domain: string) {
           <div class="ui-text-muted mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
             <button
               type="button"
-              class="break-all underline decoration-dotted underline-offset-2"
+              class="cursor-pointer break-all hover:underline"
               :class="{
-                'ui-action px-1 py-0.5 no-underline': isDomainActive(
+                'ui-tag ui-tag-active border px-1.5 py-0.5 hover:no-underline!': isDomainActive(
                   formatBookmarkDomain(bookmark.url),
                 ),
               }"
@@ -106,7 +106,7 @@ function isDomainActive(domain: string) {
               :key="tag.id"
               type="button"
               class="ui-tag inline-flex max-w-full items-center border px-1.5 py-0.5 text-xs"
-              :class="{ 'ui-action': isIncludedTagActive(tag.name) }"
+              :class="{ 'ui-tag-active': isIncludedTagActive(tag.name) }"
               @click="emit('tagClick', tag.name)"
             >
               {{ tag.name }}

@@ -190,6 +190,15 @@ textarea {
 .ui-tag {
   border-color: var(--ui-tag-border);
   color: var(--ui-text-muted);
+
+  &:hover {
+    border-color: #d5d5d5;
+    cursor: pointer;
+  }
+  &.ui-tag-active {
+    border-color: var(--ui-action);
+    color: var(--ui-action);
+  }
 }
 
 .ui-suggestion-selected {

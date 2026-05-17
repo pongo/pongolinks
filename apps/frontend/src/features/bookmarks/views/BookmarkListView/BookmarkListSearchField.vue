@@ -152,7 +152,7 @@ function onSearchKeydown(event: KeyboardEvent) {
       <ul
         v-if="tagSuggestionsOpen"
         :id="searchTagListboxId"
-        class="ui-border-subtle ui-surface absolute z-20 mt-1 max-h-56 w-full overflow-auto border py-1 text-sm shadow-sm"
+        class="ui-border-subtle ui-surface absolute z-20 mt-1 max-h-70 w-full overflow-auto border py-1 text-sm shadow-sm"
         role="listbox"
       >
         <li
@@ -161,9 +161,7 @@ function onSearchKeydown(event: KeyboardEvent) {
           :key="tag.id"
           class="cursor-pointer px-3 py-1.5"
           :class="
-            index === activeTagSuggestionIndex
-              ? 'ui-page-text ui-surface-elevated'
-              : 'ui-text-muted hover:ui-page-text'
+            index === activeTagSuggestionIndex ? 'ui-suggestion-selected' : 'ui-suggestion-hover'
           "
           role="option"
           :aria-selected="index === activeTagSuggestionIndex"
