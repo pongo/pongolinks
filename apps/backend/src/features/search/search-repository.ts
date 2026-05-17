@@ -5,7 +5,7 @@ import { Err, Ok } from "@pongolinks/shared/result";
 import { bookmarks } from "@pongolinks/db/schema";
 
 import type { AppDb } from "#/db/app-db.ts";
-import { lookupBookmarksByUrl } from "#/domain/bookmark-url-lookup.ts";
+import { lookupBookmarksByUrl } from "#/repository/bookmark-url-lookup-repository.ts";
 import type { BookmarkUrl } from "#/domain/bookmark-url.ts";
 import { type ApiError, unexpectedError } from "#/http/result-response.ts";
 import type { BookmarkUrlCheckBookmark, BookmarkUrlCheckResult } from "./contracts.ts";
