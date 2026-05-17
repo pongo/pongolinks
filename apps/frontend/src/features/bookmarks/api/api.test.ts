@@ -49,10 +49,37 @@ describe("bookmark API payload parsing", () => {
     });
   });
 
-  it("omits page query for page 1 and sends it for later pages", () => {
-    expect(bookmarkListQuery(1)).toEqual({ $query: {} });
-    expect(bookmarkListQuery(0)).toEqual({ $query: {} });
-    expect(bookmarkListQuery(2)).toEqual({ $query: { page: "2" } });
+  it("serializes bookmark list query parameters", () => {
+    expect(bookmarkListQuery({ page: 1 })).toEqual({ $query: {} });
+    expect(bookmarkListQuery({ page: 0 })).toEqual({ $query: {} });
+    expect(bookmarkListQuery({ page: 2 })).toEqual({ $query: { page: "2" } });
+    expect(
+      bookmarkListQuery({
+        q: "sqlite",
+        tag: ["vue", "-old"],
+        domain: "example.com",
+      }),
+    ).toEqual({
+      $query: {
+        q: "sqlite",
+        tag: ["vue", "-old"],
+        domain: "example.com",
+      },
+    });
+    expect(
+      bookmarkListQuery({
+        q: "sqlite",
+        tag: ["vue"],
+        domain: "example.com",
+        url: "https://example.com",
+        page: 3,
+      }),
+    ).toEqual({
+      $query: {
+        url: "https://example.com",
+        page: "3",
+      },
+    });
   });
 
   it("parses deleted bookmark payloads", () => {

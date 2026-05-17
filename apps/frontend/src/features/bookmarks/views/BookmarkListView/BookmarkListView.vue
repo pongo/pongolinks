@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { RouterLink, useRoute } from "vue-router";
+import { RouterLink, useRoute, useRouter } from "vue-router";
 
 import { listBookmarks } from "../../api/api";
 import type {
@@ -10,9 +10,16 @@ import type {
 import { useDelayedFlag } from "#/shared/useDelayedFlag.ts";
 import BookmarkList from "./BookmarkList.vue";
 import BookmarkListPagination from "./BookmarkListPagination.vue";
-import { normalizeBookmarkListPageQuery } from "./pagination-window";
+import {
+  isFilterActive,
+  parseBookmarkListRouteQuery,
+  parseMiniQueryToState,
+  renderMiniQueryFromState,
+  toBookmarkListRouteQuery,
+} from "./bookmark-list-query-state";
 
 const route = useRoute();
+const router = useRouter();
 const bookmarks = ref<BookmarkDTO[]>([]);
 const pagination = ref<BookmarkListPaginationState>({
   page: 1,
@@ -24,16 +31,35 @@ const pagination = ref<BookmarkListPaginationState>({
 });
 const isLoading = ref(true);
 const error = ref("");
-const currentPage = computed(() => normalizeBookmarkListPageQuery(route.query.page));
+const queryState = computed(() => parseBookmarkListRouteQuery(route.query));
+const searchText = ref("");
 const { isDelayed, start: startLoadingDelay, stop: stopLoadingDelay } = useDelayedFlag(1000);
+const isSearchActive = computed(() => isFilterActive(queryState.value));
 const shouldShowLoadingMessage = computed(
   () => isLoading.value && isDelayed.value && bookmarks.value.length === 0,
 );
 const shouldShowBookmarkContent = computed(() => !isLoading.value || bookmarks.value.length > 0);
+const isNoMatchingBookmarks = computed(
+  () => bookmarks.value.length === 0 && pagination.value.totalCount === 0 && isSearchActive.value,
+);
+const isNoBookmarksYet = computed(
+  () => bookmarks.value.length === 0 && pagination.value.totalCount === 0 && !isSearchActive.value,
+);
 
 watch(
-  currentPage,
-  async (page, _previousPage, onCleanup) => {
+  queryState,
+  (nextState) => {
+    const nextText = renderMiniQueryFromState(nextState);
+    if (nextText !== searchText.value) {
+      searchText.value = nextText;
+    }
+  },
+  { immediate: true },
+);
+
+watch(
+  queryState,
+  async (state, _previousState, onCleanup) => {
     let isCurrentRequest = true;
     startLoadingDelay();
 
@@ -45,7 +71,13 @@ watch(
     isLoading.value = true;
     error.value = "";
 
-    const result = await listBookmarks(page);
+    const result = await listBookmarks({
+      q: state.q ?? undefined,
+      tag: state.tags.length > 0 ? state.tags : undefined,
+      domain: state.domain ?? undefined,
+      url: state.url ?? undefined,
+      page: state.page,
+    });
 
     if (!isCurrentRequest) {
       return;
@@ -64,6 +96,22 @@ watch(
   },
   { immediate: true },
 );
+
+async function submitSearch() {
+  const next = parseMiniQueryToState(searchText.value);
+  await router.push({
+    path: "/",
+    query: toBookmarkListRouteQuery({
+      ...next,
+      page: 1,
+    }),
+  });
+}
+
+async function clearSearch() {
+  searchText.value = "";
+  await router.push("/");
+}
 </script>
 
 <template>
@@ -87,19 +135,43 @@ watch(
       </p>
       <p v-else-if="shouldShowLoadingMessage" class="ui-text-muted text-sm">Loading bookmarks...</p>
 
+      <form class="mb-4 flex items-center gap-2" @submit.prevent="submitSearch">
+        <input
+          v-model="searchText"
+          type="text"
+          class="ui-border-subtle ui-surface min-h-10 w-full border px-3 text-sm"
+          placeholder="Search: sqlite #vue -#old @example.com"
+          aria-label="Search bookmarks"
+        />
+        <button class="ui-action min-h-10 px-4 text-sm font-semibold" type="submit">Search</button>
+      </form>
+      <div v-if="isSearchActive" class="mb-5">
+        <button type="button" class="ui-muted-link text-sm font-semibold" @click="clearSearch">
+          Clear search
+        </button>
+      </div>
+
       <template v-else-if="shouldShowBookmarkContent">
         <div
           v-if="bookmarks.length === 0"
           class="ui-border ui-surface border border-dashed px-5 py-8"
         >
           <h2 class="ui-text-strong text-lg font-semibold">
-            {{ pagination.totalCount === 0 ? "No bookmarks yet" : "No bookmarks on this page" }}
+            {{
+              isNoMatchingBookmarks
+                ? "No matching bookmarks"
+                : isNoBookmarksYet
+                  ? "No bookmarks yet"
+                  : "No bookmarks on this page"
+            }}
           </h2>
           <p class="ui-text-muted mt-2 text-sm">
             {{
-              pagination.totalCount === 0
-                ? "Save the first link you want to keep close."
-                : "Choose another page to continue browsing saved links."
+              isNoMatchingBookmarks
+                ? "Try another search or clear filters."
+                : isNoBookmarksYet
+                  ? "Save the first link you want to keep close."
+                  : "Choose another page to continue browsing saved links."
             }}
           </p>
           <RouterLink
@@ -113,7 +185,7 @@ watch(
 
         <BookmarkList v-else :bookmarks="bookmarks" />
 
-        <BookmarkListPagination :pagination="pagination" />
+        <BookmarkListPagination :pagination="pagination" :query-state="queryState" />
       </template>
 
       <footer class="ui-border-subtle mt-8 flex justify-end border-t pt-4">

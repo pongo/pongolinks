@@ -73,14 +73,40 @@ export function parseApiPayload<T>(payload: unknown): Result<T, ApiError> {
   });
 }
 
-export function bookmarkListQuery(page: number): { $query: { page?: string } } {
-  return Number.isInteger(page) && page > 1 ? { $query: { page: String(page) } } : { $query: {} };
+export type BookmarkListApiQuery = {
+  q?: string;
+  tag?: string[];
+  domain?: string;
+  url?: string;
+  page?: number;
+};
+
+export function bookmarkListQuery(query: BookmarkListApiQuery): {
+  $query: { q?: string; tag?: string[]; domain?: string; url?: string; page?: string };
+} {
+  const payload: { q?: string; tag?: string[]; domain?: string; url?: string; page?: string } = {};
+
+  if (query.url) {
+    payload.url = query.url;
+  } else {
+    if (query.q) payload.q = query.q;
+    if (query.tag && query.tag.length > 0) payload.tag = query.tag;
+    if (query.domain) payload.domain = query.domain;
+  }
+
+  if (Number.isInteger(query.page) && (query.page ?? 1) > 1) {
+    payload.page = String(query.page);
+  }
+
+  return { $query: payload };
 }
 
-export async function listBookmarks(page = 1): Promise<Result<BookmarkListResponse, ApiError>> {
+export async function listBookmarks(
+  query: BookmarkListApiQuery = {},
+): Promise<Result<BookmarkListResponse, ApiError>> {
   try {
     return parseEdenResponse<BookmarkListResponse, ApiError>(
-      await apiClient.api.bookmarks.get(bookmarkListQuery(page)),
+      await apiClient.api.bookmarks.get(bookmarkListQuery(query)),
       {
         fallbackError,
         parseError: parseApiError,
