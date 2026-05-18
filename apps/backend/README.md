@@ -12,4 +12,4 @@ Keep backend behavior in vertical feature slices under `src/features/<feature>/`
 
 Do not put Vue UI state, browser-only behavior, or frontend routing here. Do not bypass `packages/db` for durable data concerns.
 
-API routes are grouped under `/pongolinks/api`.
+API routes are grouped under `/pl/api`.

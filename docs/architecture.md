@@ -46,7 +46,7 @@ When a feature needs behavior from another feature, prefer the other feature's p
 The backend owns:
 
 - Bun/Elysia server startup and app composition.
-- HTTP API routes under `/pongolinks/api`.
+- HTTP API routes under `/pl/api`.
 - The Eden-visible app contract consumed by the frontend.
 - Backend-facing orchestration around persistence.
 - Mapping operational failures to shared Result responses.
