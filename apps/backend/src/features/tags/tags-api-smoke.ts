@@ -45,9 +45,9 @@ function assertPrivateRevalidationHeaders(response: Response) {
   return etag;
 }
 
-async function readTagsEtag(
-  app: { handle: (request: Request) => Promise<Response> },
-): Promise<string> {
+async function readTagsEtag(app: {
+  handle: (request: Request) => Promise<Response>;
+}): Promise<string> {
   const response = await app.handle(request("/api/tags"));
   const body = await response.json();
   const etag = assertPrivateRevalidationHeaders(response);

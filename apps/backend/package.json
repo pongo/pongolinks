@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@bogeychan/elysia-etag": "^0.1.0",
+    "@eelkevdbos/elysia-basic-auth": "^2.0.1",
     "@elysia/opentelemetry": "^1.4.12",
     "@elysiajs/static": "^1.4.10",
     "@opentelemetry/exporter-trace-otlp-proto": "^0.218.0",
