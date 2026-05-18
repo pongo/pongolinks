@@ -1,5 +1,6 @@
+import { basicAuth } from "@eelkevdbos/elysia-basic-auth";
 import { staticPlugin } from "@elysiajs/static";
-import { Elysia } from "elysia";
+import { Elysia, type Context } from "elysia";
 import { evlog } from "evlog/elysia";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -58,10 +59,40 @@ function serveIndexHtml(frontendDistPath: string) {
   });
 }
 
+function readEnv(name: string) {
+  return typeof Bun === "undefined" ? process.env[name] : Bun.env[name];
+}
+
+function createBasicAuthPlugin() {
+  if (!readEnv("BASIC_AUTH_CREDENTIALS")?.trim()) {
+    throw new Error("BASIC_AUTH_CREDENTIALS must be set");
+  }
+
+  return basicAuth({
+    realm: "pongolinks",
+    scope: `${APP_BASE_PATH}/`,
+  });
+}
+
+function serveSpaFallback(
+  frontendDistPath: string,
+  { request, set }: Pick<Context, "request" | "set">,
+) {
+  const pathname = new URL(request.url).pathname;
+
+  if (pathname.startsWith(`${APP_BASE_PATH}/api/`)) {
+    set.status = 404;
+    return { error: "Not Found" };
+  }
+
+  return serveIndexHtml(frontendDistPath);
+}
+
 export function createApp(options: CreateAppOptions = {}) {
   const frontendDistPath = options.frontendDistPath ?? config.frontendDistPath;
   const app = new Elysia()
     .use(createTracingPlugin())
+    .use(createBasicAuthPlugin())
     .use(
       evlog({
         ...createRequestLoggingOptions(),
@@ -85,16 +116,9 @@ export function createApp(options: CreateAppOptions = {}) {
       }),
     )
     .get(APP_BASE_PATH, () => serveIndexHtml(frontendDistPath))
-    .get(`${APP_BASE_PATH}/*`, ({ request, set }) => {
-      const pathname = new URL(request.url).pathname;
-
-      if (pathname.startsWith(`${APP_BASE_PATH}/api/`)) {
-        set.status = 404;
-        return { error: "Not Found" };
-      }
-
-      return serveIndexHtml(frontendDistPath);
-    });
+    .get(`${APP_BASE_PATH}/*`, (context: Pick<Context, "request" | "set">) =>
+      serveSpaFallback(frontendDistPath, context),
+    );
 }
 
 export type App = ReturnType<typeof createApp>;

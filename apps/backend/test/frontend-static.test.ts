@@ -4,8 +4,17 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { APP_BASE_PATH, createApp } from "#/app.ts";
+import { TEST_BASIC_AUTH_HEADER, useTestBasicAuthCredentials } from "#test/api-smoke-support.ts";
 
 const tempDir = fileURLToPath(new URL(".tmp/frontend-dist", import.meta.url));
+
+function authenticatedRequest(url: string) {
+  return new Request(url, {
+    headers: {
+      authorization: TEST_BASIC_AUTH_HEADER,
+    },
+  });
+}
 
 describe("production frontend serving", () => {
   afterEach(() => {
@@ -19,16 +28,18 @@ describe("production frontend serving", () => {
       '<!doctype html><html><body><div id="app"></div></body></html>',
     );
 
+    useTestBasicAuthCredentials();
+
     const app = createApp({
       frontendDistPath: tempDir,
       serveFrontend: true,
     });
 
     const healthResponse = await app.handle(
-      new Request(`http://localhost${APP_BASE_PATH}/api/health`),
+      authenticatedRequest(`http://localhost${APP_BASE_PATH}/api/health`),
     );
     const fallbackResponse = await app.handle(
-      new Request(`http://localhost${APP_BASE_PATH}/bookmarks/future`),
+      authenticatedRequest(`http://localhost${APP_BASE_PATH}/bookmarks/future`),
     );
     const oldApiResponse = await app.handle(new Request("http://localhost/api/health"));
     const rootResponse = await app.handle(new Request("http://localhost/"));

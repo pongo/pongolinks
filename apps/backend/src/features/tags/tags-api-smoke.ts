@@ -45,6 +45,38 @@ function assertPrivateRevalidationHeaders(response: Response) {
   return etag;
 }
 
+async function readTagsEtag(app: {
+  handle: (request: Request) => Promise<Response>;
+}): Promise<string> {
+  const response = await app.handle(request("/api/tags"));
+  const body = await response.json();
+  const etag = assertPrivateRevalidationHeaders(response);
+
+  assert(response.status === 200, "tags etag read should return 200");
+  assert(body.isOk === true, "tags etag read should return Ok result");
+
+  return etag;
+}
+
+async function assertTagsEtagChangedAfterMutation(
+  app: { handle: (request: Request) => Promise<Response> },
+  previousEtag: string,
+) {
+  const revalidatedResponse = await app.handle(
+    request("/api/tags", {
+      headers: {
+        "if-none-match": previousEtag,
+      },
+    }),
+  );
+  const revalidatedBody = await revalidatedResponse.json();
+  const nextEtag = assertPrivateRevalidationHeaders(revalidatedResponse);
+
+  assert(revalidatedResponse.status === 200, "stale tags etag should return 200 after mutation");
+  assert(revalidatedBody.isOk === true, "stale tags etag should return fresh Ok payload");
+  assert(nextEtag !== previousEtag, "tags etag should change after membership-affecting mutation");
+}
+
 await withApp(async ({ app }) => {
   const response = await app.handle(request("/api/tags"));
   const body = await response.json();
@@ -111,6 +143,82 @@ await withApp(async ({ app, db }) => {
 
   const shared = await db.query.tags.findFirst({ where: eq(tags.nameLower, "shared") });
   assert(shared, "shared tag should exist for follow-up tag update tests");
+});
+
+await withApp(async ({ app }) => {
+  await createBookmark(app, {
+    url: "https://example.com/create-a",
+    title: "Create A",
+    tagsText: "alpha",
+  });
+  const etagBeforeCreate = await readTagsEtag(app);
+
+  await createBookmark(app, {
+    url: "https://example.com/create-b",
+    title: "Create B",
+    tagsText: "alpha",
+  });
+
+  await assertTagsEtagChangedAfterMutation(app, etagBeforeCreate);
+});
+
+await withApp(async ({ app }) => {
+  await createBookmark(app, {
+    url: "https://example.com/update-a",
+    title: "Update A",
+    tagsText: "alpha",
+  });
+  await createBookmark(app, {
+    url: "https://example.com/update-b",
+    title: "Update B",
+    tagsText: "beta",
+  });
+  const etagBeforeUpdate = await readTagsEtag(app);
+
+  const updateResponse = await app.handle(
+    request("/api/bookmarks/2", {
+      method: "PATCH",
+      body: JSON.stringify(
+        bookmarkPayload({
+          url: "https://example.com/update-b",
+          title: "Update B",
+          tagsText: "alpha",
+        }),
+      ),
+    }),
+  );
+  const updateBody = await updateResponse.json();
+
+  assert(updateResponse.status === 200, "bookmark update should return 200");
+  assert(updateBody.isOk === true, "bookmark update should return Ok");
+
+  await assertTagsEtagChangedAfterMutation(app, etagBeforeUpdate);
+});
+
+await withApp(async ({ app }) => {
+  await createBookmark(app, {
+    url: "https://example.com/delete-a",
+    title: "Delete A",
+    tagsText: "alpha",
+  });
+  await createBookmark(app, {
+    url: "https://example.com/delete-b",
+    title: "Delete B",
+    tagsText: "alpha",
+  });
+  const etagBeforeDelete = await readTagsEtag(app);
+
+  const deleteResponse = await app.handle(
+    request("/api/bookmarks/2", {
+      method: "DELETE",
+    }),
+  );
+  const deleteBody = await deleteResponse.json();
+
+  assert(deleteResponse.status === 200, "bookmark delete should return 200");
+  assert(deleteBody.isOk === true, "bookmark delete should return Ok");
+
+  await assertTagsEtagChangedAfterMutation(app, etagBeforeDelete);
 });
 
 await withApp(async ({ app, db }) => {

@@ -1,6 +1,8 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
+import { TEST_BASIC_AUTH_CREDENTIALS } from "./api-smoke-support";
+
 export function smokeSuiteEnv() {
   const {
     AXIOM_API_KEY: _axiomApiKey,
@@ -13,6 +15,7 @@ export function smokeSuiteEnv() {
 
   return {
     ...env,
+    BASIC_AUTH_CREDENTIALS: TEST_BASIC_AUTH_CREDENTIALS,
     NODE_ENV: "test",
   };
 }
