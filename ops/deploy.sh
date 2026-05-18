@@ -98,7 +98,7 @@ main() {
   short_sha="$(git rev-parse --short "$commit_sha")"
 
   bun install --frozen-lockfile
-  bun run build
+  bunx turbo run build --concurrency=1
 
   local release_id
   release_id="$(date -u +%Y%m%d%H%M%S)-$short_sha"
