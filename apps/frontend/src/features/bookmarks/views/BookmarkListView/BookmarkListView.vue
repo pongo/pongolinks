@@ -140,8 +140,18 @@ async function onDomainClick(domain: string) {
     <section class="mx-auto max-w-3xl">
       <header class="mb-7 flex items-center justify-between gap-4">
         <div>
-          <p class="ui-link text-xs font-bold tracking-normal uppercase">pongolinks</p>
-          <h1 class="ui-text-strong mt-1 text-2xl font-bold select-none">Bookmarks</h1>
+          <RouterLink
+            class="ui-link block cursor-pointer text-xs font-bold tracking-normal uppercase"
+            to="/"
+          >
+            pongolinks
+          </RouterLink>
+          <RouterLink
+            class="ui-text-strong mt-1 block cursor-pointer text-2xl font-bold select-none"
+            to="/"
+          >
+            Bookmarks
+          </RouterLink>
         </div>
         <RouterLink
           class="ui-action inline-flex min-h-10 items-center justify-center px-4 text-sm font-semibold transition select-none"
