@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { X } from "@lucide/vue";
 
 import { listTags } from "#/features/tags/api.ts";
@@ -21,7 +21,7 @@ const searchInput = ref<HTMLInputElement>();
 const searchCursorPosition = ref(0);
 const tagSuggestions = ref<TagSummaryDTO[]>([]);
 const tagSuggestionsOpen = ref(false);
-const activeTagSuggestionIndex = ref(0);
+const activeTagSuggestionIndex = ref(-1);
 const searchTagListboxId = "bookmark-list-search-tag-suggestions";
 const visibleTagSuggestions = computed(() =>
   suggestSearchFieldTags(tagSuggestions.value, props.modelValue, searchCursorPosition.value),
@@ -35,7 +35,7 @@ const activeTagDescendantId = computed(() =>
 watch(visibleTagSuggestions, (nextSuggestions) => {
   if (nextSuggestions.length === 0) {
     tagSuggestionsOpen.value = false;
-    activeTagSuggestionIndex.value = 0;
+    activeTagSuggestionIndex.value = -1;
     return;
   }
 
@@ -65,10 +65,10 @@ function syncSearchCursorPosition(event?: Event) {
 
 function closeTagSuggestions() {
   tagSuggestionsOpen.value = false;
-  activeTagSuggestionIndex.value = 0;
+  activeTagSuggestionIndex.value = -1;
 }
 
-function selectTagSuggestion(index: number) {
+async function selectTagSuggestion(index: number) {
   const suggestion = visibleTagSuggestions.value[index];
   if (!suggestion) {
     return;
@@ -83,6 +83,7 @@ function selectTagSuggestion(index: number) {
   searchCursorPosition.value = replacement.cursor;
   closeTagSuggestions();
 
+  await nextTick();
   searchInput.value?.focus();
   searchInput.value?.setSelectionRange(replacement.cursor, replacement.cursor);
 }
@@ -93,15 +94,38 @@ function onSearchInput(event: Event) {
     emit("update:modelValue", target.value);
   }
   syncSearchCursorPosition(event);
-  tagSuggestionsOpen.value = visibleTagSuggestions.value.length > 0;
+  activeTagSuggestionIndex.value = -1;
+  tagSuggestionsOpen.value =
+    suggestSearchFieldTags(
+      tagSuggestions.value,
+      target instanceof HTMLInputElement ? target.value : props.modelValue,
+      searchCursorPosition.value,
+    ).length > 0;
+}
+
+function moveActiveTagSuggestion(offset: number) {
+  const count = visibleTagSuggestions.value.length;
+  if (count === 0) {
+    return;
+  }
+
+  tagSuggestionsOpen.value = true;
+  activeTagSuggestionIndex.value =
+    activeTagSuggestionIndex.value < 0
+      ? offset > 0
+        ? 0
+        : count - 1
+      : (activeTagSuggestionIndex.value + offset + count) % count;
 }
 
 function onSearchKeydown(event: KeyboardEvent) {
-  if (event.key === "ArrowDown" && visibleTagSuggestions.value.length > 0) {
+  if (event.key === "ArrowDown") {
+    if (visibleTagSuggestions.value.length === 0) {
+      return;
+    }
+
     event.preventDefault();
-    tagSuggestionsOpen.value = true;
-    activeTagSuggestionIndex.value =
-      (activeTagSuggestionIndex.value + 1) % visibleTagSuggestions.value.length;
+    moveActiveTagSuggestion(1);
     return;
   }
 
@@ -111,9 +135,7 @@ function onSearchKeydown(event: KeyboardEvent) {
     visibleTagSuggestions.value.length > 0
   ) {
     event.preventDefault();
-    activeTagSuggestionIndex.value =
-      (activeTagSuggestionIndex.value - 1 + visibleTagSuggestions.value.length) %
-      visibleTagSuggestions.value.length;
+    moveActiveTagSuggestion(-1);
     return;
   }
 
@@ -121,7 +143,9 @@ function onSearchKeydown(event: KeyboardEvent) {
     const hasSuggestion = visibleTagSuggestions.value.length > 0;
     if (!hasSuggestion) return;
     event.preventDefault();
-    selectTagSuggestion(activeTagSuggestionIndex.value);
+    void selectTagSuggestion(
+      activeTagSuggestionIndex.value >= 0 ? activeTagSuggestionIndex.value : 0,
+    );
     return;
   }
 
