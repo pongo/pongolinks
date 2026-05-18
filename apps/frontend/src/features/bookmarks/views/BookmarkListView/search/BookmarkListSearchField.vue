@@ -17,10 +17,6 @@ const emit = defineEmits<{
 }>();
 
 const tagSuggestions = ref<TagSummaryDTO[]>([]);
-const tagAutocomplete = {
-  replaceCurrentTagToken: replaceCurrentSearchTagToken,
-  suggestTags: suggestSearchFieldTags,
-};
 
 void (async () => {
   const tagsResult = await listTags();
@@ -36,13 +32,14 @@ void (async () => {
       class="w-full"
       :model-value="modelValue"
       :tag-suggestions="tagSuggestions"
-      :autocomplete="tagAutocomplete"
+      :autocomplete="{
+        replaceCurrentTagToken: replaceCurrentSearchTagToken,
+        suggestTags: suggestSearchFieldTags,
+      }"
       input-class="ui-border-subtle ui-surface min-h-10 w-full border pr-8 pl-3 text-sm"
-      listbox-class="ui-border-subtle ui-surface absolute z-20 mt-1 max-h-70 w-full overflow-auto border py-1 text-sm shadow-sm"
-      option-class="ui-text-emphasis cursor-pointer px-3 py-2"
       placeholder="Search: sqlite #vue -#old @example.com"
       aria-label="Search bookmarks"
-      search-tag-listbox-id="bookmark-list-search-tag-suggestions"
+      tag-listbox-id="bookmark-list-search-tag-suggestions"
       show-clear-button
       @update:model-value="emit('update:modelValue', $event)"
       @clear="emit('clear')"

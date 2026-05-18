@@ -15,10 +15,6 @@ const emit = defineEmits<{
 }>();
 
 const autocompleteInput = ref<InstanceType<typeof BookmarkTagAutocompleteInput>>();
-const tagAutocomplete = {
-  replaceCurrentTagToken,
-  suggestTags,
-};
 
 function focusInput() {
   autocompleteInput.value?.focusInput();
@@ -36,9 +32,10 @@ defineExpose({
       ref="autocompleteInput"
       :model-value="modelValue"
       :tag-suggestions="tagSuggestions ?? []"
-      :autocomplete="tagAutocomplete"
+      :autocomplete="{ replaceCurrentTagToken, suggestTags }"
       input-class="ui-field w-full border px-3 py-2 text-sm transition outline-none focus:ring-2"
       placeholder=""
+      tag-listbox-id="bookmark-tag-suggestions"
       @update:model-value="emit('update:modelValue', $event)"
     />
     <span hidden class="ui-text-muted mt-2 block text-sm">Separate tags with spaces.</span>

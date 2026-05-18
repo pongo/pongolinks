@@ -26,19 +26,13 @@ const props = withDefaults(
     autocomplete: TagAutocomplete;
     ariaLabel?: string;
     inputClass: string;
-    listboxClass?: string;
-    optionClass?: string;
     placeholder?: string;
-    searchTagListboxId?: string;
+    tagListboxId: string;
     showClearButton?: boolean;
   }>(),
   {
     ariaLabel: undefined,
-    listboxClass:
-      "ui-border-subtle ui-surface absolute z-10 mt-1 max-h-70 w-full overflow-y-auto border py-1 shadow-sm",
-    optionClass: "ui-text-emphasis cursor-pointer px-3 py-2 text-sm",
     placeholder: "",
-    searchTagListboxId: "bookmark-tag-suggestions",
     showClearButton: false,
   },
 );
@@ -76,7 +70,7 @@ const {
   resetActive: resetActiveTagSuggestion,
   selectableIndex: selectableTagSuggestionIndex,
 } = useTagAutocompleteInteraction({
-  listboxId: props.searchTagListboxId,
+  listboxId: props.tagListboxId,
   suggestionCount: tagSuggestionCount,
   getSuggestionId: (index) => visibleTagSuggestions.value[index]?.id,
 });
@@ -183,7 +177,7 @@ defineExpose({
       :aria-label="ariaLabel"
       role="combobox"
       :aria-expanded="tagSuggestionsOpen"
-      :aria-controls="searchTagListboxId"
+      :aria-controls="tagListboxId"
       :aria-activedescendant="activeDescendantId"
       @input="updateTagSuggestions"
       @click="updateTagSuggestions"
@@ -202,15 +196,18 @@ defineExpose({
     >
       <X :size="16" />
     </button>
-    <ul v-if="tagSuggestionsOpen" :id="searchTagListboxId" :class="listboxClass" role="listbox">
+    <ul
+      v-if="tagSuggestionsOpen"
+      :id="tagListboxId"
+      class="ui-border-subtle ui-surface absolute z-10 mt-1 max-h-70 w-full overflow-y-auto border py-1 text-sm shadow-sm"
+      role="listbox"
+    >
       <li
         v-for="(tag, index) in visibleTagSuggestions"
-        :id="`${searchTagListboxId}-${tag.id}`"
+        :id="`${tagListboxId}-${tag.id}`"
         :key="tag.id"
-        :class="[
-          optionClass,
-          index === activeIndex ? 'ui-suggestion-selected' : 'ui-suggestion-hover',
-        ]"
+        class="ui-text-emphasis cursor-pointer px-3 py-2 text-sm"
+        :class="[index === activeIndex ? 'ui-suggestion-selected' : 'ui-suggestion-hover']"
         role="option"
         :aria-selected="index === activeIndex"
         @mousedown.prevent="selectTagSuggestion(index)"
