@@ -2,7 +2,7 @@
 import { computed, nextTick, ref, watch } from "vue";
 
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
-import { useTagAutocompleteInteraction } from "../useTagAutocompleteInteraction";
+import { useTagAutocompleteInteraction } from "../autocomplete/useTagAutocompleteInteraction.ts";
 import { replaceCurrentTagToken, suggestTags } from "./tag-autocomplete";
 
 const props = defineProps<{

@@ -4,8 +4,8 @@ import { X } from "@lucide/vue";
 
 import { listTags } from "#/features/tags/api.ts";
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
-import { useTagAutocompleteInteraction } from "../../components/useTagAutocompleteInteraction";
-import { replaceCurrentSearchTagToken, suggestSearchFieldTags } from "./search-tag-autocomplete";
+import { useTagAutocompleteInteraction } from "../../../components/autocomplete/useTagAutocompleteInteraction.ts";
+import { replaceCurrentSearchTagToken, suggestSearchFieldTags } from "./search-tag-autocomplete.ts";
 
 const props = defineProps<{
   modelValue: string;

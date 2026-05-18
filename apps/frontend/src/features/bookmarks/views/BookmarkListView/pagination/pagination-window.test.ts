@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createPaginationWindow, normalizeBookmarkListPageQuery } from "./pagination-window";
+import { createPaginationWindow, normalizeBookmarkListPageQuery } from "./pagination-window.ts";
 
 describe("Bookmark list pagination window", () => {
   it("normalizes invalid page query values to page 1", () => {

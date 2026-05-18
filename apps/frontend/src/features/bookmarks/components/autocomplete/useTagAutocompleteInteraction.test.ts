@@ -1,7 +1,7 @@
 import { computed, nextTick, ref } from "vue";
 import { describe, expect, it } from "vitest";
 
-import { useTagAutocompleteInteraction } from "./useTagAutocompleteInteraction";
+import { useTagAutocompleteInteraction } from "./useTagAutocompleteInteraction.ts";
 
 function setupInteraction(initialSuggestions: Array<{ id: string }> = []) {
   const suggestions = ref(initialSuggestions);

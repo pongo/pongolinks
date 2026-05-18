@@ -1,6 +1,6 @@
 import type { LocationQuery, LocationQueryRaw } from "vue-router";
 
-import { normalizeBookmarkListPageQuery } from "./pagination-window";
+import { normalizeBookmarkListPageQuery } from "./pagination/pagination-window.ts";
 
 export type BookmarkListRouteState = {
   q: string | null;

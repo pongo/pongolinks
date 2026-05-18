@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { replaceCurrentSearchTagToken, suggestSearchFieldTags } from "./search-tag-autocomplete";
+import { replaceCurrentSearchTagToken, suggestSearchFieldTags } from "./search-tag-autocomplete.ts";
 
 const tags = [
   { id: 1, name: "sqlite", nameLower: "sqlite", usageCount: 9 },

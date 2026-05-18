@@ -6,7 +6,7 @@ import type { FormErrors } from "#/shared/api/errors.ts";
 import { listTags } from "#/features/tags/api.ts";
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
 import { deleteBookmark, getBookmark, updateBookmark } from "../api/api";
-import BookmarkForm from "../components/BookmarkForm.vue";
+import BookmarkForm from "../components/BookmarkForm/BookmarkForm.vue";
 import type { BookmarkDTO, EditableBookmarkPayload } from "../types";
 
 const route = useRoute();
@@ -81,7 +81,7 @@ async function confirmDeleteBookmark() {
 <template>
   <main class="ui-page-text min-h-screen px-4 py-8 sm:px-6">
     <section class="mx-auto max-w-3xl">
-      <RouterLink class="ui-link text-sm font-semibold" to="/"> Back to bookmarks </RouterLink>
+      <RouterLink class="ui-link text-sm font-semibold" to="/"> Back to bookmarks</RouterLink>
       <h1 class="ui-text-strong mt-5 text-2xl font-bold">Edit bookmark</h1>
       <p v-if="isLoading" class="ui-text-muted mt-6 text-sm">Loading bookmark...</p>
       <div v-else class="py-6">

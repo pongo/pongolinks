@@ -1,5 +1,9 @@
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
-import { currentToken, replaceCurrentToken, type TokenRange } from "../tag-token-autocomplete";
+import {
+  currentToken,
+  replaceCurrentToken,
+  type TokenRange,
+} from "../autocomplete/tag-token-autocomplete.ts";
 
 export function suggestTags(
   tags: TagSummaryDTO[],

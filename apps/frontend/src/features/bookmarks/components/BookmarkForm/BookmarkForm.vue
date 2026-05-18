@@ -3,13 +3,13 @@ import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
 
 import type { FormErrors } from "#/shared/api/errors.ts";
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
-import type { BookmarkDTO, EditableBookmarkPayload } from "../types";
-import BookmarkTagInput from "./BookmarkTagInput/BookmarkTagInput.vue";
+import type { BookmarkDTO, EditableBookmarkPayload } from "../../types.ts";
+import BookmarkTagInput from "../BookmarkTagInput/BookmarkTagInput.vue";
 import type {
   BookmarkFormInitialCreateValues,
   BookmarkFormInitialFocusTarget,
-} from "./bookmark-form-state";
-import { resolveBookmarkFormInitialPayload } from "./bookmark-form-state";
+} from "./bookmark-form-state.ts";
+import { resolveBookmarkFormInitialPayload } from "./bookmark-form-state.ts";
 
 const props = defineProps<{
   bookmark?: BookmarkDTO;

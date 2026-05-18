@@ -9,8 +9,8 @@ import type {
 } from "../../types";
 import { useDelayedFlag } from "#/shared/useDelayedFlag.ts";
 import BookmarkList from "./BookmarkList.vue";
-import BookmarkListPagination from "./BookmarkListPagination.vue";
-import BookmarkListSearchField from "./BookmarkListSearchField.vue";
+import BookmarkListPagination from "./pagination/BookmarkListPagination.vue";
+import BookmarkListSearchField from "./search/BookmarkListSearchField.vue";
 import {
   isFilterActive,
   parseBookmarkListRouteQuery,
