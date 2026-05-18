@@ -19,11 +19,19 @@ const emit = defineEmits<{
 }>();
 
 const searchInput = ref<HTMLInputElement>();
+const searchTextValue = ref(props.modelValue);
 const searchCursorPosition = ref(0);
 const tagSuggestions = ref<TagSummaryDTO[]>([]);
 const searchTagListboxId = "bookmark-list-search-tag-suggestions";
+const searchText = computed({
+  get: () => searchTextValue.value,
+  set: (value: string) => {
+    searchTextValue.value = value;
+    emit("update:modelValue", value);
+  },
+});
 const visibleTagSuggestions = computed(() =>
-  suggestSearchFieldTags(tagSuggestions.value, props.modelValue, searchCursorPosition.value),
+  suggestSearchFieldTags(tagSuggestions.value, searchTextValue.value, searchCursorPosition.value),
 );
 const tagSuggestionCount = computed(() => visibleTagSuggestions.value.length);
 const {
@@ -32,6 +40,7 @@ const {
   close: closeTagSuggestions,
   isOpen: tagSuggestionsOpen,
   moveActive: moveActiveTagSuggestion,
+  openIfAny: openTagSuggestions,
   resetActive: resetActiveTagSuggestion,
   selectableIndex: selectableTagSuggestionIndex,
 } = useTagAutocompleteInteraction({
@@ -42,8 +51,10 @@ const {
 
 watch(
   () => props.modelValue,
-  () => {
-    syncSearchCursorPosition();
+  (value) => {
+    if (value !== searchTextValue.value) {
+      searchTextValue.value = value;
+    }
   },
 );
 
@@ -54,9 +65,15 @@ void (async () => {
   }
 })();
 
-function syncSearchCursorPosition(event?: Event) {
+function updateSearchCursor(event?: Event) {
   const target = event?.target instanceof HTMLInputElement ? event.target : searchInput.value;
-  searchCursorPosition.value = target?.selectionStart ?? props.modelValue.length;
+  searchCursorPosition.value = target?.selectionStart ?? searchTextValue.value.length;
+}
+
+function updateTagSuggestions(event: Event) {
+  updateSearchCursor(event);
+  resetActiveTagSuggestion();
+  openTagSuggestions();
 }
 
 async function selectTagSuggestion(index: number) {
@@ -66,11 +83,11 @@ async function selectTagSuggestion(index: number) {
   }
 
   const replacement = replaceCurrentSearchTagToken(
-    props.modelValue,
+    searchTextValue.value,
     searchCursorPosition.value,
     suggestion.name,
   );
-  emit("update:modelValue", replacement.value);
+  searchText.value = replacement.value;
   searchCursorPosition.value = replacement.cursor;
   closeTagSuggestions();
 
@@ -79,22 +96,9 @@ async function selectTagSuggestion(index: number) {
   searchInput.value?.setSelectionRange(replacement.cursor, replacement.cursor);
 }
 
-function onSearchInput(event: Event) {
-  const target = event.target;
-  if (target instanceof HTMLInputElement) {
-    emit("update:modelValue", target.value);
-  }
-  syncSearchCursorPosition(event);
-  resetActiveTagSuggestion();
-  tagSuggestionsOpen.value =
-    suggestSearchFieldTags(
-      tagSuggestions.value,
-      target instanceof HTMLInputElement ? target.value : props.modelValue,
-      searchCursorPosition.value,
-    ).length > 0;
-}
-
 function onSearchKeydown(event: KeyboardEvent) {
+  updateSearchCursor(event);
+
   if (event.key === "ArrowDown") {
     if (visibleTagSuggestions.value.length === 0) {
       return;
@@ -105,19 +109,13 @@ function onSearchKeydown(event: KeyboardEvent) {
     return;
   }
 
-  if (
-    event.key === "ArrowUp" &&
-    tagSuggestionsOpen.value &&
-    visibleTagSuggestions.value.length > 0
-  ) {
+  if (event.key === "ArrowUp" && tagSuggestionsOpen.value) {
     event.preventDefault();
     moveActiveTagSuggestion(-1);
     return;
   }
 
   if ((event.key === "Enter" || event.key === "Tab") && tagSuggestionsOpen.value) {
-    const hasSuggestion = visibleTagSuggestions.value.length > 0;
-    if (!hasSuggestion) return;
     event.preventDefault();
     void selectTagSuggestion(selectableTagSuggestionIndex.value);
     return;
@@ -125,6 +123,11 @@ function onSearchKeydown(event: KeyboardEvent) {
 
   if (event.key === "Escape" && tagSuggestionsOpen.value) {
     event.preventDefault();
+    closeTagSuggestions();
+    return;
+  }
+
+  if (event.key === " ") {
     closeTagSuggestions();
   }
 }
@@ -135,7 +138,7 @@ function onSearchKeydown(event: KeyboardEvent) {
     <div class="relative w-full">
       <input
         ref="searchInput"
-        :value="modelValue"
+        v-model="searchText"
         type="text"
         class="ui-border-subtle ui-surface min-h-10 w-full border pr-8 pl-3 text-sm"
         placeholder="Search: sqlite #vue -#old @example.com"
@@ -145,10 +148,10 @@ function onSearchKeydown(event: KeyboardEvent) {
         :aria-expanded="tagSuggestionsOpen"
         :aria-controls="searchTagListboxId"
         :aria-activedescendant="activeTagDescendantId"
-        @input="onSearchInput"
-        @click="syncSearchCursorPosition"
-        @keyup="syncSearchCursorPosition"
-        @focus="syncSearchCursorPosition"
+        @input="updateTagSuggestions"
+        @click="updateTagSuggestions"
+        @keyup="updateSearchCursor"
+        @focus="updateSearchCursor"
         @keydown="onSearchKeydown"
         @blur="closeTagSuggestions"
       />
@@ -172,13 +175,12 @@ function onSearchKeydown(event: KeyboardEvent) {
           v-for="(tag, index) in visibleTagSuggestions"
           :id="`${searchTagListboxId}-${tag.id}`"
           :key="tag.id"
-          class="cursor-pointer px-3 py-1.5"
+          class="ui-text-emphasis cursor-pointer px-3 py-2"
           :class="
             index === activeTagSuggestionIndex ? 'ui-suggestion-selected' : 'ui-suggestion-hover'
           "
           role="option"
           :aria-selected="index === activeTagSuggestionIndex"
-          @mouseenter="activeTagSuggestionIndex = index"
           @mousedown.prevent="selectTagSuggestion(index)"
         >
           {{ tag.name }}
