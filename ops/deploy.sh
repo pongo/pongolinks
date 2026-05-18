@@ -85,7 +85,7 @@ main() {
   validate_credentials
 
   local deploy_ref
-  deploy_ref="${1:-main}"
+  deploy_ref="${1:-master}"
 
   pushd "$REPO_DIR" >/dev/null
 
