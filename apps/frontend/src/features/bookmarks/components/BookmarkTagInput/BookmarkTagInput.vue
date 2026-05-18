@@ -2,6 +2,7 @@
 import { computed, nextTick, ref, watch } from "vue";
 
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
+import { useTagAutocompleteInteraction } from "../useTagAutocompleteInteraction";
 import { replaceCurrentTagToken, suggestTags } from "./tag-autocomplete";
 
 const props = defineProps<{
@@ -15,8 +16,6 @@ const emit = defineEmits<{
 
 const tagsInput = ref<HTMLInputElement>();
 const tagsTextValue = ref(props.modelValue);
-const tagSuggestionsOpen = ref(false);
-const activeTagSuggestionIndex = ref(-1);
 const tagCursorPosition = ref(0);
 const tagListboxId = "bookmark-tag-suggestions";
 const tagsText = computed({
@@ -29,11 +28,21 @@ const tagsText = computed({
 const visibleTagSuggestions = computed(() =>
   suggestTags(props.tagSuggestions ?? [], tagsTextValue.value, tagCursorPosition.value),
 );
-const activeTagSuggestionId = computed(() =>
-  tagSuggestionsOpen.value && activeTagSuggestionIndex.value >= 0
-    ? `${tagListboxId}-${visibleTagSuggestions.value[activeTagSuggestionIndex.value]?.id}`
-    : undefined,
-);
+const tagSuggestionCount = computed(() => visibleTagSuggestions.value.length);
+const {
+  activeDescendantId: activeTagSuggestionId,
+  activeIndex: activeTagSuggestionIndex,
+  close: closeTagSuggestions,
+  isOpen: tagSuggestionsOpen,
+  moveActive: moveActiveTagSuggestion,
+  openIfAny: openTagSuggestions,
+  resetActive: resetActiveTagSuggestion,
+  selectableIndex: selectableTagSuggestionIndex,
+} = useTagAutocompleteInteraction({
+  listboxId: tagListboxId,
+  suggestionCount: tagSuggestionCount,
+  getSuggestionId: (index) => visibleTagSuggestions.value[index]?.id,
+});
 
 watch(
   () => props.modelValue,
@@ -44,35 +53,14 @@ watch(
   },
 );
 
-watch(visibleTagSuggestions, (suggestions) => {
-  if (suggestions.length === 0) {
-    tagSuggestionsOpen.value = false;
-    activeTagSuggestionIndex.value = -1;
-    return;
-  }
-
-  if (activeTagSuggestionIndex.value >= suggestions.length) {
-    activeTagSuggestionIndex.value = suggestions.length - 1;
-  }
-});
-
 function updateTagCursor(event?: Event) {
   const target = event?.target instanceof HTMLInputElement ? event.target : tagsInput.value;
   tagCursorPosition.value = target?.selectionStart ?? tagsTextValue.value.length;
 }
 
-function openTagSuggestions() {
-  tagSuggestionsOpen.value = visibleTagSuggestions.value.length > 0;
-}
-
-function closeTagSuggestions() {
-  tagSuggestionsOpen.value = false;
-  activeTagSuggestionIndex.value = -1;
-}
-
 function updateTagSuggestions(event: Event) {
   updateTagCursor(event);
-  activeTagSuggestionIndex.value = -1;
+  resetActiveTagSuggestion();
   openTagSuggestions();
 }
 
@@ -96,21 +84,6 @@ async function selectTagSuggestion(index: number) {
   tagsInput.value?.setSelectionRange(replacement.cursor, replacement.cursor);
 }
 
-function moveActiveTagSuggestion(offset: number) {
-  const count = visibleTagSuggestions.value.length;
-  if (count === 0) {
-    return;
-  }
-
-  tagSuggestionsOpen.value = true;
-  activeTagSuggestionIndex.value =
-    activeTagSuggestionIndex.value < 0
-      ? offset > 0
-        ? 0
-        : count - 1
-      : (activeTagSuggestionIndex.value + offset + count) % count;
-}
-
 function handleTagKeydown(event: KeyboardEvent) {
   updateTagCursor(event);
 
@@ -132,9 +105,7 @@ function handleTagKeydown(event: KeyboardEvent) {
 
   if ((event.key === "Enter" || event.key === "Tab") && tagSuggestionsOpen.value) {
     event.preventDefault();
-    void selectTagSuggestion(
-      activeTagSuggestionIndex.value >= 0 ? activeTagSuggestionIndex.value : 0,
-    );
+    void selectTagSuggestion(selectableTagSuggestionIndex.value);
     return;
   }
 
