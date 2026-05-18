@@ -63,6 +63,11 @@ function syncSearchCursorPosition(event?: Event) {
   searchCursorPosition.value = target?.selectionStart ?? props.modelValue.length;
 }
 
+function closeTagSuggestions() {
+  tagSuggestionsOpen.value = false;
+  activeTagSuggestionIndex.value = 0;
+}
+
 function selectTagSuggestion(index: number) {
   const suggestion = visibleTagSuggestions.value[index];
   if (!suggestion) {
@@ -76,8 +81,7 @@ function selectTagSuggestion(index: number) {
   );
   emit("update:modelValue", replacement.value);
   searchCursorPosition.value = replacement.cursor;
-  activeTagSuggestionIndex.value = 0;
-  tagSuggestionsOpen.value = false;
+  closeTagSuggestions();
 
   searchInput.value?.focus();
   searchInput.value?.setSelectionRange(replacement.cursor, replacement.cursor);
@@ -123,7 +127,7 @@ function onSearchKeydown(event: KeyboardEvent) {
 
   if (event.key === "Escape" && tagSuggestionsOpen.value) {
     event.preventDefault();
-    tagSuggestionsOpen.value = false;
+    closeTagSuggestions();
   }
 }
 </script>
@@ -148,6 +152,7 @@ function onSearchKeydown(event: KeyboardEvent) {
         @keyup="syncSearchCursorPosition"
         @focus="syncSearchCursorPosition"
         @keydown="onSearchKeydown"
+        @blur="closeTagSuggestions"
       />
       <button
         v-if="isSearchActive"
