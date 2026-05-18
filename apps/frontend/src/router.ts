@@ -4,6 +4,7 @@ import BookmarkListView from "#/features/bookmarks/views/BookmarkListView/Bookma
 import TagShortcutRouteView from "#/features/bookmarks/views/BookmarkListView/TagShortcutRouteView.vue";
 import CreateBookmarkView from "#/features/bookmarks/views/CreateBookmarkView/CreateBookmarkView.vue";
 import EditBookmarkView from "#/features/bookmarks/views/EditBookmarkView.vue";
+import TagsView from "#/features/tags/views/TagsView.vue";
 import ToolsView from "#/features/tools/views/ToolsView.vue";
 
 export const router = createRouter({
@@ -34,6 +35,11 @@ export const router = createRouter({
       path: "/bookmarks/:id/edit",
       name: "bookmark-edit",
       component: EditBookmarkView,
+    },
+    {
+      path: "/tags",
+      name: "tags",
+      component: TagsView,
     },
     {
       path: "/tools",

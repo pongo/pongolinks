@@ -20,6 +20,8 @@ const apiErrorCodes = [
   "bookmark.unexpected",
 ] as const satisfies readonly ApiErrorCode[];
 
+type SearchApiErrorCode = (typeof apiErrorCodes)[number];
+
 const fallbackError = new ApiError(
   "Something went wrong. Please try again.",
   "bookmark.unexpected",
@@ -29,8 +31,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function isApiErrorCode(value: unknown): value is ApiErrorCode {
-  return typeof value === "string" && apiErrorCodes.includes(value as ApiErrorCode);
+function isApiErrorCode(value: unknown): value is SearchApiErrorCode {
+  return typeof value === "string" && apiErrorCodes.includes(value as SearchApiErrorCode);
 }
 
 function mapApiErrorToFormErrors(error: Pick<ApiError, "code" | "message">): FormErrors {

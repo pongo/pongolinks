@@ -4,3 +4,8 @@ export type TagSummaryDTO = {
   nameLower: string;
   usageCount: number;
 };
+
+export type UntaggedBookmarkDTO = {
+  id: number;
+  title: string;
+};

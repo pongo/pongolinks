@@ -1,6 +1,6 @@
 import type { LocationQuery, LocationQueryRaw } from "vue-router";
 
-import { normalizeBookmarkListPageQuery } from "./pagination-window";
+import { normalizeBookmarkListPageQuery } from "./pagination/pagination-window.ts";
 
 export type BookmarkListRouteState = {
   q: string | null;
@@ -89,6 +89,11 @@ export function renderMiniQueryFromState(state: BookmarkListRouteState) {
   }
 
   return parts.join(" ").trim();
+}
+
+export function renderMiniQueryForContinuedInput(state: BookmarkListRouteState) {
+  const text = renderMiniQueryFromState(state);
+  return text === "" ? "" : `${text} `;
 }
 
 export function parseMiniQueryToState(input: string): Omit<BookmarkListRouteState, "page"> {

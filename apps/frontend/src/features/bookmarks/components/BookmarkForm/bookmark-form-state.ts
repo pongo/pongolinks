@@ -1,4 +1,4 @@
-import type { BookmarkDTO, EditableBookmarkPayload } from "../types";
+import type { BookmarkDTO, EditableBookmarkPayload } from "../../types.ts";
 
 export type BookmarkFormInitialFocusTarget = "url" | "tags";
 

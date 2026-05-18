@@ -6,6 +6,7 @@ import {
   parseBookmarkListRouteQuery,
   parseMiniQueryToState,
   parseTagShortcutInput,
+  renderMiniQueryForContinuedInput,
   renderMiniQueryFromState,
   toggleDomainFilter,
   toggleIncludedTagFilter,
@@ -62,6 +63,30 @@ describe("bookmark list query state", () => {
         page: 1,
       }),
     ).toBe("https://example.com");
+  });
+
+  it("renders non-empty route filters with one trailing space for continued input", () => {
+    expect(
+      renderMiniQueryForContinuedInput({
+        q: null,
+        tags: ["narod.ru"],
+        domain: null,
+        url: null,
+        page: 1,
+      }),
+    ).toBe("#narod.ru ");
+  });
+
+  it("keeps empty route filters empty for continued input", () => {
+    expect(
+      renderMiniQueryForContinuedInput({
+        q: null,
+        tags: [],
+        domain: null,
+        url: null,
+        page: 1,
+      }),
+    ).toBe("");
   });
 
   it("serializes route query and omits page 1", () => {

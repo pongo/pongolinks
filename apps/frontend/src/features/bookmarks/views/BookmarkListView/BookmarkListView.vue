@@ -9,13 +9,13 @@ import type {
 } from "../../types";
 import { useDelayedFlag } from "#/shared/useDelayedFlag.ts";
 import BookmarkList from "./BookmarkList.vue";
-import BookmarkListPagination from "./BookmarkListPagination.vue";
-import BookmarkListSearchField from "./BookmarkListSearchField.vue";
+import BookmarkListPagination from "./pagination/BookmarkListPagination.vue";
+import BookmarkListSearchField from "./search/BookmarkListSearchField.vue";
 import {
   isFilterActive,
   parseBookmarkListRouteQuery,
   parseMiniQueryToState,
-  renderMiniQueryFromState,
+  renderMiniQueryForContinuedInput,
   toggleDomainFilter,
   toggleIncludedTagFilter,
   toBookmarkListRouteQuery,
@@ -52,7 +52,7 @@ const isNoBookmarksYet = computed(
 watch(
   queryState,
   (nextState) => {
-    const nextText = renderMiniQueryFromState(nextState);
+    const nextText = renderMiniQueryForContinuedInput(nextState);
     if (nextText !== searchText.value) {
       searchText.value = nextText;
     }
@@ -116,11 +116,6 @@ async function clearSearch() {
   await router.push("/");
 }
 
-function renderMiniQueryForContinuedInput(state: typeof queryState.value) {
-  const nextText = renderMiniQueryFromState(state);
-  return nextText === "" ? "" : `${nextText} `;
-}
-
 async function onTagClick(tagName: string) {
   const nextState = toggleIncludedTagFilter(queryState.value, tagName);
   await router.push({
@@ -145,8 +140,18 @@ async function onDomainClick(domain: string) {
     <section class="mx-auto max-w-3xl">
       <header class="mb-7 flex items-center justify-between gap-4">
         <div>
-          <p class="ui-link text-xs font-bold tracking-normal uppercase">pongolinks</p>
-          <h1 class="ui-text-strong mt-1 text-2xl font-bold select-none">Bookmarks</h1>
+          <RouterLink
+            class="ui-link block cursor-pointer text-xs font-bold tracking-normal uppercase"
+            to="/"
+          >
+            pongolinks
+          </RouterLink>
+          <RouterLink
+            class="ui-text-strong mt-1 block cursor-pointer text-2xl font-bold select-none"
+            to="/"
+          >
+            Bookmarks
+          </RouterLink>
         </div>
         <RouterLink
           class="ui-action inline-flex min-h-10 items-center justify-center px-4 text-sm font-semibold transition select-none"
@@ -211,7 +216,10 @@ async function onDomainClick(domain: string) {
         <BookmarkListPagination :pagination="pagination" :query-state="queryState" />
       </template>
 
-      <footer class="ui-border-subtle mt-8 flex justify-end border-t pt-4">
+      <footer class="ui-border-subtle mt-8 flex justify-end gap-4 border-t pt-4">
+        <RouterLink class="ui-muted-link text-sm font-semibold select-none" to="/tags">
+          Tags
+        </RouterLink>
         <RouterLink class="ui-muted-link text-sm font-semibold select-none" to="/tools">
           Tools
         </RouterLink>

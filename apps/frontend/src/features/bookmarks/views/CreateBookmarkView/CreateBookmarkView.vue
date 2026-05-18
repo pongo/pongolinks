@@ -7,7 +7,7 @@ import { checkBookmarkUrl } from "#/features/search/api.ts";
 import { listTags } from "#/features/tags/api.ts";
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
 import { createBookmark } from "../../api/api";
-import BookmarkForm from "../../components/BookmarkForm.vue";
+import BookmarkForm from "../../components/BookmarkForm/BookmarkForm.vue";
 import type { EditableBookmarkPayload } from "../../types";
 import {
   chooseBookmarkCreateUrl,
