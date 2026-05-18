@@ -1,4 +1,5 @@
 import { defineConfig } from "vitest/config";
+import vue from "@vitejs/plugin-vue";
 
 export default defineConfig({
   test: {
@@ -17,9 +18,11 @@ export default defineConfig({
         },
       },
       {
+        plugins: [vue()],
         test: {
           name: "@pongolinks/frontend",
           root: "./apps/frontend",
+          environment: "happy-dom",
         },
       },
       {

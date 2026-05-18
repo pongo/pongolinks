@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@types/bun": "^1.3.13",
+    "@vitejs/plugin-vue": "^6.0.7",
     "drizzle-kit": "^0.31.10",
     "oxfmt": "^0.48.0",
     "turbo": "^2.9.12",
