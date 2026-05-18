@@ -91,6 +91,11 @@ export function renderMiniQueryFromState(state: BookmarkListRouteState) {
   return parts.join(" ").trim();
 }
 
+export function renderMiniQueryForContinuedInput(state: BookmarkListRouteState) {
+  const text = renderMiniQueryFromState(state);
+  return text === "" ? "" : `${text} `;
+}
+
 export function parseMiniQueryToState(input: string): Omit<BookmarkListRouteState, "page"> {
   const trimmedInput = input.trim();
   if (trimmedInput !== "" && isHttpUrl(trimmedInput)) {

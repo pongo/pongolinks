@@ -15,7 +15,7 @@ import {
   isFilterActive,
   parseBookmarkListRouteQuery,
   parseMiniQueryToState,
-  renderMiniQueryFromState,
+  renderMiniQueryForContinuedInput,
   toggleDomainFilter,
   toggleIncludedTagFilter,
   toBookmarkListRouteQuery,
@@ -52,7 +52,7 @@ const isNoBookmarksYet = computed(
 watch(
   queryState,
   (nextState) => {
-    const nextText = renderMiniQueryFromState(nextState);
+    const nextText = renderMiniQueryForContinuedInput(nextState);
     if (nextText !== searchText.value) {
       searchText.value = nextText;
     }
@@ -114,11 +114,6 @@ async function submitSearch() {
 async function clearSearch() {
   searchText.value = "";
   await router.push("/");
-}
-
-function renderMiniQueryForContinuedInput(state: typeof queryState.value) {
-  const nextText = renderMiniQueryFromState(state);
-  return nextText === "" ? "" : `${nextText} `;
 }
 
 async function onTagClick(tagName: string) {
