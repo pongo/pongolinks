@@ -161,12 +161,7 @@ async function onDomainClick(domain: string) {
         </RouterLink>
       </header>
 
-      <BookmarkListSearchField
-        v-model="searchText"
-        :is-search-active="isSearchActive"
-        @submit="submitSearch"
-        @clear="clearSearch"
-      />
+      <BookmarkListSearchField v-model="searchText" @submit="submitSearch" @clear="clearSearch" />
 
       <p v-if="error" class="ui-danger-banner border-l-4 px-4 py-3 text-sm font-medium">
         {{ error }}
