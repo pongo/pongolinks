@@ -48,7 +48,6 @@ watch(
   () => props.modelValue,
   () => {
     syncSearchCursorPosition();
-    tagSuggestionsOpen.value = visibleTagSuggestions.value.length > 0;
   },
 );
 
@@ -147,7 +146,7 @@ function onSearchKeydown(event: KeyboardEvent) {
         @input="onSearchInput"
         @click="syncSearchCursorPosition"
         @keyup="syncSearchCursorPosition"
-        @focus="onSearchInput"
+        @focus="syncSearchCursorPosition"
         @keydown="onSearchKeydown"
       />
       <button
