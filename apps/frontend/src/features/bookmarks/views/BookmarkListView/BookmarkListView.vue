@@ -19,6 +19,7 @@ import {
   toggleDomainFilter,
   toggleIncludedTagFilter,
   toBookmarkListRouteQuery,
+  type BookmarkListRouteState,
 } from "./bookmark-list-query-state";
 
 const route = useRoute();
@@ -116,22 +117,21 @@ async function clearSearch() {
   await router.push("/");
 }
 
-async function onTagClick(tagName: string) {
-  const nextState = toggleIncludedTagFilter(queryState.value, tagName);
+async function applyQueryState(nextState: BookmarkListRouteState) {
   await router.push({
     path: "/",
     query: toBookmarkListRouteQuery(nextState),
   });
+
   searchText.value = renderMiniQueryForContinuedInput(nextState);
 }
 
+async function onTagClick(tagName: string) {
+  await applyQueryState(toggleIncludedTagFilter(queryState.value, tagName));
+}
+
 async function onDomainClick(domain: string) {
-  const nextState = toggleDomainFilter(queryState.value, domain);
-  await router.push({
-    path: "/",
-    query: toBookmarkListRouteQuery(nextState),
-  });
-  searchText.value = renderMiniQueryForContinuedInput(nextState);
+  await applyQueryState(toggleDomainFilter(queryState.value, domain));
 }
 </script>
 
