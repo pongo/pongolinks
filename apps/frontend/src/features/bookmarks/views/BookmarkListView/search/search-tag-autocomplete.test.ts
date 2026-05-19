@@ -13,8 +13,16 @@ describe("search field tag autocomplete", () => {
     expect(suggestSearchFieldTags(tags, "hello #sq", 9)).toEqual([tags[0]]);
   });
 
+  it("suggests exact matches for include #token", () => {
+    expect(suggestSearchFieldTags(tags, "hello #sqlite", 13)).toEqual([tags[0]]);
+  });
+
   it("suggests tags for exclude -#token", () => {
     expect(suggestSearchFieldTags(tags, "hello -#ol", 10)).toEqual([tags[1], tags[2]]);
+  });
+
+  it("suggests exact matches for exclude -#token", () => {
+    expect(suggestSearchFieldTags(tags, "hello -#old", 11)).toEqual([tags[2]]);
   });
 
   it("does not suggest for plain text tokens", () => {

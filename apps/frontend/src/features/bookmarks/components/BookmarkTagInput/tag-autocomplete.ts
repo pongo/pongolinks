@@ -1,9 +1,5 @@
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
-import {
-  currentToken,
-  replaceCurrentToken,
-  type TokenRange,
-} from "../autocomplete/tag-token-autocomplete.ts";
+import { currentToken, replaceCurrentToken } from "../autocomplete/tag-token-autocomplete.ts";
 
 export function suggestTags(
   tags: TagSummaryDTO[],
@@ -27,12 +23,7 @@ export function suggestTags(
   const otherTokenSet = new Set(otherTokens);
 
   return tags
-    .filter(
-      (tag) =>
-        tag.nameLower.includes(queryLower) &&
-        tag.nameLower !== queryLower &&
-        !otherTokenSet.has(tag.nameLower),
-    )
+    .filter((tag) => tag.nameLower.includes(queryLower) && !otherTokenSet.has(tag.nameLower))
     .slice(0, limit);
 }
 

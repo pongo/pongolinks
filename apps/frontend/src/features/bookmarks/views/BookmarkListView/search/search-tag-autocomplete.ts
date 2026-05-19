@@ -23,9 +23,7 @@ export function suggestSearchFieldTags(
     return [];
   }
 
-  return tags
-    .filter((tag) => tag.nameLower.includes(queryLower) && tag.nameLower !== queryLower)
-    .slice(0, limit);
+  return tags.filter((tag) => tag.nameLower.includes(queryLower)).slice(0, limit);
 }
 
 export function replaceCurrentSearchTagToken(
