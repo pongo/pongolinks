@@ -12,7 +12,7 @@
   },
   "scripts": {
     "dev": "cd ../.. && bun --watch apps/backend/src/index.ts",
-    "build": "bun build ./src/index.ts --outdir dist --target bun",
+    "build": "bun build ./src/index.ts --outdir dist --target bun --sourcemap",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "agent:test": "vitest run --no-color --reporter=agent",
