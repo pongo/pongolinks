@@ -108,6 +108,24 @@ describe.each(contexts)("BookmarkTagAutocompleteInput ($name)", (context) => {
     wrapper.unmount();
   });
 
+  it("highlights the first suggestion when suggestions open from input", async () => {
+    const wrapper = mountInput({
+      autocomplete: context.autocomplete,
+      modelValue: context.selectionSeed,
+    });
+    const input = wrapper.get("input");
+    const element = input.element as HTMLInputElement;
+
+    element.setSelectionRange(context.selectionSeed.length, context.selectionSeed.length);
+    await input.trigger("input");
+
+    const options = wrapper.findAll('[role="option"]');
+    expect(options).toHaveLength(2);
+    expect(options[0]?.attributes("aria-selected")).toBe("true");
+    expect(element.getAttribute("aria-activedescendant")).toBe("bookmark-tag-listbox-1");
+    wrapper.unmount();
+  });
+
   it.each(["Enter", "Tab"])(
     "opens with ArrowDown and selects active suggestion with %s",
     async (selectKey) => {

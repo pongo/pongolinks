@@ -24,16 +24,19 @@ describe("tag autocomplete interaction", () => {
     expect(interaction.selectableIndex.value).toBe(0);
   });
 
-  it("opens only when suggestions exist", () => {
+  it("opens only when suggestions exist and activates the first suggestion", () => {
     const { interaction, suggestions } = setupInteraction();
 
     interaction.openIfAny();
     expect(interaction.isOpen.value).toBe(false);
+    expect(interaction.activeIndex.value).toBe(-1);
 
     suggestions.value = [{ id: "one" }];
     interaction.openIfAny();
 
     expect(interaction.isOpen.value).toBe(true);
+    expect(interaction.activeIndex.value).toBe(0);
+    expect(interaction.activeDescendantId.value).toBe("tag-listbox-one");
   });
 
   it("moves through suggestions and wraps around", () => {

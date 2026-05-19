@@ -35,7 +35,11 @@ export function useTagAutocompleteInteraction({
   });
 
   function openIfAny() {
-    isOpen.value = suggestionCount.value > 0;
+    const count = suggestionCount.value;
+    isOpen.value = count > 0;
+    if (count > 0 && activeIndex.value < 0) {
+      activeIndex.value = 0;
+    }
   }
 
   function close() {
