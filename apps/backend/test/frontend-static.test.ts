@@ -23,10 +23,12 @@ describe("production frontend serving", () => {
 
   it("keeps API routes and falls back non-API routes to the SPA", async () => {
     mkdirSync(tempDir, { recursive: true });
+    mkdirSync(join(tempDir, "assets"), { recursive: true });
     writeFileSync(
       join(tempDir, "index.html"),
-      '<!doctype html><html><body><div id="app"></div></body></html>',
+      '<!doctype html><html><body><div id="app"></div><script type="module" src="/pl/assets/index-test.js"></script></body></html>',
     );
+    writeFileSync(join(tempDir, "assets", "index-test.js"), "console.log('asset loaded');\n");
 
     useTestBasicAuthCredentials();
 
@@ -41,6 +43,12 @@ describe("production frontend serving", () => {
     const fallbackResponse = await app.handle(
       authenticatedRequest(`http://localhost${APP_BASE_PATH}/bookmarks/future`),
     );
+    const assetResponse = await app.handle(
+      authenticatedRequest(`http://localhost${APP_BASE_PATH}/assets/index-test.js`),
+    );
+    const missingAssetResponse = await app.handle(
+      authenticatedRequest(`http://localhost${APP_BASE_PATH}/assets/missing.js`),
+    );
     const oldApiResponse = await app.handle(new Request("http://localhost/api/health"));
     const rootResponse = await app.handle(new Request("http://localhost/"));
 
@@ -48,6 +56,11 @@ describe("production frontend serving", () => {
     expect(await healthResponse.json()).toEqual({ status: "ok" });
     expect(fallbackResponse.status).toBe(200);
     expect(await fallbackResponse.text()).toContain('<div id="app"></div>');
+    expect(assetResponse.status).toBe(200);
+    expect(assetResponse.headers.get("content-type")).toContain("text/javascript");
+    expect(await assetResponse.text()).toContain("asset loaded");
+    expect(missingAssetResponse.status).toBe(404);
+    expect(await missingAssetResponse.json()).toEqual({ error: "Not Found" });
     expect(oldApiResponse.status).not.toBe(200);
     expect(rootResponse.status).not.toBe(200);
   });
