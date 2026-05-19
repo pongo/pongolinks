@@ -2,6 +2,7 @@ import { Autolinker, type AutolinkerConfig } from "autolinker";
 
 export type RenderBookmarkDescriptionHtmlOptions = {
   linkClassName?: string;
+  quoteClassName?: string;
 };
 
 const bookmarkDescriptionLinkParsingOptions = {
@@ -39,7 +40,38 @@ export function renderBookmarkDescriptionHtml(
   description: string,
   options: RenderBookmarkDescriptionHtmlOptions = {},
 ): string {
-  return Autolinker.link(description, {
+  return renderBookmarkDescriptionBlocks(description)
+    .map((block) => {
+      const html = renderBookmarkDescriptionText(block.text, options);
+
+      if (block.type === "quote") {
+        const classAttribute = options.quoteClassName
+          ? ` class="${escapeHtmlAttribute(options.quoteClassName)}"`
+          : "";
+
+        return `<blockquote${classAttribute}>${html}</blockquote>`;
+      }
+
+      return html;
+    })
+    .join("");
+}
+
+type BookmarkDescriptionBlock =
+  | {
+      type: "text";
+      text: string;
+    }
+  | {
+      type: "quote";
+      text: string;
+    };
+
+function renderBookmarkDescriptionText(
+  text: string,
+  options: RenderBookmarkDescriptionHtmlOptions,
+): string {
+  return Autolinker.link(text, {
     ...bookmarkDescriptionLinkParsingOptions,
     sanitizeHtml: true,
     newWindow: true,
@@ -56,4 +88,47 @@ export function renderBookmarkDescriptionHtml(
       return url.startsWith("http://") || url.startsWith("https://");
     },
   });
+}
+
+function renderBookmarkDescriptionBlocks(description: string): BookmarkDescriptionBlock[] {
+  const blocks: BookmarkDescriptionBlock[] = [];
+  const lines = description.split(/(\r?\n)/);
+
+  for (let index = 0; index < lines.length; index += 2) {
+    const line = lines[index] ?? "";
+    const newline = lines[index + 1] ?? "";
+    const quoteLine = line.match(/^>\s?(.*)$/);
+
+    if (quoteLine) {
+      const previousBlock = blocks.at(-1);
+      const quoteText = quoteLine[1] + newline;
+
+      if (previousBlock?.type === "quote") {
+        previousBlock.text += quoteText;
+      } else {
+        blocks.push({ type: "quote", text: quoteText });
+      }
+
+      continue;
+    }
+
+    const previousBlock = blocks.at(-1);
+    const text = line + newline;
+
+    if (previousBlock?.type === "text") {
+      previousBlock.text += text;
+    } else {
+      blocks.push({ type: "text", text });
+    }
+  }
+
+  return blocks;
+}
+
+function escapeHtmlAttribute(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
 }

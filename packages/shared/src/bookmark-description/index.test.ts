@@ -88,4 +88,42 @@ describe("renderBookmarkDescriptionHtml", () => {
 
     expect(html).toContain('class="bookmark-description-link bookmark-description-link-url"');
   });
+
+  it("renders consecutive quote lines as one blockquote", () => {
+    const html = renderBookmarkDescriptionHtml("> First line\n> Second line");
+
+    expect(html).toBe("<blockquote>First line\nSecond line</blockquote>");
+  });
+
+  it("renders quote groups separated by a blank line as separate blockquotes", () => {
+    const html = renderBookmarkDescriptionHtml("> First quote\n\n> Second quote");
+
+    expect(html).toBe(
+      "<blockquote>First quote\n</blockquote>\n<blockquote>Second quote</blockquote>",
+    );
+  });
+
+  it("escapes HTML and links URLs inside blockquotes", () => {
+    const html = renderBookmarkDescriptionHtml("> <strong>Read</strong> https://example.com/docs");
+
+    expect(html).toContain("&lt;strong&gt;Read&lt;/strong&gt;");
+    expect(html).toContain('<a href="https://example.com/docs"');
+    expect(html).not.toContain("<strong>");
+  });
+
+  it("applies the provided quote class name", () => {
+    const html = renderBookmarkDescriptionHtml("> Quoted", {
+      quoteClassName: "bookmark-description-quote",
+    });
+
+    expect(html).toBe('<blockquote class="bookmark-description-quote">Quoted</blockquote>');
+  });
+
+  it("escapes the provided quote class attribute", () => {
+    const html = renderBookmarkDescriptionHtml("> Quoted", {
+      quoteClassName: 'quote" onclick="alert(1)',
+    });
+
+    expect(html).toBe('<blockquote class="quote&quot; onclick=&quot;alert(1)">Quoted</blockquote>');
+  });
 });

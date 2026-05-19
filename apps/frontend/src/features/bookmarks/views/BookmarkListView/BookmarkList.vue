@@ -21,6 +21,7 @@ const emit = defineEmits<{
 const { variants } = useAppVariants();
 const bookmarkDescriptionHtmlOptions = {
   linkClassName: "bookmark-description-link",
+  quoteClassName: "bookmark-description-quote",
 };
 
 function formatUpdatedAt(updatedAt: string) {
@@ -113,13 +114,13 @@ function isDomainActive(domain: string) {
               {{ tag.name }}
             </a>
           </div>
-          <p
+          <div
             v-if="bookmark.description"
             class="ui-text-readable mt-2 text-sm leading-6 whitespace-pre-wrap"
             v-html="
               renderBookmarkDescriptionHtml(bookmark.description, bookmarkDescriptionHtmlOptions)
             "
-          ></p>
+          ></div>
         </div>
         <div class="shrink-0 text-right">
           <RouterLink
@@ -147,5 +148,12 @@ function isDomainActive(domain: string) {
 
 .bookmark-description-link:hover {
   color: var(--ui-link);
+}
+
+.bookmark-description-quote {
+  margin: 0;
+  border-left: 3px solid var(--ui-border);
+  padding-left: 0.75rem;
+  color: var(--ui-text-muted);
 }
 </style>
