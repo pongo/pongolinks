@@ -25,6 +25,11 @@ describe("search field tag autocomplete", () => {
     expect(suggestSearchFieldTags(tags, "hello -#old", 11)).toEqual([tags[2]]);
   });
 
+  it("excludes tags entered in other include or exclude tokens", () => {
+    expect(suggestSearchFieldTags(tags, "#sqlite -#solid #ol", 19)).toEqual([tags[2]]);
+    expect(suggestSearchFieldTags(tags, "#sqlite -#solid -#ol", 20)).toEqual([tags[2]]);
+  });
+
   it("does not suggest for plain text tokens", () => {
     expect(suggestSearchFieldTags(tags, "hello sq", 8)).toEqual([]);
     expect(suggestSearchFieldTags(tags, "@example.com", 12)).toEqual([]);

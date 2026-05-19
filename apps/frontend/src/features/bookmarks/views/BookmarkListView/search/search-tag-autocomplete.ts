@@ -23,7 +23,28 @@ export function suggestSearchFieldTags(
     return [];
   }
 
-  return tags.filter((tag) => tag.nameLower.includes(queryLower)).slice(0, limit);
+  const otherTokens = value
+    .slice(0, token.start)
+    .concat(" ", value.slice(token.end))
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((otherToken) => {
+      if (otherToken.startsWith("-#")) {
+        return otherToken.slice(2).toLocaleLowerCase("und");
+      }
+
+      if (otherToken.startsWith("#")) {
+        return otherToken.slice(1).toLocaleLowerCase("und");
+      }
+
+      return undefined;
+    })
+    .filter((tagName): tagName is string => Boolean(tagName));
+  const otherTokenSet = new Set(otherTokens);
+
+  return tags
+    .filter((tag) => tag.nameLower.includes(queryLower) && !otherTokenSet.has(tag.nameLower))
+    .slice(0, limit);
 }
 
 export function replaceCurrentSearchTagToken(
