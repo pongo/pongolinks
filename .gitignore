@@ -42,3 +42,4 @@ dist/
 **/.tmp/
 /.turbo/cache/
 /tmp/
+/.vscode/settings.json
