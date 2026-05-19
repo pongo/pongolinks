@@ -142,15 +142,16 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
         const { params, set } = context;
         const log = getRouteLogger(context);
 
-        const id = BookmarkId.from(params.id);
-        if (id.isErr) {
-          logApiError(log, id.error);
-          return resultResponse(id, set);
+        const idResult = BookmarkId.from(params.id);
+        if (idResult.isErr) {
+          logApiError(log, idResult.error);
+          return resultResponse(idResult, set);
         }
 
-        log.set({ bookmark: { id: id.value.value() } });
+        const id = idResult.value;
+        log.set({ bookmark: { id: id.value() } });
 
-        const result = await bookmarkReads.findById(id.value);
+        const result = await bookmarkReads.findById(id);
         if (result.isErr) {
           logApiError(log, result.error);
         }
@@ -210,15 +211,16 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
         const { params, set } = context;
         const log = getRouteLogger(context);
 
-        const id = BookmarkId.from(params.id);
-        if (id.isErr) {
-          logApiError(log, id.error);
-          return resultResponse(id, set);
+        const idResult = BookmarkId.from(params.id);
+        if (idResult.isErr) {
+          logApiError(log, idResult.error);
+          return resultResponse(idResult, set);
         }
 
-        log.set({ bookmark: { id: id.value.value() } });
+        const id = idResult.value;
+        log.set({ bookmark: { id: id.value() } });
 
-        const result = await bookmarkEditor.delete(id.value, log);
+        const result = await bookmarkEditor.delete(id, log);
         if (result.isErr) {
           logApiError(log, result.error);
         }

@@ -119,21 +119,19 @@ export function createTagRoutes({ db }: TagRoutesOptions) {
       async (context) => {
         const { body, params, set } = context;
         const log = getRouteLogger(context);
-        const parsed = parseTagName(body.name);
-        if (parsed.isErr) {
-          logApiError(log, parsed.error);
-          return resultResponse(parsed, set);
+
+        const tagNameResult = parseTagName(body.name);
+        if (tagNameResult.isErr) {
+          logApiError(log, tagNameResult.error);
+          return resultResponse(tagNameResult, set);
         }
 
+        const tagName = tagNameResult.value;
         log.set({
-          tag: { id: params.id, name: parsed.value.trimmed, nameLower: parsed.value.lowered },
+          tag: { id: params.id, name: tagName.trimmed, nameLower: tagName.lowered },
         });
 
-        const result = await repository.update(
-          params.id,
-          parsed.value.trimmed,
-          parsed.value.lowered,
-        );
+        const result = await repository.update(params.id, tagName.trimmed, tagName.lowered);
         if (result.isErr) {
           logApiError(log, result.error);
         } else {
