@@ -22,6 +22,9 @@ import {
   type BookmarkListRouteState,
 } from "./bookmark-list-query-state";
 
+import { useAppVariants } from "#/variants.ts";
+const { variants } = useAppVariants();
+
 const route = useRoute();
 const router = useRouter();
 const bookmarks = ref<BookmarkDTO[]>([]);
@@ -141,6 +144,15 @@ async function onDomainClick(domain: string) {
       <header class="mb-7 flex items-center justify-between gap-4">
         <div>
           <RouterLink
+            v-if="variants.showFavIcon"
+            class="ui-link flex h-4 cursor-pointer items-center gap-1.25 text-xs font-bold tracking-normal uppercase"
+            to="/"
+          >
+            <img class="h-4 w-4 shrink-0" src="/favicon.ico" alt="" aria-hidden="true" />
+            pongolinks
+          </RouterLink>
+          <RouterLink
+            v-else
             class="ui-link block cursor-pointer text-xs font-bold tracking-normal uppercase"
             to="/"
           >
