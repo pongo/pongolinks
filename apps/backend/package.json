@@ -21,7 +21,6 @@
   "dependencies": {
     "@eelkevdbos/elysia-basic-auth": "^2.0.1",
     "@elysia/opentelemetry": "^1.4.12",
-    "@elysiajs/static": "^1.4.10",
     "@opentelemetry/exporter-trace-otlp-proto": "^0.218.0",
     "@opentelemetry/sdk-trace-node": "^2.7.1",
     "@pongolinks/db": "workspace:*",
