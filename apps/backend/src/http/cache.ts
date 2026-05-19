@@ -1,18 +1,13 @@
 import { isResult } from "@pongolinks/shared/result";
 import { Elysia } from "elysia";
-import { createHash } from "node:crypto";
-import { createRequire } from "node:module";
 
-import type { etag as createEtagPlugin } from "@bogeychan/elysia-etag";
+import { etag } from "#/http/etag.ts";
 
 type HeaderValue = string | string[] | undefined;
 type HeaderBag = Record<string, HeaderValue>;
 
 const PRIVATE_REVALIDATION_CACHE_CONTROL = "private, no-cache";
 const AUTHORIZATION_VARY_HEADER = "Authorization";
-const require = createRequire(import.meta.url);
-
-type ETagPluginFactory = typeof createEtagPlugin;
 
 function appendVaryHeader(headers: HeaderBag, value: string) {
   const existingValue = headers.vary ?? headers.Vary;
@@ -37,42 +32,9 @@ function serializeCacheableResponse(response: unknown) {
   }
 }
 
-function createNodeCompatibleEtagPlugin() {
-  return new Elysia({ name: "node-compatible-etag" })
-    .onAfterHandle((context) => {
-      const serializedResponse = serializeCacheableResponse(context.response);
-
-      if (serializedResponse === undefined) {
-        return;
-      }
-
-      const etag = `"${createHash("sha1").update(serializedResponse).digest("base64")}"`;
-      context.set.headers.etag = etag;
-
-      const ifNoneMatch = context.headers["if-none-match"]?.split(",").map((entry) => entry.trim());
-      if (context.request.method === "GET" && ifNoneMatch?.includes(etag)) {
-        context.set.status = 304;
-        context.response = null;
-      }
-    })
-    .as("global");
-}
-
-function createRuntimeEtagPlugin() {
-  if (typeof Bun === "undefined") {
-    return createNodeCompatibleEtagPlugin();
-  }
-
-  const { etag } = require("@bogeychan/elysia-etag") as { etag: ETagPluginFactory };
-
-  return etag({
-    serialize: serializeCacheableResponse,
-  });
-}
-
 export function privateApiRevalidationCache() {
   return new Elysia({ name: "private-api-revalidation-cache" })
-    .use(createRuntimeEtagPlugin())
+    .use(etag({ serialize: serializeCacheableResponse }))
     .onAfterHandle(({ set }) => {
       const headers = set.headers as HeaderBag;
 
