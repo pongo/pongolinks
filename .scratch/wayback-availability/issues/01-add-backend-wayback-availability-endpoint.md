@@ -24,6 +24,8 @@ type WaybackAvailabilityDTO =
 
 The module owns fetch behavior, response parsing, operational error mapping, and a small in-memory `quick-lru` cache. It must use `https://archive.org/wayback/available?url=...`, must not retry Wayback failures, and must not cache operational errors.
 
+Тесты должны использовать мок, а не обращаться напрямую к `https://archive.org/wayback/available?url=...`
+
 ## Acceptance criteria
 
 - [ ] The backend exposes a Wayback availability endpoint inside the existing API surface.
