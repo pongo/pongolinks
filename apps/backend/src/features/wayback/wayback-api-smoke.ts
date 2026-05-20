@@ -1,4 +1,4 @@
-import { assert, request, withApp } from "./bookmarks-api-smoke-support";
+import { assert, request, withApp } from "#/features/bookmarks/bookmarks-api-smoke-support.ts";
 
 type FetchMock = (...args: Parameters<typeof fetch>) => ReturnType<typeof fetch>;
 
@@ -190,4 +190,4 @@ await withApp(async ({ app }) => {
   }
 });
 
-console.log("bookmark wayback availability api smoke passed");
+console.log("wayback api smoke passed");

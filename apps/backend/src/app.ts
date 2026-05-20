@@ -9,6 +9,7 @@ import { createBookmarkRoutes } from "./features/bookmarks/routes";
 import { createTagRoutes } from "./features/tags/routes";
 import { healthRoutes } from "./features/health/routes";
 import { createSearchRoutes } from "./features/search/routes";
+import { createWaybackRoutes } from "./features/wayback/routes";
 import { createFrontendStaticPlugin } from "./http/frontend-static";
 import { createRequestLoggingOptions, createTracingPlugin } from "./observability";
 
@@ -25,6 +26,7 @@ function createApiRoutes(db: AppDb) {
     api
       .use(healthRoutes)
       .use(createSearchRoutes({ db }))
+      .use(createWaybackRoutes())
       .use(createBookmarkRoutes({ db }))
       .use(createTagRoutes({ db })),
   );
