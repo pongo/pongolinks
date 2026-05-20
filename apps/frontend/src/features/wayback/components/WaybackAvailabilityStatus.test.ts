@@ -1,17 +1,23 @@
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
+import { nextTick } from "vue";
 import { describe, expect, it, vi } from "vitest";
 
 import WaybackAvailabilityStatus from "./WaybackAvailabilityStatus.vue";
 
 describe("WaybackAvailabilityStatus", () => {
-  it("renders checking state", () => {
+  it("renders checking state without running an injected check", async () => {
+    const check = vi.fn();
     const wrapper = mount(WaybackAvailabilityStatus, {
       props: {
         status: { kind: "checking" },
+        url: "https://example.com/status",
+        check,
       },
     });
+    await nextTick();
 
     expect(wrapper.text()).toContain("Checking Wayback availability...");
+    expect(check).not.toHaveBeenCalled();
   });
 
   it("renders archived state with snapshot link and readable timestamp", () => {
@@ -57,7 +63,6 @@ describe("WaybackAvailabilityStatus", () => {
   });
 
   it("runs one-time check for edit form after bookmark URL is shown", async () => {
-    vi.useFakeTimers();
     const check = vi.fn().mockResolvedValue({
       isOk: true,
       isErr: false,
@@ -67,25 +72,20 @@ describe("WaybackAvailabilityStatus", () => {
     const wrapper = mount(WaybackAvailabilityStatus, {
       props: {
         url: "https://example.com/edit",
-        initialCheckUrl: "https://example.com/edit",
         check,
       },
     });
 
-    await vi.advanceTimersByTimeAsync(400);
-    await Promise.resolve();
+    await flushPromises();
     expect(check).toHaveBeenCalledTimes(1);
     expect(check).toHaveBeenCalledWith("https://example.com/edit");
 
     await wrapper.setProps({ url: "https://example.com/edit" });
-    await vi.advanceTimersByTimeAsync(400);
-    await Promise.resolve();
+    await flushPromises();
     expect(check).toHaveBeenCalledTimes(1);
-    vi.useRealTimers();
   });
 
   it("runs one-time check for create form when initial route URL reaches final form", async () => {
-    vi.useFakeTimers();
     const check = vi.fn().mockResolvedValue({
       isOk: true,
       isErr: false,
@@ -99,38 +99,30 @@ describe("WaybackAvailabilityStatus", () => {
     mount(WaybackAvailabilityStatus, {
       props: {
         url: "https://example.com/create",
-        initialCheckUrl: "https://example.com/create",
         check,
       },
     });
 
-    await vi.advanceTimersByTimeAsync(400);
-    await Promise.resolve();
+    await flushPromises();
     expect(check).toHaveBeenCalledTimes(1);
     expect(check).toHaveBeenCalledWith("https://example.com/create");
-    vi.useRealTimers();
   });
 
   it("does not check Wayback for empty manual create form", async () => {
-    vi.useFakeTimers();
     const check = vi.fn();
 
     mount(WaybackAvailabilityStatus, {
       props: {
         url: "",
-        initialCheckUrl: "",
         check,
       },
     });
 
-    await vi.advanceTimersByTimeAsync(400);
-    await Promise.resolve();
+    await flushPromises();
     expect(check).not.toHaveBeenCalled();
-    vi.useRealTimers();
   });
 
   it("hides status after URL edit from the initial check target", async () => {
-    vi.useFakeTimers();
     const check = vi.fn().mockResolvedValue({
       isOk: true,
       isErr: false,
@@ -140,19 +132,55 @@ describe("WaybackAvailabilityStatus", () => {
     const wrapper = mount(WaybackAvailabilityStatus, {
       props: {
         url: "https://example.com/original",
-        initialCheckUrl: "https://example.com/original",
         check,
       },
     });
 
-    await vi.advanceTimersByTimeAsync(400);
-    await Promise.resolve();
+    await flushPromises();
     expect(wrapper.text()).toContain("No Wayback snapshot found for this URL.");
 
     await wrapper.setProps({ url: "https://example.com/edited" });
-    await Promise.resolve();
+    await flushPromises();
     expect(wrapper.text()).toBe("");
     expect(check).toHaveBeenCalledTimes(1);
-    vi.useRealTimers();
+  });
+
+  it("does not show a stale result when URL changes before the check resolves", async () => {
+    let resolveCheck: (value: { isOk: true; isErr: false; value: { available: false } }) => void;
+    const check = vi.fn(
+      () =>
+        new Promise<{
+          isOk: true;
+          isErr: false;
+          value: { available: false };
+        }>((resolve) => {
+          resolveCheck = resolve;
+        }),
+    );
+
+    const wrapper = mount(WaybackAvailabilityStatus, {
+      props: {
+        url: "https://example.com/original",
+        check,
+      },
+    });
+
+    await flushPromises();
+    expect(wrapper.text()).toContain("Checking Wayback availability...");
+
+    await wrapper.setProps({ url: "https://example.com/edited" });
+    await nextTick();
+    expect(wrapper.text()).toBe("");
+
+    resolveCheck!({
+      isOk: true,
+      isErr: false,
+      value: { available: false },
+    });
+    await flushPromises();
+    await nextTick();
+
+    expect(wrapper.text()).toBe("");
+    expect(check).toHaveBeenCalledTimes(1);
   });
 });

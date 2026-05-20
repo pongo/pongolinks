@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
 import { checkWaybackAvailability } from "#/features/wayback/api.ts";
 import type { ApiError } from "#/shared/api/errors.ts";
@@ -13,19 +13,21 @@ import type { Result } from "@pongolinks/shared/result";
 
 const props = defineProps<{
   url?: string;
-  initialCheckUrl?: string;
   status?: WaybackStatusViewModel;
   check?: (url: string) => Promise<Result<WaybackAvailabilityDTO, ApiError>>;
 }>();
 
 const internalStatus = ref<WaybackStatusViewModel>({ kind: "idle" });
-const displayStatus = computed(() => props.status ?? internalStatus.value);
+const initialUrl = (props.url ?? "").trim();
+let isActive = true;
+const hasEditedInitialUrl = computed(() => (props.url ?? "").trim() !== initialUrl);
+const displayStatus = computed<WaybackStatusViewModel>(() => {
+  if (props.status) {
+    return props.status;
+  }
 
-let waybackRequestId = 0;
-let waybackDebounceTimer: ReturnType<typeof setTimeout> | null = null;
-let checkTargetUrl: string | null = null;
-let hasStartedCheck = false;
-let hideStatusAfterUrlEdit = false;
+  return hasEditedInitialUrl.value ? { kind: "idle" } : internalStatus.value;
+});
 
 const formattedTimestamp = computed(() =>
   displayStatus.value.kind === "available"
@@ -55,67 +57,25 @@ function isCheckableBookmarkUrl(value: string): boolean {
   }
 }
 
-watch(
-  () => [props.initialCheckUrl ?? "", props.url ?? "", props.status] as const,
-  ([initialCheckUrlValue, currentUrlValue]) => {
-    if (props.status) {
-      return;
-    }
+onMounted(async () => {
+  if (props.status || !isCheckableBookmarkUrl(initialUrl)) {
+    return;
+  }
 
-    const normalizedInitialCheckUrl = initialCheckUrlValue.trim();
-    const normalizedCurrentUrl = currentUrlValue.trim();
-    waybackRequestId += 1;
-    const requestId = waybackRequestId;
+  internalStatus.value = { kind: "checking" };
+  const check = props.check ?? checkWaybackAvailability;
+  const result = await check(initialUrl);
+  if (!isActive || hasEditedInitialUrl.value) {
+    return;
+  }
 
-    if (waybackDebounceTimer) {
-      clearTimeout(waybackDebounceTimer);
-      waybackDebounceTimer = null;
-    }
-
-    if (
-      checkTargetUrl === null &&
-      normalizedInitialCheckUrl !== "" &&
-      isCheckableBookmarkUrl(normalizedInitialCheckUrl)
-    ) {
-      checkTargetUrl = normalizedInitialCheckUrl;
-    }
-
-    if (!checkTargetUrl) {
-      internalStatus.value = { kind: "idle" };
-      return;
-    }
-
-    if (normalizedCurrentUrl !== checkTargetUrl) {
-      hideStatusAfterUrlEdit = true;
-      internalStatus.value = { kind: "idle" };
-      return;
-    }
-
-    if (hideStatusAfterUrlEdit || hasStartedCheck) {
-      return;
-    }
-
-    hasStartedCheck = true;
-    internalStatus.value = { kind: "checking" };
-    waybackDebounceTimer = setTimeout(async () => {
-      const check = props.check ?? checkWaybackAvailability;
-      const result = await check(checkTargetUrl!);
-      if (requestId !== waybackRequestId || hideStatusAfterUrlEdit) {
-        return;
-      }
-
-      internalStatus.value = result.isOk
-        ? toWaybackStatusViewModel(result.value)
-        : { kind: "error", message: "Could not check Wayback availability right now." };
-    }, 350);
-  },
-  { immediate: true },
-);
+  internalStatus.value = result.isOk
+    ? toWaybackStatusViewModel(result.value)
+    : { kind: "error", message: "Could not check Wayback availability right now." };
+});
 
 onBeforeUnmount(() => {
-  if (waybackDebounceTimer) {
-    clearTimeout(waybackDebounceTimer);
-  }
+  isActive = false;
 });
 </script>
 

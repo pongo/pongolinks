@@ -22,7 +22,6 @@ const props = defineProps<{
   showDelete?: boolean;
   submitLabel: string;
   tagSuggestions?: TagSummaryDTO[];
-  waybackInitialCheckUrl?: string;
 }>();
 
 const emit = defineEmits<{
@@ -109,7 +108,7 @@ onMounted(async () => {
       <span v-if="errors?.url" id="bookmark-url-error" class="ui-danger-text mt-2 block text-sm">
         {{ errors.url }}
       </span>
-      <WaybackAvailabilityStatus :initial-check-url="waybackInitialCheckUrl" :url="form.url" />
+      <WaybackAvailabilityStatus :key="$route.fullPath" :url="form.url" />
     </label>
 
     <label class="block">
