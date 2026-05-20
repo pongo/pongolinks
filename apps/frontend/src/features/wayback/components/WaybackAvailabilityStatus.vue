@@ -32,6 +32,14 @@ const formattedTimestamp = computed(() =>
     ? formatWaybackTimestamp(displayStatus.value.timestamp)
     : "",
 );
+const browseWaybackHref = computed(() => {
+  const normalizedUrl = (props.url ?? "").trim();
+  if (!isCheckableBookmarkUrl(normalizedUrl)) {
+    return "https://web.archive.org/web/";
+  }
+
+  return `https://web.archive.org/web/${normalizedUrl}`;
+});
 
 function isCheckableBookmarkUrl(value: string): boolean {
   const trimmed = value.trim();
@@ -130,12 +138,7 @@ onBeforeUnmount(() => {
 
   <p v-else-if="displayStatus.kind === 'unavailable'" class="ui-text-muted mt-2 text-sm">
     No Wayback snapshot found for this URL.
-    <a
-      class="ui-link font-semibold"
-      href="https://web.archive.org/web/"
-      target="_blank"
-      rel="noopener"
-    >
+    <a class="ui-link font-semibold" :href="browseWaybackHref" target="_blank" rel="noopener">
       Browse Wayback
     </a>
   </p>

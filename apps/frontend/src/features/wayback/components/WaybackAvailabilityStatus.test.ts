@@ -37,12 +37,13 @@ describe("WaybackAvailabilityStatus", () => {
     const wrapper = mount(WaybackAvailabilityStatus, {
       props: {
         status: { kind: "unavailable" },
+        url: "https://example.com/missing",
       },
     });
 
     expect(wrapper.text()).toContain("No Wayback snapshot found for this URL.");
     const link = wrapper.get("a");
-    expect(link.attributes("href")).toBe("https://web.archive.org/web/");
+    expect(link.attributes("href")).toBe("https://web.archive.org/web/https://example.com/missing");
   });
 
   it("renders non-blocking error state", () => {
