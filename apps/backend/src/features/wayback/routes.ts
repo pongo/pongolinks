@@ -24,6 +24,8 @@ export function createWaybackRoutes() {
       const result = await waybackAvailability.getAvailability(urlResult.value);
       if (result.isErr) {
         logApiError(log, result.error);
+      } else if (result.value.available) {
+        log.set({ waybackCacheSize: waybackAvailability.cacheSize() });
       }
 
       return resultResponse(result, set);

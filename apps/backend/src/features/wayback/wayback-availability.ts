@@ -44,6 +44,10 @@ export class WaybackAvailabilityService {
 
   constructor(private readonly fetchFn?: typeof fetch) {}
 
+  cacheSize(): number {
+    return this.cache.size;
+  }
+
   async getAvailability(url: BookmarkUrl): Promise<Result<WaybackAvailabilityDTO, ApiError>> {
     const cacheKey = url.value();
     const cached = this.cache.get(cacheKey);
