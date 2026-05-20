@@ -7,8 +7,8 @@ import type {
   BookmarkDTO,
   BookmarkListPagination as BookmarkListPaginationState,
 } from "../../types";
-import { useDelayedFlag } from "#/shared/useDelayedFlag.ts";
-import BookmarkList from "./BookmarkList.vue";
+import { useDelayedFlag } from "#/shared/composables/useDelayedFlag.ts";
+import BookmarkList from "./ui/BookmarkList.vue";
 import BookmarkListPagination from "./pagination/BookmarkListPagination.vue";
 import BookmarkListSearchField from "./search/BookmarkListSearchField.vue";
 import {
@@ -20,7 +20,7 @@ import {
   toggleIncludedTagFilter,
   toBookmarkListRouteQuery,
   type BookmarkListRouteState,
-} from "./bookmark-list-query-state";
+} from "../../utils/bookmark-list-query-state.ts";
 
 import { useAppVariants } from "#/variants.ts";
 const { variants } = useAppVariants();

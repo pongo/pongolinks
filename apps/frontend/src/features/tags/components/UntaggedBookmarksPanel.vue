@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 
-import { useDelayedFlag } from "#/shared/useDelayedFlag.ts";
+import { useDelayedFlag } from "#/shared/composables/useDelayedFlag.ts";
 import { listUntaggedBookmarks } from "../api";
 import type { UntaggedBookmarkDTO } from "../types";
 

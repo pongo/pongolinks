@@ -5,7 +5,7 @@ import { computed, nextTick, onMounted, ref } from "vue";
 import type { ComponentPublicInstance } from "vue";
 import { useVirtualList } from "@vueuse/core";
 
-import { useDelayedFlag } from "#/shared/useDelayedFlag.ts";
+import { useDelayedFlag } from "#/shared/composables/useDelayedFlag.ts";
 import { deleteTag, listTags, updateTag } from "../api";
 import type { TagSummaryDTO } from "../types";
 
