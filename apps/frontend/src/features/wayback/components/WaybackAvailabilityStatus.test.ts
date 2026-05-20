@@ -1,5 +1,5 @@
 import { mount } from "@vue/test-utils";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import WaybackAvailabilityStatus from "./WaybackAvailabilityStatus.vue";
 
@@ -53,5 +53,105 @@ describe("WaybackAvailabilityStatus", () => {
     });
 
     expect(wrapper.text()).toContain("Could not check Wayback availability right now.");
+  });
+
+  it("runs one-time check for edit form after bookmark URL is shown", async () => {
+    vi.useFakeTimers();
+    const check = vi.fn().mockResolvedValue({
+      isOk: true,
+      isErr: false,
+      value: { available: false },
+    });
+
+    const wrapper = mount(WaybackAvailabilityStatus, {
+      props: {
+        url: "https://example.com/edit",
+        initialCheckUrl: "https://example.com/edit",
+        check,
+      },
+    });
+
+    await vi.advanceTimersByTimeAsync(400);
+    await Promise.resolve();
+    expect(check).toHaveBeenCalledTimes(1);
+    expect(check).toHaveBeenCalledWith("https://example.com/edit");
+
+    await wrapper.setProps({ url: "https://example.com/edit" });
+    await vi.advanceTimersByTimeAsync(400);
+    await Promise.resolve();
+    expect(check).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
+  it("runs one-time check for create form when initial route URL reaches final form", async () => {
+    vi.useFakeTimers();
+    const check = vi.fn().mockResolvedValue({
+      isOk: true,
+      isErr: false,
+      value: {
+        available: true,
+        archivedUrl: "http://web.archive.org/web/20260212061822/https://example.com/create",
+        timestamp: "20260212061822",
+      },
+    });
+
+    mount(WaybackAvailabilityStatus, {
+      props: {
+        url: "https://example.com/create",
+        initialCheckUrl: "https://example.com/create",
+        check,
+      },
+    });
+
+    await vi.advanceTimersByTimeAsync(400);
+    await Promise.resolve();
+    expect(check).toHaveBeenCalledTimes(1);
+    expect(check).toHaveBeenCalledWith("https://example.com/create");
+    vi.useRealTimers();
+  });
+
+  it("does not check Wayback for empty manual create form", async () => {
+    vi.useFakeTimers();
+    const check = vi.fn();
+
+    mount(WaybackAvailabilityStatus, {
+      props: {
+        url: "",
+        initialCheckUrl: "",
+        check,
+      },
+    });
+
+    await vi.advanceTimersByTimeAsync(400);
+    await Promise.resolve();
+    expect(check).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it("hides status after URL edit from the initial check target", async () => {
+    vi.useFakeTimers();
+    const check = vi.fn().mockResolvedValue({
+      isOk: true,
+      isErr: false,
+      value: { available: false },
+    });
+
+    const wrapper = mount(WaybackAvailabilityStatus, {
+      props: {
+        url: "https://example.com/original",
+        initialCheckUrl: "https://example.com/original",
+        check,
+      },
+    });
+
+    await vi.advanceTimersByTimeAsync(400);
+    await Promise.resolve();
+    expect(wrapper.text()).toContain("No Wayback snapshot found for this URL.");
+
+    await wrapper.setProps({ url: "https://example.com/edited" });
+    await Promise.resolve();
+    expect(wrapper.text()).toBe("");
+    expect(check).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
   });
 });

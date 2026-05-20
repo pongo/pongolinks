@@ -91,6 +91,7 @@ async function confirmDeleteBookmark() {
           :is-deleting="isDeleting"
           :is-saving="isSaving"
           :tag-suggestions="tagSuggestions"
+          :wayback-initial-check-url="bookmark?.url"
           show-delete
           submit-label="Save changes"
           @delete="confirmDeleteBookmark"

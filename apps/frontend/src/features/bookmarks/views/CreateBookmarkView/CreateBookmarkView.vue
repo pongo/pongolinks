@@ -47,6 +47,9 @@ const formInitialValues = computed(() =>
 const formInitialFocusTarget = computed(() =>
   state.value.kind === "create-form" ? state.value.focusTarget : "url",
 );
+const waybackInitialCheckUrl = computed(() =>
+  state.value.kind === "create-form" && state.value.closeAfterCreate ? state.value.initialUrl : "",
+);
 
 onMounted(async () => {
   const [tagsResult] = await Promise.all([listTags(), runUrlCheckIfNeeded()]);
@@ -191,6 +194,7 @@ async function runUrlCheckIfNeeded() {
           :initial-focus-target="formInitialFocusTarget"
           :is-saving="isSaving"
           :tag-suggestions="tagSuggestions"
+          :wayback-initial-check-url="waybackInitialCheckUrl"
           submit-label="Create bookmark"
           @submit="saveBookmark"
         />
