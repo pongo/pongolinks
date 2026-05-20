@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
 
 import type { FormErrors } from "#/shared/api/errors.ts";
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
+import WaybackAvailabilityStatus from "#/features/wayback/components/WaybackAvailabilityStatus.vue";
 import type { BookmarkDTO, EditableBookmarkPayload } from "../../types.ts";
 import BookmarkTagInput from "../BookmarkTagInput/BookmarkTagInput.vue";
 import type {
@@ -107,6 +108,7 @@ onMounted(async () => {
       <span v-if="errors?.url" id="bookmark-url-error" class="ui-danger-text mt-2 block text-sm">
         {{ errors.url }}
       </span>
+      <WaybackAvailabilityStatus :key="$route.fullPath" :url="form.url" />
     </label>
 
     <label class="block">
