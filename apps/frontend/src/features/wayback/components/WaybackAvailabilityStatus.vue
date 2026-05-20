@@ -85,14 +85,14 @@ onBeforeUnmount(() => {
   </p>
 
   <p v-else-if="displayStatus.kind === 'available'" class="ui-text-muted mt-2 text-sm">
-    Archived snapshot found on {{ formattedTimestamp }}.
+    Archived snapshot found on
     <a
       class="ui-link font-semibold"
       :href="displayStatus.archivedUrl"
       target="_blank"
       rel="noopener"
     >
-      Open archived snapshot
+      {{ formattedTimestamp }}
     </a>
   </p>
 
