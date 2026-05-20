@@ -8,6 +8,7 @@ import type { BookmarkDTO } from "../../types";
 import type { BookmarkListRouteState } from "./bookmark-list-query-state";
 
 import { useAppVariants } from "#/variants.ts";
+import { YYYYMMDD } from "#/shared/YYYYMMDD.ts";
 
 const props = defineProps<{
   bookmarks: BookmarkDTO[];
@@ -31,14 +32,7 @@ function formatUpdatedAt(updatedAt: string) {
     return updatedAt;
   }
 
-  return formatDateAsYYYYMMDD(parsed);
-}
-
-function formatDateAsYYYYMMDD(date: Readonly<Date>): string {
-  const yyyy = date.getFullYear();
-  const mm = (date.getMonth() + 1).toString().padStart(2, "0");
-  const dd = date.getDate().toString().padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+  return YYYYMMDD(parsed);
 }
 
 function formatBookmarkDomain(url: string) {

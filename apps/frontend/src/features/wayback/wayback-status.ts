@@ -1,3 +1,4 @@
+import { YYYYMMDDHHMM } from "#/shared/YYYYMMDD.ts";
 import type { WaybackAvailabilityDTO } from "./types";
 
 export type WaybackStatusViewModel =
@@ -21,9 +22,9 @@ export function toWaybackStatusViewModel(dto: WaybackAvailabilityDTO): WaybackSt
   };
 }
 
-export function formatWaybackTimestamp(timestamp: string): string {
+export function parseWaybackTimestamp(timestamp: string): Date | null {
   if (!waybackTimestampPattern.test(timestamp)) {
-    return timestamp;
+    return null;
   }
 
   const year = Number(timestamp.slice(0, 4));
@@ -32,17 +33,16 @@ export function formatWaybackTimestamp(timestamp: string): string {
   const hour = Number(timestamp.slice(8, 10));
   const minute = Number(timestamp.slice(10, 12));
   const second = Number(timestamp.slice(12, 14));
-  const date = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
 
-  if (Number.isNaN(date.getTime())) {
+  const date = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+export function formatWaybackTimestamp(timestamp: string): string {
+  const date = parseWaybackTimestamp(timestamp);
+  if (date === null) {
     return timestamp;
   }
 
-  const formatted = new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "UTC",
-  }).format(date);
-
-  return `${formatted} UTC`;
+  return YYYYMMDDHHMM(date);
 }
