@@ -26,6 +26,19 @@ The module owns fetch behavior, response parsing, operational error mapping, and
 
 Тесты должны использовать мок, а не обращаться напрямую к `https://archive.org/wayback/available?url=...`
 
+примеры запросов к api wayback:
+
+```bash
+$ curl https://archive.org/wayback/available?url=https://jayconrod.com/posts/133/integration-tests-are-best-tests
+{"url": "https://jayconrod.com/posts/133/integration-tests-are-best-tests", "archived_snapshots": {"closest": {"status": "200", "available": true, "url": "http://web.archive.org/web/20260212061822/https://jayconrod.com/posts/133/integration-tests-are-best-tests", "timestamp": "20260212061822"}}}
+
+$ curl https://archive.org/wayback/available?url=https://github.com/DrKain/tidy-url
+{"url": "https://github.com/DrKain/tidy-url", "archived_snapshots": {"closest": {"status": "200", "available": true, "url": "http://web.archive.org/web/20260311082645/https://github.com/DrKain/tidy-url", "timestamp": "20260311082645"}}}
+
+$ curl https://archive.org/wayback/available?url=https://www.youtube.com/watch?v=_sOjKkBIlys
+{"url": "https://www.youtube.com/watch?v=_sOjKkBIlys", "archived_snapshots": {}}
+```
+
 ## Acceptance criteria
 
 - [ ] The backend exposes a Wayback availability endpoint inside the existing API surface.
