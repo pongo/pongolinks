@@ -89,8 +89,9 @@ Before showing the final create form, pongolinks helps the user choose whether t
 - Related Link matches have third priority.
 - Not found is returned only when no Bookmark or Related Link match applies.
 - Alternate-protocol matching is strict: only `http:` and `https:` may differ.
-- Alternate-protocol matching must not treat host, path, query, hash, slash shape, or other string differences as a match.
-- Related Link checks include exact and alternate-protocol variants.
+- Alternate-protocol matching must not treat host, path text, query, hash, or other string differences as a match.
+- Bookmark URL and Related Link lookup treat a trailing slash at the end of the path as equivalent.
+- Related Link checks include exact, alternate-protocol, and trailing-slash variants.
 - Related Link response wording does not mention alternate protocol.
 - Related Link matches can return multiple containing Bookmarks.
 - Multiple Related Link matches are sorted by containing Bookmark update time descending, then id descending.
@@ -142,7 +143,8 @@ type BookmarkUrlCheckResult =
 - Backend URL check coverage should use the existing backend smoke-suite pattern.
 - Backend tests should cover exact Bookmark matches.
 - Backend tests should cover strict alternate-protocol Bookmark matches.
-- Backend tests should cover non-matches where only host, path, slash shape, query string, or hash differs.
+- Backend tests should cover trailing-slash equivalent Bookmark and Related Link matches.
+- Backend tests should cover non-matches where only host, path text, query string, or hash differs.
 - Backend tests should cover Related Link matches.
 - Backend tests should cover Related Link alternate-protocol matching without exposing alternate-protocol wording in the response.
 - Backend tests should cover multiple Related Link matches sorted by update time descending and id descending.

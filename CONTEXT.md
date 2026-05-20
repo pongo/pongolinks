@@ -10,6 +10,7 @@ _Avoid_: link, favorite, item
 
 **Bookmark URL**:
 The primary HTTP(S) URL that identifies a Bookmark.
+Bookmark URL lookup treats a trailing slash at the end of the URL path as equivalent, while keeping protocol, host, path text, query, and hash strict unless an explicit lookup rule says otherwise.
 _Avoid_: link URL, saved URL, item URL
 
 **Tag**:

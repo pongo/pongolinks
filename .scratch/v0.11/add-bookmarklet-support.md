@@ -93,10 +93,10 @@ Resolution priority:
 
 1. Exact Bookmark URL match.
 2. Alternate-protocol Bookmark URL match.
-3. Related Link matches, including exact and alternate-protocol variants without mentioning alternateness.
+3. Related Link matches, including exact, alternate-protocol, and trailing-slash variants without mentioning alternateness.
 4. Not found.
 
-Alternate-protocol matching is strict: only `http:` <-> `https:` changes. Host, path, query string, hash, slash shape, and all other characters must match exactly.
+Alternate-protocol matching is strict: only `http:` <-> `https:` changes. Host, path text, query string, hash, and all other characters must match exactly. A trailing slash at the end of the path is equivalent for Bookmark URL and Related Link lookup.
 
 Related Link matches can return multiple Bookmarks. Sort them by Bookmark `updatedAt desc, id desc`, matching the Bookmark list ordering. Show Bookmark title as the primary clickable label and the primary Bookmark URL as secondary context.
 
@@ -185,10 +185,11 @@ Backend:
 
 1. Add a search API smoke suite covering exact Bookmark match.
 2. Cover strict alternate-protocol Bookmark match.
-3. Cover no match when only path, host, slash shape, query string, or hash differs.
-4. Cover Related Link matches, including alternate-protocol matching without alternate wording in the response.
-5. Cover multiple Related Link matches sorted by `updatedAt desc, id desc`.
-6. Cover invalid URL errors using existing `bookmark.url_*` codes.
+3. Cover trailing-slash equivalent Bookmark and Related Link matches.
+4. Cover no match when only path text, host, query string, or hash differs.
+5. Cover Related Link matches, including alternate-protocol matching without alternate wording in the response.
+6. Cover multiple Related Link matches sorted by `updatedAt desc, id desc`.
+7. Cover invalid URL errors using existing `bookmark.url_*` codes.
 
 Frontend:
 

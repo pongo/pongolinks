@@ -22,11 +22,33 @@ export function flipBookmarkUrlProtocol(url: string) {
   return `https:${url.slice("http:".length)}`;
 }
 
-async function searchExact(db: AppDb, url: string): Promise<Result<BookmarkUrlLookupMatch>> {
-  const exactBookmark = await db.query.bookmarks.findFirst({
-    where: eq(bookmarks.url, url),
-    columns: { id: true },
-  });
+export function getTrailingSlashUrlVariants(url: string) {
+  const suffixStart = url.search(/[?#]/);
+  const resourceEnd = suffixStart === -1 ? url.length : suffixStart;
+  const resource = url.slice(0, resourceEnd);
+  const suffix = url.slice(resourceEnd);
+  const alternateSlashUrl = resource.endsWith("/")
+    ? `${resource.slice(0, -1)}${suffix}`
+    : `${resource}/${suffix}`;
+
+  return Array.from(new Set([url, alternateSlashUrl]));
+}
+
+async function findFirstBookmarkByUrl(db: AppDb, urls: string[]) {
+  for (const url of urls) {
+    const bookmark = await db.query.bookmarks.findFirst({
+      where: eq(bookmarks.url, url),
+      columns: { id: true },
+    });
+
+    if (bookmark) return bookmark;
+  }
+
+  return null;
+}
+
+async function searchExact(db: AppDb, urls: string[]): Promise<Result<BookmarkUrlLookupMatch>> {
+  const exactBookmark = await findFirstBookmarkByUrl(db, urls);
 
   if (exactBookmark) {
     return Ok({
@@ -40,12 +62,9 @@ async function searchExact(db: AppDb, url: string): Promise<Result<BookmarkUrlLo
 
 async function searchAlternateProtocol(
   db: AppDb,
-  alternateProtocolUrl: string,
+  alternateProtocolUrls: string[],
 ): Promise<Result<BookmarkUrlLookupMatch>> {
-  const alternateProtocolBookmark = await db.query.bookmarks.findFirst({
-    where: eq(bookmarks.url, alternateProtocolUrl),
-    columns: { id: true },
-  });
+  const alternateProtocolBookmark = await findFirstBookmarkByUrl(db, alternateProtocolUrls);
 
   if (alternateProtocolBookmark) {
     return Ok({
@@ -59,14 +78,14 @@ async function searchAlternateProtocol(
 
 async function searchRelated(
   db: AppDb,
-  url: string,
-  alternateProtocolUrl: string,
+  urls: string[],
+  alternateProtocolUrls: string[],
 ): Promise<Result<BookmarkUrlLookupMatch>> {
   const relatedLinkMatches = await db
     .select({ id: bookmarks.id })
     .from(bookmarks)
     .innerJoin(relatedLinks, eq(relatedLinks.bookmarkId, bookmarks.id))
-    .where(inArray(relatedLinks.url, [url, alternateProtocolUrl]))
+    .where(inArray(relatedLinks.url, [...urls, ...alternateProtocolUrls]))
     .orderBy(desc(bookmarks.updatedAt), desc(bookmarks.id));
 
   const uniqueBookmarkIds = new Set<number>();
@@ -90,14 +109,15 @@ export async function lookupBookmarksByUrl(
   url: string,
 ): Promise<Result<BookmarkUrlLookupMatch, ApiError>> {
   try {
-    const exactResult = await searchExact(db, url);
+    const urls = getTrailingSlashUrlVariants(url);
+    const exactResult = await searchExact(db, urls);
     if (exactResult.isOk) return exactResult;
 
-    const alternateProtocolUrl = flipBookmarkUrlProtocol(url);
-    const alternateProtocolResult = await searchAlternateProtocol(db, alternateProtocolUrl);
+    const alternateProtocolUrls = urls.map(flipBookmarkUrlProtocol);
+    const alternateProtocolResult = await searchAlternateProtocol(db, alternateProtocolUrls);
     if (alternateProtocolResult.isOk) return alternateProtocolResult;
 
-    const relatedLinkResult = await searchRelated(db, url, alternateProtocolUrl);
+    const relatedLinkResult = await searchRelated(db, urls, alternateProtocolUrls);
     if (relatedLinkResult.isOk) return relatedLinkResult;
 
     return Ok({ status: "not-found", bookmarkIds: [] });

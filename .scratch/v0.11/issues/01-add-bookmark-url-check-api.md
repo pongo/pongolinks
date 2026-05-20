@@ -23,9 +23,10 @@ This slice should deliver the backend contract and route behavior end-to-end wit
 - [ ] Exact Bookmark matches take priority over all other match types.
 - [ ] Alternate-protocol Bookmark matches return an `alternate-protocol-bookmark` result with Bookmark id, URL, and title.
 - [ ] Alternate-protocol matching is strict: only `http:` and `https:` may differ.
-- [ ] Host, path, slash shape, query string, hash, or any other string difference does not count as an alternate-protocol match.
+- [ ] Host, path text, query string, hash, or any other string difference does not count as an alternate-protocol match.
+- [ ] Bookmark URL and Related Link lookup treat a trailing slash at the end of the path as equivalent.
 - [ ] Related Link matches return a `related-link` result with the containing Bookmark id, URL, and title.
-- [ ] Related Link matching includes exact and alternate-protocol URL variants without exposing alternate-protocol wording in the response.
+- [ ] Related Link matching includes exact, alternate-protocol, and trailing-slash URL variants without exposing alternate-protocol wording in the response.
 - [ ] Multiple Related Link matches are sorted by containing Bookmark update time descending, then id descending.
 - [ ] A `not-found` result is returned only when no Bookmark or Related Link match applies.
 - [ ] Backend smoke coverage verifies exact Bookmark, alternate-protocol Bookmark, Related Link, multiple Related Link ordering, not-found, and invalid URL behavior.

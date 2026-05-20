@@ -35,6 +35,42 @@ await withApp(async ({ app }) => {
 });
 
 await withApp(async ({ app }) => {
+  await createBookmark(app, { url: "https://zagjs.com", title: "Zag" });
+
+  const response = await app.handle(request("/api/search/check?url=https://zagjs.com/"));
+  const body = await response.json();
+
+  assert(response.status === 200, "exact trailing slash match should return 200");
+  assert(body.isOk === true, "exact trailing slash match should return Ok result");
+  assert(
+    body.value.status === "exact-bookmark",
+    "exact trailing slash match should return exact-bookmark",
+  );
+  assert(
+    body.value.bookmark.url === "https://zagjs.com",
+    "exact trailing slash match should return existing bookmark",
+  );
+});
+
+await withApp(async ({ app }) => {
+  await createBookmark(app, { url: "https://zagjs.com/", title: "Zag Slash" });
+
+  const response = await app.handle(request("/api/search/check?url=https://zagjs.com"));
+  const body = await response.json();
+
+  assert(response.status === 200, "exact missing trailing slash match should return 200");
+  assert(body.isOk === true, "exact missing trailing slash match should return Ok result");
+  assert(
+    body.value.status === "exact-bookmark",
+    "exact missing trailing slash match should return exact-bookmark",
+  );
+  assert(
+    body.value.bookmark.url === "https://zagjs.com/",
+    "exact missing trailing slash match should return existing bookmark",
+  );
+});
+
+await withApp(async ({ app }) => {
   await createBookmark(app, { url: "https://example.com/protocol", title: "Protocol Bookmark" });
 
   const response = await app.handle(request("/api/search/check?url=http://example.com/protocol"));
@@ -53,11 +89,33 @@ await withApp(async ({ app }) => {
 });
 
 await withApp(async ({ app }) => {
+  await createBookmark(app, {
+    url: "https://example.com/protocol-slash",
+    title: "Protocol Slash Bookmark",
+  });
+
+  const response = await app.handle(
+    request("/api/search/check?url=http://example.com/protocol-slash/"),
+  );
+  const body = await response.json();
+
+  assert(response.status === 200, "alternate protocol slash match should return 200");
+  assert(body.isOk === true, "alternate protocol slash match should return Ok result");
+  assert(
+    body.value.status === "alternate-protocol-bookmark",
+    "alternate protocol slash match should return alternate-protocol-bookmark",
+  );
+  assert(
+    body.value.bookmark.url === "https://example.com/protocol-slash",
+    "alternate protocol slash match should return existing bookmark URL",
+  );
+});
+
+await withApp(async ({ app }) => {
   await createBookmark(app, { url: "https://example.com/base", title: "Base Bookmark" });
 
   const variants = [
     "https://another.example.com/base",
-    "https://example.com/base/",
     "https://example.com/base?x=1",
     "https://example.com/base#top",
   ];
@@ -91,6 +149,30 @@ await withApp(async ({ app }) => {
   assert(
     body.value.bookmarks[0].title === "Bookmark One",
     "related link should return containing bookmark",
+  );
+});
+
+await withApp(async ({ app }) => {
+  await createBookmark(app, {
+    url: "https://example.com/bookmark-slash-related",
+    title: "Bookmark Slash Related",
+    description: "See https://related.example.com/doc/",
+  });
+
+  const response = await app.handle(
+    request("/api/search/check?url=https://related.example.com/doc"),
+  );
+  const body = await response.json();
+
+  assert(response.status === 200, "related link trailing slash match should return 200");
+  assert(body.isOk === true, "related link trailing slash match should return Ok result");
+  assert(
+    body.value.status === "related-link",
+    "related link trailing slash should return related-link status",
+  );
+  assert(
+    body.value.bookmarks[0].title === "Bookmark Slash Related",
+    "related link trailing slash should return containing bookmark",
   );
 });
 
