@@ -1,4 +1,5 @@
 import { Autolinker, type AutolinkerConfig } from "autolinker";
+import type { ValidUrl } from "../brands.ts";
 
 export type RenderBookmarkDescriptionHtmlOptions = {
   linkClassName?: string;
@@ -17,8 +18,8 @@ const bookmarkDescriptionLinkParsingOptions = {
   hashtag: false,
 } satisfies AutolinkerConfig;
 
-export function extractRelatedLinkUrls(description: string): string[] {
-  const urls = new Set<string>();
+export function extractRelatedLinkUrls(description: string): ValidUrl[] {
+  const urls = new Set<ValidUrl>();
   const matches = Autolinker.parse(description, bookmarkDescriptionLinkParsingOptions);
 
   for (const match of matches) {
@@ -29,7 +30,7 @@ export function extractRelatedLinkUrls(description: string): string[] {
     const url = match.getUrl();
 
     if (url.startsWith("http://") || url.startsWith("https://")) {
-      urls.add(url);
+      urls.add(url as ValidUrl);
     }
   }
 

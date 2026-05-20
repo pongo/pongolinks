@@ -1,6 +1,7 @@
 import { Err, Ok, type Result } from "@pongolinks/shared/result";
 
 import { ApiError } from "#/http/result-response.ts";
+import type { ValidUrl } from "@pongolinks/shared/brands";
 
 export class BookmarkUrl {
   private constructor(private readonly rawValue: string) {}
@@ -27,7 +28,7 @@ export class BookmarkUrl {
     }
   }
 
-  value(): string {
-    return this.rawValue;
+  value(): ValidUrl {
+    return this.rawValue as ValidUrl;
   }
 }

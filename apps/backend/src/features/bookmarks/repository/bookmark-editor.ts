@@ -11,6 +11,7 @@ import type { BookmarkId } from "../domain/bookmark-id.ts";
 import type { BookmarkDTO, EditableBookmarkData } from "../domain/contracts.ts";
 import type { TagName } from "../domain/tag-name.ts";
 import { toBookmarkDTO } from "./bookmark-dto.ts";
+import type { ValidUrl } from "@pongolinks/shared/brands";
 
 export type BookmarkEditorLogger = {
   set: (context: Record<string, unknown>) => void;
@@ -255,7 +256,7 @@ export class BookmarkEditor {
     });
   }
 
-  private async insertRelatedLinks(db: EditorDb, bookmarkId: number, urls: string[]) {
+  private async insertRelatedLinks(db: EditorDb, bookmarkId: number, urls: ValidUrl[]) {
     if (urls.length === 0) {
       return;
     }
@@ -266,16 +267,16 @@ export class BookmarkEditor {
       .run();
   }
 
-  private async syncRelatedLinks(db: EditorDb, bookmarkId: number, nextUrls: string[]) {
+  private async syncRelatedLinks(db: EditorDb, bookmarkId: number, nextUrls: ValidUrl[]) {
     const existingRows = await db.query.relatedLinks.findMany({
       where: eq(relatedLinks.bookmarkId, bookmarkId),
       orderBy: asc(relatedLinks.id),
     });
     const nextUrlSet = new Set(nextUrls);
-    const existingUrlSet = new Set(existingRows.map((row) => row.url));
+    const existingUrlSet = new Set(existingRows.map((row) => row.url as ValidUrl));
     const urlsToInsert = nextUrls.filter((url) => !existingUrlSet.has(url));
-    const rowsToDelete = existingRows.filter((row) => !nextUrlSet.has(row.url));
-    const urlsToDelete = rowsToDelete.map((row) => row.url);
+    const rowsToDelete = existingRows.filter((row) => !nextUrlSet.has(row.url as ValidUrl));
+    const urlsToDelete = rowsToDelete.map((row) => row.url as ValidUrl);
 
     for (const row of rowsToDelete) {
       await db.delete(relatedLinks).where(eq(relatedLinks.id, row.id)).run();

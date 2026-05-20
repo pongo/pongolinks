@@ -8,6 +8,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./app-config": "./src/app-config.ts",
+    "./brands": "./src/brands.ts",
     "./bookmark-description": "./src/bookmark-description/index.ts",
     "./errors": "./src/errors/index.ts",
     "./result": "./src/result/result.ts"

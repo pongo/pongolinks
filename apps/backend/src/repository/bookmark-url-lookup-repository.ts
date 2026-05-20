@@ -7,6 +7,7 @@ import { bookmarks, relatedLinks } from "@pongolinks/db/schema";
 import type { AppDb } from "#/db/app-db.ts";
 import type { ApiError } from "#/http/result-response.ts";
 import { unexpectedError } from "#/http/result-response.ts";
+import type { ValidUrl } from "@pongolinks/shared/brands";
 
 export type BookmarkUrlLookupMatch =
   | { status: "exact-bookmark"; bookmarkIds: [number] }
@@ -14,15 +15,15 @@ export type BookmarkUrlLookupMatch =
   | { status: "related-link"; bookmarkIds: number[] }
   | { status: "not-found"; bookmarkIds: [] };
 
-export function flipBookmarkUrlProtocol(url: string) {
+export function flipBookmarkUrlProtocol(url: ValidUrl): ValidUrl {
   if (url.startsWith("https:")) {
-    return `http:${url.slice("https:".length)}`;
+    return `http:${url.slice("https:".length)}` as ValidUrl;
   }
 
-  return `https:${url.slice("http:".length)}`;
+  return `https:${url.slice("http:".length)}` as ValidUrl;
 }
 
-export function getTrailingSlashUrlVariants(url: string) {
+export function getTrailingSlashUrlVariants(url: ValidUrl): ValidUrl[] {
   const suffixStart = url.search(/[?#]/);
   const resourceEnd = suffixStart === -1 ? url.length : suffixStart;
   const resource = url.slice(0, resourceEnd);
@@ -31,10 +32,10 @@ export function getTrailingSlashUrlVariants(url: string) {
     ? `${resource.slice(0, -1)}${suffix}`
     : `${resource}/${suffix}`;
 
-  return Array.from(new Set([url, alternateSlashUrl]));
+  return Array.from(new Set([url, alternateSlashUrl])) as ValidUrl[];
 }
 
-async function findFirstBookmarkByUrl(db: AppDb, urls: string[]) {
+async function findFirstBookmarkByUrl(db: AppDb, urls: ValidUrl[]) {
   for (const url of urls) {
     const bookmark = await db.query.bookmarks.findFirst({
       where: eq(bookmarks.url, url),
@@ -47,7 +48,7 @@ async function findFirstBookmarkByUrl(db: AppDb, urls: string[]) {
   return null;
 }
 
-async function searchExact(db: AppDb, urls: string[]): Promise<Result<BookmarkUrlLookupMatch>> {
+async function searchExact(db: AppDb, urls: ValidUrl[]): Promise<Result<BookmarkUrlLookupMatch>> {
   const exactBookmark = await findFirstBookmarkByUrl(db, urls);
 
   if (exactBookmark) {
@@ -62,7 +63,7 @@ async function searchExact(db: AppDb, urls: string[]): Promise<Result<BookmarkUr
 
 async function searchAlternateProtocol(
   db: AppDb,
-  alternateProtocolUrls: string[],
+  alternateProtocolUrls: ValidUrl[],
 ): Promise<Result<BookmarkUrlLookupMatch>> {
   const alternateProtocolBookmark = await findFirstBookmarkByUrl(db, alternateProtocolUrls);
 
@@ -78,8 +79,8 @@ async function searchAlternateProtocol(
 
 async function searchRelated(
   db: AppDb,
-  urls: string[],
-  alternateProtocolUrls: string[],
+  urls: ValidUrl[],
+  alternateProtocolUrls: ValidUrl[],
 ): Promise<Result<BookmarkUrlLookupMatch>> {
   const relatedLinkMatches = await db
     .select({ id: bookmarks.id })
@@ -106,7 +107,7 @@ async function searchRelated(
 
 export async function lookupBookmarksByUrl(
   db: AppDb,
-  url: string,
+  url: ValidUrl,
 ): Promise<Result<BookmarkUrlLookupMatch, ApiError>> {
   try {
     const urls = getTrailingSlashUrlVariants(url);
