@@ -10,7 +10,7 @@ export function createWaybackRoutes() {
   const waybackAvailability = new WaybackAvailabilityService();
 
   return new Elysia({ name: "wayback-routes" }).get(
-    "/bookmarks/wayback-availability",
+    "/wayback/availability",
     async (context) => {
       const { query, set } = context;
       const log = getRouteLogger(context);

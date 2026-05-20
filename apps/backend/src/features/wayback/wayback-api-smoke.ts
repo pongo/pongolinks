@@ -31,7 +31,7 @@ await withApp(async ({ app }) => {
 
   try {
     const response = await app.handle(
-      request("/api/bookmarks/wayback-availability?url=https%3A%2F%2Fexample.com"),
+      request("/api/wayback/availability?url=https%3A%2F%2Fexample.com"),
     );
     const body = await response.json();
 
@@ -60,7 +60,7 @@ await withApp(async ({ app }) => {
 
   try {
     const response = await app.handle(
-      request("/api/bookmarks/wayback-availability?url=https%3A%2F%2Fexample.com%2Funavailable"),
+      request("/api/wayback/availability?url=https%3A%2F%2Fexample.com%2Funavailable"),
     );
     const body = await response.json();
 
@@ -86,7 +86,7 @@ await withApp(async ({ app }) => {
 
   try {
     const response = await app.handle(
-      request("/api/bookmarks/wayback-availability?url=https%3A%2F%2Fexample.com%2Fmalformed"),
+      request("/api/wayback/availability?url=https%3A%2F%2Fexample.com%2Fmalformed"),
     );
     const body = await response.json();
 
@@ -110,7 +110,7 @@ await withApp(async ({ app }) => {
 
   try {
     const response = await app.handle(
-      request("/api/bookmarks/wayback-availability?url=https%3A%2F%2Fexample.com%2Frate-limited"),
+      request("/api/wayback/availability?url=https%3A%2F%2Fexample.com%2Frate-limited"),
     );
     const body = await response.json();
 
@@ -131,7 +131,7 @@ await withApp(async ({ app }) => {
 
   try {
     const response = await app.handle(
-      request("/api/bookmarks/wayback-availability?url=https%3A%2F%2Fexample.com%2Fnetwork"),
+      request("/api/wayback/availability?url=https%3A%2F%2Fexample.com%2Fnetwork"),
     );
     const body = await response.json();
 
@@ -148,7 +148,7 @@ await withApp(async ({ app }) => {
 
 await withApp(async ({ app }) => {
   const response = await app.handle(
-    request("/api/bookmarks/wayback-availability?url=ftp%3A%2F%2Fexample.com"),
+    request("/api/wayback/availability?url=ftp%3A%2F%2Fexample.com"),
   );
   const body = await response.json();
 
@@ -168,18 +168,14 @@ await withApp(async ({ app }) => {
 
   try {
     const first = await app.handle(
-      request(
-        "/api/bookmarks/wayback-availability?url=https%3A%2F%2Fexample.com%2Fcached%3Fq%3D1%23a",
-      ),
+      request("/api/wayback/availability?url=https%3A%2F%2Fexample.com%2Fcached%3Fq%3D1%23a"),
     );
     const firstBody = await first.json();
     assert(first.status === 200, "first cached request should return 200");
     assert(firstBody.value.available === false, "first cached request should be unavailable");
 
     const second = await app.handle(
-      request(
-        "/api/bookmarks/wayback-availability?url=%20https%3A%2F%2Fexample.com%2Fcached%3Fq%3D1%23a%20",
-      ),
+      request("/api/wayback/availability?url=%20https%3A%2F%2Fexample.com%2Fcached%3Fq%3D1%23a%20"),
     );
     const secondBody = await second.json();
     assert(second.status === 200, "second cached request should return 200");
