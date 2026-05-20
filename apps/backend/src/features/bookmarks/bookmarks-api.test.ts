@@ -26,4 +26,11 @@ describe("Bookmark API", () => {
   it("passes the Bun/Elysia delete API smoke suite", () => {
     runSmokeSuite("bookmarks-delete-api-smoke.ts", "bookmark delete api smoke passed");
   });
+
+  it("passes the Bun/Elysia wayback availability API smoke suite", () => {
+    runSmokeSuite(
+      "bookmarks-wayback-availability-api-smoke.ts",
+      "bookmark wayback availability api smoke passed",
+    );
+  });
 });

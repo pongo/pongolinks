@@ -12,6 +12,7 @@ import { BookmarkEditor } from "./repository/bookmark-editor.ts";
 import { BookmarkReadRepository } from "./repository/bookmark-read-repository.ts";
 import { parseBookmarkListFiltersQuery } from "./bookmark-list-filters-query.ts";
 import { parseTagNames } from "./domain/tag-name.ts";
+import { WaybackAvailabilityService } from "./wayback-availability.ts";
 
 export type BookmarkRoutesOptions = {
   db: AppDb;
@@ -92,6 +93,7 @@ function bookmarkValidationErrorResponse(error: unknown, set: { status?: number 
 export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
   const bookmarkEditor = new BookmarkEditor(db);
   const bookmarkReads = new BookmarkReadRepository(db);
+  const waybackAvailability = new WaybackAvailabilityService();
 
   return new Elysia({ name: "bookmark-routes" })
     .onError(({ code, error, set }) => {
@@ -134,6 +136,31 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
       },
       {
         body: editableBookmarkBodySchema,
+      },
+    )
+    .get(
+      "/bookmarks/wayback-availability",
+      async (context) => {
+        const { query, set } = context;
+        const log = getRouteLogger(context);
+
+        const urlResult = BookmarkUrl.from(query.url);
+        if (urlResult.isErr) {
+          logApiError(log, urlResult.error);
+          return resultResponse(urlResult, set);
+        }
+
+        const result = await waybackAvailability.getAvailability(urlResult.value);
+        if (result.isErr) {
+          logApiError(log, result.error);
+        }
+
+        return resultResponse(result, set);
+      },
+      {
+        query: z.object({
+          url: z.string({ error: "bookmark.url_required" }),
+        }),
       },
     )
     .get(
