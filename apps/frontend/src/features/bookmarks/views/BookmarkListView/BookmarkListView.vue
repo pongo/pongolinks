@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { RouterLink, useRoute, useRouter } from "vue-router";
 
 import { listBookmarks } from "../../api/api";
 import type {
@@ -11,23 +10,22 @@ import { useDelayedFlag } from "#/shared/composables/useDelayedFlag.ts";
 import BookmarkList from "./ui/BookmarkList.vue";
 import BookmarkListPagination from "./pagination/BookmarkListPagination.vue";
 import BookmarkListSearchField from "./search/BookmarkListSearchField.vue";
-import {
-  isFilterActive,
-  parseBookmarkListRouteQuery,
-  parseMiniQueryToState,
-  renderMiniQueryForContinuedInput,
-  toggleDomainFilter,
-  toggleIncludedTagFilter,
-  toBookmarkListRouteQuery,
-  type BookmarkListRouteState,
-} from "../../utils/bookmark-list-query-state.ts";
-
 import { useAppVariants } from "#/variants.ts";
 import BookmarksEmptyState from "./ui/BookmarksEmptyState.vue";
+import { useBookmarkQuery } from "./composables/useBookmarkQuery.ts";
+
 const { variants } = useAppVariants();
 
-const route = useRoute();
-const router = useRouter();
+const {
+  queryState,
+  searchText,
+  isSearchActive,
+  submitSearch,
+  clearSearch,
+  onTagClick,
+  onDomainClick,
+} = useBookmarkQuery();
+
 const bookmarks = ref<BookmarkDTO[]>([]);
 const pagination = ref<BookmarkListPaginationState>({
   page: 1,
@@ -39,10 +37,9 @@ const pagination = ref<BookmarkListPaginationState>({
 });
 const isLoading = ref(true);
 const error = ref("");
-const queryState = computed(() => parseBookmarkListRouteQuery(route.query));
-const searchText = ref("");
+
 const { isDelayed, start: startLoadingDelay, stop: stopLoadingDelay } = useDelayedFlag(1000);
-const isSearchActive = computed(() => isFilterActive(queryState.value));
+
 const shouldShowLoadingMessage = computed(
   () => isLoading.value && isDelayed.value && bookmarks.value.length === 0,
 );
@@ -60,17 +57,6 @@ const emptyStateVariant = computed<BookmarksEmptyVariant>(() => {
   if (isNoBookmarksYet.value) return "no-bookmarks";
   return "no-page";
 });
-
-watch(
-  queryState,
-  (nextState) => {
-    const nextText = renderMiniQueryForContinuedInput(nextState);
-    if (nextText !== searchText.value) {
-      searchText.value = nextText;
-    }
-  },
-  { immediate: true },
-);
 
 watch(
   queryState,
@@ -111,39 +97,6 @@ watch(
   },
   { immediate: true },
 );
-
-async function submitSearch() {
-  const next = parseMiniQueryToState(searchText.value);
-  await router.push({
-    path: "/",
-    query: toBookmarkListRouteQuery({
-      ...next,
-      page: 1,
-    }),
-  });
-}
-
-async function clearSearch() {
-  searchText.value = "";
-  await router.push("/");
-}
-
-async function applyQueryState(nextState: BookmarkListRouteState) {
-  await router.push({
-    path: "/",
-    query: toBookmarkListRouteQuery(nextState),
-  });
-
-  searchText.value = renderMiniQueryForContinuedInput(nextState);
-}
-
-async function onTagClick(tagName: string) {
-  await applyQueryState(toggleIncludedTagFilter(queryState.value, tagName));
-}
-
-async function onDomainClick(domain: string) {
-  await applyQueryState(toggleDomainFilter(queryState.value, domain));
-}
 </script>
 
 <template>
