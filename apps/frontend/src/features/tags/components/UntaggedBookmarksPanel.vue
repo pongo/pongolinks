@@ -6,7 +6,7 @@ import { useDelayedFlag } from "#/shared/composables/useDelayedFlag.ts";
 import { listUntaggedBookmarks } from "../api";
 import type { UntaggedBookmarkDTO } from "../types";
 
-const untaggedTotalCount = ref(0);
+const untaggedTotalCount = ref(-1);
 const untaggedBookmarks = ref<UntaggedBookmarkDTO[]>([]);
 const isVisible = ref(false);
 const isLoading = ref(true);
@@ -16,6 +16,9 @@ const { isDelayed, start: startLoadingDelay, stop: stopLoadingDelay } = useDelay
 const isTruncated = computed(() => untaggedTotalCount.value > untaggedBookmarks.value.length);
 const shouldShowLoadingMessage = computed(
   () => isLoading.value && isDelayed.value && untaggedBookmarks.value.length === 0,
+);
+const shouldShowButtonVisible = computed(
+  () => !isLoading.value && untaggedBookmarks.value.length > 0 && !isVisible.value,
 );
 
 onMounted(async () => {
@@ -61,7 +64,7 @@ async function loadUntaggedBookmarks() {
         class="ui-action inline-flex min-h-10 items-center justify-center px-4 text-sm font-semibold transition"
         type="button"
         @click="isVisible = true"
-        v-if="!isVisible && !isLoading"
+        v-if="shouldShowButtonVisible"
       >
         Show
       </button>
