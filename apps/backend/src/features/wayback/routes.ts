@@ -15,6 +15,7 @@ export function createWaybackRoutes() {
       const { query, set } = context;
       const log = getRouteLogger(context);
 
+      log.set({ wayback: { url: query.url } });
       const urlResult = BookmarkUrl.from(query.url);
       if (urlResult.isErr) {
         logApiError(log, urlResult.error);
@@ -24,8 +25,13 @@ export function createWaybackRoutes() {
       const result = await waybackAvailability.getAvailability(urlResult.value);
       if (result.isErr) {
         logApiError(log, result.error);
-      } else if (result.value.available) {
-        log.set({ waybackCacheSize: waybackAvailability.cacheSize() });
+      } else {
+        log.set({
+          wayback: {
+            available: result.value.available,
+            cacheSize: waybackAvailability.cacheSize(),
+          },
+        });
       }
 
       return resultResponse(result, set);
