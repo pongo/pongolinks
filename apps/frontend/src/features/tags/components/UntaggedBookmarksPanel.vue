@@ -2,7 +2,6 @@
 import { computed, onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 
-import { useDelayedFlag } from "#/shared/composables/useDelayedFlag.ts";
 import { listUntaggedBookmarks } from "../api";
 import type { UntaggedBookmarkDTO } from "../types";
 
@@ -11,12 +10,8 @@ const untaggedBookmarks = ref<UntaggedBookmarkDTO[]>([]);
 const isVisible = ref(false);
 const isLoading = ref(true);
 const error = ref("");
-const { isDelayed, start: startLoadingDelay, stop: stopLoadingDelay } = useDelayedFlag(500);
 
 const isTruncated = computed(() => untaggedTotalCount.value > untaggedBookmarks.value.length);
-const shouldShowLoadingMessage = computed(
-  () => isLoading.value && isDelayed.value && untaggedBookmarks.value.length === 0,
-);
 const shouldShowButtonVisible = computed(
   () => !isLoading.value && untaggedBookmarks.value.length > 0 && !isVisible.value,
 );
@@ -26,12 +21,10 @@ onMounted(async () => {
 });
 
 async function loadUntaggedBookmarks() {
-  startLoadingDelay();
   isLoading.value = true;
   error.value = "";
 
   const result = await listUntaggedBookmarks();
-  stopLoadingDelay();
 
   if (result.isErr) {
     error.value = result.error.formErrors.form ?? result.error.message;
@@ -54,10 +47,8 @@ async function loadUntaggedBookmarks() {
       <div>
         <h2 class="ui-text-strong text-lg font-semibold">Untagged bookmarks</h2>
         <p class="ui-text-muted mt-1 text-sm">
-          <span v-if="!isLoading">{{ untaggedTotalCount }} bookmarks without tags</span>
-          <span v-else :style="{ visibility: shouldShowLoadingMessage ? 'visible' : 'hidden' }"
-            >Loading untagged bookmarks...</span
-          >
+          <span v-if="isLoading">Loading untagged bookmarks...</span>
+          <span v-else>{{ untaggedTotalCount }} bookmarks without tags</span>
         </p>
       </div>
       <button
