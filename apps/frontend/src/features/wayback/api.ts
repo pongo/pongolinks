@@ -2,6 +2,7 @@ import { Err, type Result } from "@pongolinks/shared/result";
 
 import {
   apiClient,
+  type EdenApiResponse,
   parseApiPayload as parseSharedApiPayload,
   parseEdenResponse,
 } from "#/shared/api/client.ts";
@@ -26,6 +27,13 @@ const fallbackError = new ApiError(
   "Something went wrong. Please try again.",
   "bookmark.unexpected",
 );
+
+type WaybackAvailabilityEndpoint = {
+  get: (input: { $query: { url: string } }) => Promise<EdenApiResponse>;
+};
+
+const waybackAvailabilityEndpoint = apiClient.api.wayback
+  .availability as WaybackAvailabilityEndpoint;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -64,10 +72,11 @@ export function parseApiPayload<T>(payload: unknown): Result<T, ApiError> {
 
 export async function checkWaybackAvailability(
   url: string,
+  endpoint: WaybackAvailabilityEndpoint = waybackAvailabilityEndpoint,
 ): Promise<Result<WaybackAvailabilityDTO, ApiError>> {
   try {
     return parseEdenResponse<WaybackAvailabilityDTO, ApiError>(
-      await apiClient.api.wayback.availability.get({ $query: { url } }),
+      await endpoint.get({ $query: { url } }),
       {
         fallbackError,
         parseError: parseApiError,

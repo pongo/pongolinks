@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { apiClient } from "#/shared/api/client.ts";
 import type { ApiErrorCode } from "#/shared/api/errors.ts";
 import { checkWaybackAvailability, parseApiPayload } from "./api";
 import type { WaybackAvailabilityDTO } from "./types";
@@ -75,26 +74,20 @@ describe("wayback API payload parsing", () => {
   });
 
   it("returns fallback error when transport throws", async () => {
-    const waybackEndpoint = apiClient.api.wayback.availability as {
-      get: (input: { $query: { url: string } }) => Promise<unknown>;
-    };
-    const originalGet = waybackEndpoint.get;
-    waybackEndpoint.get = async () => {
-      throw new Error("network down");
+    const throwingEndpoint = {
+      get: async () => {
+        throw new Error("network down");
+      },
     };
 
-    try {
-      const result = await checkWaybackAvailability("https://example.com");
+    const result = await checkWaybackAvailability("https://example.com", throwingEndpoint);
 
-      expect(result).toMatchObject({
-        isErr: true,
-        error: {
-          code: "bookmark.unexpected",
-          message: "Something went wrong. Please try again.",
-        },
-      });
-    } finally {
-      waybackEndpoint.get = originalGet;
-    }
+    expect(result).toMatchObject({
+      isErr: true,
+      error: {
+        code: "bookmark.unexpected",
+        message: "Something went wrong. Please try again.",
+      },
+    });
   });
 });
