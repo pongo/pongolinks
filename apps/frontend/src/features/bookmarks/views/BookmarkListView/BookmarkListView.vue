@@ -38,7 +38,7 @@ const pagination = ref<BookmarkListPaginationState>({
 const isLoading = ref(true);
 const error = ref("");
 
-const { isDelayed, start: startLoadingDelay, stop: stopLoadingDelay } = useDelayedFlag(1000);
+const { isDelayed, start: startLoadingDelay, stop: stopLoadingDelay } = useDelayedFlag(500);
 
 const shouldShowLoadingMessage = computed(
   () => isLoading.value && isDelayed.value && bookmarks.value.length === 0,
@@ -164,6 +164,7 @@ watch(
           :query-state="queryState"
           @tag-click="onTagClick"
           @domain-click="onDomainClick"
+          :class="{ 'cursor-progress opacity-50 **:cursor-progress!': isLoading && isDelayed }"
         />
 
         <BookmarkListPagination :pagination="pagination" :query-state="queryState" />
