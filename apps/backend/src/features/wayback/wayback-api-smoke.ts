@@ -1,4 +1,4 @@
-import { assert, request, withApp } from "#/features/bookmarks/bookmarks-api-smoke-support.ts";
+import { assert, request, withApp } from "#test/api-smoke-support.ts";
 
 type FetchMock = (...args: Parameters<typeof fetch>) => ReturnType<typeof fetch>;
 

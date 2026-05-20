@@ -1,13 +1,8 @@
 import { bookmarks } from "@pongolinks/db/schema";
 import { eq } from "drizzle-orm";
 
-import {
-  assertBookmarkErrorCode,
-  bookmarkPayload,
-  request,
-  withApp,
-} from "#/features/bookmarks/bookmarks-api-smoke-support.ts";
-import { assert } from "#test/api-smoke-support.ts";
+import { assertBookmarkErrorCode, bookmarkPayload } from "#test/bookmark-api-smoke-support.ts";
+import { assert, request, withApp } from "#test/api-smoke-support.ts";
 
 async function createBookmark(
   app: { handle: (request: Request) => Promise<Response> },
