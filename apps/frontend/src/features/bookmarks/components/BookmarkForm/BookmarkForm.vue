@@ -1,14 +1,9 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
+import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
 
 import type { FormErrors } from "#/shared/api/errors.ts";
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
-import { checkWaybackAvailability } from "#/features/wayback/api.ts";
 import WaybackAvailabilityStatus from "#/features/wayback/components/WaybackAvailabilityStatus.vue";
-import {
-  toWaybackStatusViewModel,
-  type WaybackStatusViewModel,
-} from "#/features/wayback/wayback-status.ts";
 import type { BookmarkDTO, EditableBookmarkPayload } from "../../types.ts";
 import BookmarkTagInput from "../BookmarkTagInput/BookmarkTagInput.vue";
 import type {
@@ -37,10 +32,6 @@ const emit = defineEmits<{
 const urlInput = ref<HTMLInputElement>();
 const tagsInput = ref<InstanceType<typeof BookmarkTagInput>>();
 const form = reactive<EditableBookmarkPayload>(resolveBookmarkFormInitialPayload(props));
-const waybackStatus = ref<WaybackStatusViewModel>({ kind: "idle" });
-
-let waybackRequestId = 0;
-let waybackDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 watch(
   () => [props.bookmark, props.initialCreateValues],
@@ -95,58 +86,6 @@ async function autofocus() {
 onMounted(async () => {
   await autofocus();
 });
-
-onBeforeUnmount(() => {
-  if (waybackDebounceTimer) {
-    clearTimeout(waybackDebounceTimer);
-  }
-});
-
-function isCheckableBookmarkUrl(value: string): boolean {
-  const trimmed = value.trim();
-  if (trimmed === "") {
-    return false;
-  }
-
-  try {
-    const parsed = new URL(trimmed);
-    return parsed.protocol === "http:" || parsed.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
-watch(
-  () => form.url,
-  (urlValue) => {
-    const normalizedUrl = urlValue.trim();
-    waybackRequestId += 1;
-    const requestId = waybackRequestId;
-
-    if (waybackDebounceTimer) {
-      clearTimeout(waybackDebounceTimer);
-      waybackDebounceTimer = null;
-    }
-
-    if (!isCheckableBookmarkUrl(normalizedUrl)) {
-      waybackStatus.value = { kind: "idle" };
-      return;
-    }
-
-    waybackStatus.value = { kind: "checking" };
-    waybackDebounceTimer = setTimeout(async () => {
-      const result = await checkWaybackAvailability(normalizedUrl);
-      if (requestId !== waybackRequestId) {
-        return;
-      }
-
-      waybackStatus.value = result.isOk
-        ? toWaybackStatusViewModel(result.value)
-        : { kind: "error", message: "Could not check Wayback availability right now." };
-    }, 350);
-  },
-  { immediate: true },
-);
 </script>
 
 <template>
@@ -169,7 +108,7 @@ watch(
       <span v-if="errors?.url" id="bookmark-url-error" class="ui-danger-text mt-2 block text-sm">
         {{ errors.url }}
       </span>
-      <WaybackAvailabilityStatus v-if="waybackStatus.kind !== 'idle'" :status="waybackStatus" />
+      <WaybackAvailabilityStatus :url="form.url" />
     </label>
 
     <label class="block">
