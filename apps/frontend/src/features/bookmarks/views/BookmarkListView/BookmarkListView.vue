@@ -23,6 +23,7 @@ import {
 } from "../../utils/bookmark-list-query-state.ts";
 
 import { useAppVariants } from "#/variants.ts";
+import BookmarksEmptyState from "./ui/BookmarksEmptyState.vue";
 const { variants } = useAppVariants();
 
 const route = useRoute();
@@ -52,6 +53,13 @@ const isNoMatchingBookmarks = computed(
 const isNoBookmarksYet = computed(
   () => bookmarks.value.length === 0 && pagination.value.totalCount === 0 && !isSearchActive.value,
 );
+
+type BookmarksEmptyVariant = "no-match" | "no-bookmarks" | "no-page";
+const emptyStateVariant = computed<BookmarksEmptyVariant>(() => {
+  if (isNoMatchingBookmarks.value) return "no-match";
+  if (isNoBookmarksYet.value) return "no-bookmarks";
+  return "no-page";
+});
 
 watch(
   queryState,
@@ -187,26 +195,9 @@ async function onDomainClick(domain: string) {
           v-if="bookmarks.length === 0"
           class="ui-border ui-surface border border-dashed px-5 py-8"
         >
-          <h2 class="ui-text-strong text-lg font-semibold">
-            {{
-              isNoMatchingBookmarks
-                ? "No matching bookmarks"
-                : isNoBookmarksYet
-                  ? "No bookmarks yet"
-                  : "No bookmarks on this page"
-            }}
-          </h2>
-          <p class="ui-text-muted mt-2 text-sm">
-            {{
-              isNoMatchingBookmarks
-                ? "Try another search or clear filters."
-                : isNoBookmarksYet
-                  ? "Save the first link you want to keep close."
-                  : "Choose another page to continue browsing saved links."
-            }}
-          </p>
+          <BookmarksEmptyState :variant="emptyStateVariant" />
           <RouterLink
-            v-if="pagination.totalCount === 0"
+            v-if="isNoBookmarksYet"
             class="ui-action mt-5 inline-flex min-h-10 items-center justify-center px-4 text-sm font-semibold transition"
             to="/bookmarks/new"
           >
