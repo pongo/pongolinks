@@ -1,6 +1,6 @@
 import { clean as tidyUrl } from "tidy-url";
 
-import type { EditableBookmarkPayload } from "../../../bookmarks/types.ts";
+import type { EditableBookmarkPayload } from "#/features/bookmark-editor/types.ts";
 import type { BookmarkFormInitialFocusTarget } from "../../components/BookmarkForm/bookmark-form-state.ts";
 import type {
   BookmarkUrlCheckBookmark,

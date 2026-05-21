@@ -34,15 +34,3 @@ export type BookmarkListResponse = {
   bookmarks: BookmarkDTO[];
   pagination: BookmarkListPagination;
 };
-
-export type DeletedBookmarkResponse = {
-  deletedBookmarkId: number;
-};
-
-export type EditableBookmarkPayload = {
-  url: string;
-  title: string;
-  description: string;
-  isPrivate: boolean;
-  tagsText: string;
-};

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { BookmarkDTO } from "../../../bookmarks/types.ts";
+import type { BookmarkDTO } from "#/features/bookmarks/types.ts";
 import { resolveBookmarkFormInitialPayload } from "./bookmark-form-state.ts";
 
 function buildBookmark(overrides: Partial<BookmarkDTO> = {}): BookmarkDTO {

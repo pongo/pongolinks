@@ -10,12 +10,7 @@ import {
   parseApiError as parseSharedApiError,
   type FormErrors,
 } from "#/shared/api/errors.ts";
-import type {
-  BookmarkDTO,
-  BookmarkListResponse,
-  DeletedBookmarkResponse,
-  EditableBookmarkPayload,
-} from "../types";
+import type { BookmarkListResponse } from "../types";
 
 const fallbackError = new ApiError(
   "Something went wrong. Please try again.",
@@ -86,63 +81,6 @@ export async function listBookmarks(
   try {
     return parseEdenResponse<BookmarkListResponse, ApiError>(
       await apiClient.api.bookmarks.get(bookmarkListQuery(query)),
-      {
-        fallbackError,
-        parseError: parseApiError,
-      },
-    );
-  } catch {
-    return Err(fallbackError);
-  }
-}
-
-export async function getBookmark(id: string): Promise<Result<BookmarkDTO, ApiError>> {
-  try {
-    return parseEdenResponse<BookmarkDTO, ApiError>(await apiClient.api.bookmarks[id]!.get(), {
-      fallbackError,
-      parseError: parseApiError,
-    });
-  } catch {
-    return Err(fallbackError);
-  }
-}
-
-export async function createBookmark(
-  payload: EditableBookmarkPayload,
-): Promise<Result<BookmarkDTO, ApiError>> {
-  try {
-    return parseEdenResponse<BookmarkDTO, ApiError>(await apiClient.api.bookmarks.post(payload), {
-      fallbackError,
-      parseError: parseApiError,
-    });
-  } catch {
-    return Err(fallbackError);
-  }
-}
-
-export async function updateBookmark(
-  id: string,
-  payload: EditableBookmarkPayload,
-): Promise<Result<BookmarkDTO, ApiError>> {
-  try {
-    return parseEdenResponse<BookmarkDTO, ApiError>(
-      await apiClient.api.bookmarks[id]!.patch(payload),
-      {
-        fallbackError,
-        parseError: parseApiError,
-      },
-    );
-  } catch {
-    return Err(fallbackError);
-  }
-}
-
-export async function deleteBookmark(
-  id: string,
-): Promise<Result<DeletedBookmarkResponse, ApiError>> {
-  try {
-    return parseEdenResponse<DeletedBookmarkResponse, ApiError>(
-      await apiClient.api.bookmarks[id]!.delete(),
       {
         fallbackError,
         parseError: parseApiError,

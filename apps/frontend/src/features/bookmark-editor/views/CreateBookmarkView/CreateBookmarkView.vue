@@ -6,9 +6,9 @@ import type { FormErrors } from "#/shared/api/errors.ts";
 
 import { listTags } from "#/features/tags/api.ts";
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
-import { createBookmark } from "../../../bookmarks/api/api.ts";
+import { createBookmark } from "#/features/bookmark-editor/api.ts";
 import BookmarkForm from "../../components/BookmarkForm/BookmarkForm.vue";
-import type { EditableBookmarkPayload } from "../../../bookmarks/types.ts";
+import type { EditableBookmarkPayload } from "#/features/bookmark-editor/types.ts";
 import {
   chooseBookmarkCreateUrl,
   continueAfterDuplicateOrRelated,

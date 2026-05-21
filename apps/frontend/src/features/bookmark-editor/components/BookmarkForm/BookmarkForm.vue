@@ -3,8 +3,9 @@ import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
 
 import type { FormErrors } from "#/shared/api/errors.ts";
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
-import WaybackAvailabilityStatus from "#/features/bookmark-editor/components/BookmarkForm/wayback/ui/WaybackAvailabilityStatus.vue";
-import type { BookmarkDTO, EditableBookmarkPayload } from "../../../bookmarks/types.ts";
+import WaybackAvailabilityStatus from "./wayback/ui/WaybackAvailabilityStatus.vue";
+import type { BookmarkDTO } from "#/features/bookmarks/types.ts";
+import type { EditableBookmarkPayload } from "../../types.ts";
 import type {
   BookmarkFormInitialCreateValues,
   BookmarkFormInitialFocusTarget,
