@@ -7,7 +7,7 @@ import {
   parseEdenResponse,
 } from "#/shared/api/client.ts";
 import { ApiError, parseApiError as parseSharedApiError } from "#/shared/api/errors.ts";
-import { mapBookmarkUrlApiErrorToFormErrors } from "#/features/bookmark-editor/api/form-errors.ts";
+import { mapBookmarkUrlApiErrorToFormErrors } from "../../../api/form-errors.ts";
 import type { WaybackAvailabilityDTO } from "./types.ts";
 
 const fallbackError = new ApiError("Something went wrong. Please try again.", "wayback.unexpected");

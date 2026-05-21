@@ -2,7 +2,7 @@
 import { ref } from "vue";
 
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
-import BookmarkTagAutocompleteInput from "../../../../shared/components/autocomplete/BookmarkTagAutocompleteInput.vue";
+import BookmarkTagAutocompleteInput from "#/shared/components/autocomplete/BookmarkTagAutocompleteInput.vue";
 import { replaceCurrentTagToken, suggestTags } from "./tag-autocomplete.ts";
 
 defineProps<{

@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 
-import { checkWaybackAvailability } from "#/features/bookmark-editor/components/BookmarkForm/wayback/api.ts";
+import { checkWaybackAvailability } from "../api.ts";
 import type { ApiError } from "#/shared/api/errors.ts";
 import {
   formatWaybackTimestamp,
   toWaybackStatusViewModel,
   type WaybackStatusViewModel,
-} from "#/features/bookmark-editor/components/BookmarkForm/wayback/wayback-status.ts";
-import type { WaybackAvailabilityDTO } from "#/features/bookmark-editor/components/BookmarkForm/wayback/types.ts";
+} from "../wayback-status.ts";
+import type { WaybackAvailabilityDTO } from "../types.ts";
 import type { Result } from "@pongolinks/shared/result";
 
 const props = defineProps<{

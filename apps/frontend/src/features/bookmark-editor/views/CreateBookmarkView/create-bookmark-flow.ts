@@ -5,7 +5,7 @@ import type { BookmarkFormInitialFocusTarget } from "../../components/BookmarkFo
 import type {
   BookmarkUrlCheckBookmark,
   BookmarkUrlCheckResult,
-} from "#/features/bookmark-editor/views/CreateBookmarkView/search/types.ts";
+} from "#/features/check-url/types.ts";
 
 export type CreateBookmarkState =
   | { kind: "checking"; url: string; title: string; closeAfterCreate: boolean }

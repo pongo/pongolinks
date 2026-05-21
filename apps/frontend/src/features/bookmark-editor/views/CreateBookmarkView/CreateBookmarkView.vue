@@ -23,7 +23,7 @@ import CreateBookmarkCheckingPanel from "./ui/CreateBookmarkCheckingPanel.vue";
 import CreateBookmarkDuplicatePanel from "./ui/CreateBookmarkDuplicatePanel.vue";
 import CreateBookmarkRelatedLinksPanel from "./ui/CreateBookmarkRelatedLinksPanel.vue";
 import CreateBookmarkUrlChoicePanel from "./ui/CreateBookmarkUrlChoicePanel.vue";
-import { checkBookmarkUrl } from "#/features/bookmark-editor/views/CreateBookmarkView/search/api.ts";
+import { checkBookmarkUrl } from "#/features/check-url/api.ts";
 
 const route = useRoute();
 const router = useRouter();

@@ -7,7 +7,7 @@ import { listTags } from "#/features/tags/api.ts";
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
 import type { BookmarkDTO, EditableBookmarkPayload } from "#/features/bookmarks/types.ts";
 import { deleteBookmark, getBookmark, updateBookmark } from "#/features/bookmarks/api/api.ts";
-import BookmarkForm from "#/features/bookmark-editor/components/BookmarkForm/BookmarkForm.vue";
+import BookmarkForm from "../components/BookmarkForm/BookmarkForm.vue";
 
 const route = useRoute();
 const router = useRouter();
