@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { PencilIcon, Trash2Icon } from "@lucide/vue";
-import { APP_BASE_PATH } from "@pongolinks/shared/app-config";
 import { computed, nextTick, onMounted, ref } from "vue";
 import type { ComponentPublicInstance } from "vue";
+import { RouterLink } from "vue-router";
 import { useVirtualList } from "@vueuse/core";
 
 import { deleteTag, listTags, updateTag } from "../api";
@@ -216,13 +216,13 @@ async function onDelete(tag: TagSummaryDTO) {
               </div>
 
               <!-- Default link view -->
-              <a
+              <RouterLink
                 v-else
                 class="tag-row-link min-w-0 text-sm font-semibold"
-                :href="`${APP_BASE_PATH}/t/${encodeURIComponent(tag.data.nameLower)}`"
+                :to="{ name: 'bookmark-tag-shortcut', params: { tags: tag.data.nameLower } }"
               >
                 {{ tag.data.name }}
-              </a>
+              </RouterLink>
             </td>
           </tr>
         </tbody>

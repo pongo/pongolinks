@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { LockIcon } from "@lucide/vue";
-import { APP_BASE_PATH } from "@pongolinks/shared/app-config";
 import { renderBookmarkDescriptionHtml } from "@pongolinks/shared/bookmark-description";
-import { RouterLink } from "vue-router";
+import { RouterLink, useRouter } from "vue-router";
 
 import type { BookmarkDTO } from "../../../types.ts";
 import type { BookmarkListRouteState } from "../../../utils/bookmark-list-query-state.ts";
@@ -20,6 +19,7 @@ const emit = defineEmits<{
 }>();
 
 const { variants } = useAppVariants();
+const router = useRouter();
 const bookmarkDescriptionHtmlOptions = {
   linkClassName: "bookmark-description-link",
   quoteClassName: "bookmark-description-quote",
@@ -41,6 +41,17 @@ function formatBookmarkDomain(url: string) {
   } catch {
     return url;
   }
+}
+
+function getDomainHref(domain: string) {
+  return router.resolve({ path: "/", query: { domain } }).href;
+}
+
+function getTagHref(tagNameLower: string) {
+  return router.resolve({
+    name: "bookmark-tag-shortcut",
+    params: { tags: tagNameLower },
+  }).href;
 }
 
 function isIncludedTagActive(tagName: string) {
@@ -92,7 +103,7 @@ function isDomainActive(domain: string) {
                   formatBookmarkDomain(bookmark.url),
                 ),
               }"
-              :href="`${APP_BASE_PATH}/?domain=${encodeURIComponent(formatBookmarkDomain(bookmark.url))}`"
+              :href="getDomainHref(formatBookmarkDomain(bookmark.url))"
               @click.left.exact.prevent="emit('domainClick', formatBookmarkDomain(bookmark.url))"
             >
               {{ formatBookmarkDomain(bookmark.url) }}
@@ -102,7 +113,7 @@ function isDomainActive(domain: string) {
               :key="tag.id"
               class="ui-tag inline-flex max-w-full items-center border px-1.5 py-0.5 text-xs"
               :class="{ 'ui-tag-active': isIncludedTagActive(tag.name) }"
-              :href="`${APP_BASE_PATH}/t/${encodeURIComponent(tag.nameLower)}`"
+              :href="getTagHref(tag.nameLower)"
               @click.left.exact.prevent="emit('tagClick', tag.name)"
             >
               {{ tag.name }}
