@@ -178,68 +178,62 @@ export function isFilterActive(state: BookmarkListRouteState) {
   return Boolean(state.q || state.domain || state.url || state.tags.length > 0);
 }
 
-export function toggleIncludedTagFilter(
+type TagPredicate = (tag: string, lower: string) => boolean;
+
+function toggleTagFilter(
   state: BookmarkListRouteState,
   tagName: string,
+  isTargetTag: TagPredicate,
+  isConflictingTag: TagPredicate,
+  makeTag: (normalized: string) => string,
 ): BookmarkListRouteState {
   const normalized = tagName.trim();
-  if (!normalized) {
-    return state;
-  }
+  if (!normalized) return state;
 
   const lower = normalized.toLocaleLowerCase("und");
-  const existingIndex = state.tags.findIndex(
-    (tag) => !tag.startsWith("-") && tag.toLocaleLowerCase("und") === lower,
-  );
+  const existingIndex = state.tags.findIndex((tag) => isTargetTag(tag, lower));
 
   const nextTags =
     existingIndex >= 0
       ? state.tags.filter((_tag, index) => index !== existingIndex)
       : dedupeTags([
-          ...state.tags.filter(
-            (tag) => !(tag.startsWith("-") && tag.slice(1).toLocaleLowerCase("und") === lower),
-          ),
-          normalized,
+          ...state.tags.filter((tag) => !isConflictingTag(tag, lower)),
+          makeTag(normalized),
         ]);
 
-  return {
-    ...state,
-    tags: nextTags,
-    url: null,
-    page: 1,
-  };
+  return { ...state, tags: nextTags, url: null, page: 1 };
+}
+
+const isExactIncludedTag = (tag: string, lower: string) =>
+  !tag.startsWith("-") && tag.toLocaleLowerCase("und") === lower;
+
+const isExactExcludedTag = (tag: string, lower: string) =>
+  tag.startsWith("-") && tag.slice(1).toLocaleLowerCase("und") === lower;
+
+export function toggleIncludedTagFilter(
+  state: BookmarkListRouteState,
+  tagName: string,
+): BookmarkListRouteState {
+  return toggleTagFilter(
+    state,
+    tagName,
+    isExactIncludedTag,
+    isExactExcludedTag,
+    (normalized) => normalized,
+  );
 }
 
 export function toggleExcludedTagFilter(
   state: BookmarkListRouteState,
   tagName: string,
 ): BookmarkListRouteState {
-  const normalized = tagName.trim();
-  if (!normalized) {
-    return state;
-  }
-
-  const lower = normalized.toLocaleLowerCase("und");
-  const existingIndex = state.tags.findIndex(
-    (tag) => tag.startsWith("-") && tag.slice(1).toLocaleLowerCase("und") === lower,
+  return toggleTagFilter(
+    state,
+    tagName,
+    isExactExcludedTag,
+    isExactIncludedTag,
+    (normalized) => `-${normalized}`,
   );
-
-  const nextTags =
-    existingIndex >= 0
-      ? state.tags.filter((_tag, index) => index !== existingIndex)
-      : dedupeTags([
-          ...state.tags.filter(
-            (tag) => tag.startsWith("-") || tag.toLocaleLowerCase("und") !== lower,
-          ),
-          `-${normalized}`,
-        ]);
-
-  return {
-    ...state,
-    tags: nextTags,
-    url: null,
-    page: 1,
-  };
 }
 
 export function toggleDomainFilter(
