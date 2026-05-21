@@ -5,11 +5,8 @@ import {
   parseApiPayload as parseSharedApiPayload,
   parseEdenResponse,
 } from "#/shared/api/client.ts";
-import {
-  ApiError,
-  parseApiError as parseSharedApiError,
-  type FormErrors,
-} from "#/shared/api/errors.ts";
+import { ApiError, parseApiError as parseSharedApiError } from "#/shared/api/errors.ts";
+import { mapBookmarkUrlApiErrorToFormErrors } from "#/features/bookmark-editor/api/form-errors.ts";
 import type { BookmarkUrlCheckResult } from "./types.ts";
 
 const fallbackError = new ApiError(
@@ -17,18 +14,10 @@ const fallbackError = new ApiError(
   "bookmark.unexpected",
 );
 
-function mapApiErrorToFormErrors(error: Pick<ApiError, "code" | "message">): FormErrors {
-  if (error.code === "bookmark.url_required" || error.code === "bookmark.url_invalid") {
-    return { url: error.message };
-  }
-
-  return { form: error.message };
-}
-
 function parseApiError(value: unknown): ApiError {
   return parseSharedApiError(value, {
     fallbackError,
-    mapFormErrors: mapApiErrorToFormErrors,
+    mapFormErrors: mapBookmarkUrlApiErrorToFormErrors,
   });
 }
 

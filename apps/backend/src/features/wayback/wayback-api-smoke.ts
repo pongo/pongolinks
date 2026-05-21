@@ -136,10 +136,7 @@ await withApp(async ({ app }) => {
     const body = await response.json();
 
     assert(response.status === 502, "wayback network failure should return 502");
-    assert(
-      body.error.code === "wayback.unexpected",
-      "wayback network failure should return error",
-    );
+    assert(body.error.code === "wayback.unexpected", "wayback network failure should return error");
     assert(fetchCalls === 1, "wayback network failure should not retry");
   } finally {
     restoreFetch();

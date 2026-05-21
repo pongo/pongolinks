@@ -73,6 +73,21 @@ describe("wayback API payload parsing", () => {
     });
   });
 
+  it("maps URL validation errors to URL field errors", () => {
+    const result = parseApiPayload<WaybackAvailabilityDTO>(
+      apiErrorPayload("Bookmark URL must use http or https", "bookmark.url_invalid"),
+    );
+
+    expect(result).toMatchObject({
+      isErr: true,
+      error: {
+        formErrors: {
+          url: "Bookmark URL must use http or https",
+        },
+      },
+    });
+  });
+
   it("returns fallback error when transport throws", async () => {
     const throwingEndpoint = {
       get: async () => {
