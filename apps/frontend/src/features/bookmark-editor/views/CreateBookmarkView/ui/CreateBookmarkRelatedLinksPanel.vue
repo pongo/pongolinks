@@ -20,7 +20,7 @@ const emit = defineEmits<{
       <p class="ui-text-emphasis text-sm font-semibold">Related links found in bookmarks</p>
       <ul class="mt-4 space-y-3">
         <li v-for="bookmark in bookmarks" :key="bookmark.id" class="ui-border-subtle border p-3">
-          <RouterLink class="ui-link text-sm font-semibold" :to="`/bookmarks/${bookmark.id}/edit`">
+          <RouterLink class="ui-link text-sm font-semibold" :to="bookmark.editHref">
             {{ bookmark.title }}
           </RouterLink>
           <p class="ui-text-muted mt-1 text-sm break-all">{{ bookmark.url }}</p>

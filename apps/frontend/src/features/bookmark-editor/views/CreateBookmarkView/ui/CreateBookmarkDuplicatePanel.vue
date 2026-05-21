@@ -32,7 +32,7 @@ const emit = defineEmits<{
       <div class="mt-4 flex flex-wrap gap-3">
         <RouterLink
           class="ui-action inline-flex min-h-10 items-center justify-center px-4 text-sm font-semibold transition"
-          :to="`/bookmarks/${bookmark.id}/edit`"
+          :to="bookmark.editHref"
         >
           Edit existing bookmark
         </RouterLink>

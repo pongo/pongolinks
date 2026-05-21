@@ -1,19 +1,12 @@
-import { Err, type Result } from "@pongolinks/shared/result";
+import type { Result } from "@pongolinks/shared/result";
+import {
+  bookmarkFilterToQueryParams,
+  normalizeBookmarkFilterInput,
+} from "@pongolinks/shared/bookmark-filter";
 
-import {
-  apiClient,
-  parseApiPayload as parseSharedApiPayload,
-  parseEdenResponse,
-} from "#/shared/api/client.ts";
-import {
-  ApiError,
-  parseApiError as parseSharedApiError,
-  type FormErrors,
-  genericFallbackError,
-} from "#/shared/api/errors.ts";
+import { apiClient, createApiResultAdapter } from "#/shared/api/client.ts";
+import { ApiError, type FormErrors } from "#/shared/api/errors.ts";
 import type { BookmarkListResponse } from "../types";
-
-const fallbackError = genericFallbackError;
 
 function mapApiErrorToFormErrors(error: Pick<ApiError, "code" | "message">): FormErrors {
   if (
@@ -27,18 +20,12 @@ function mapApiErrorToFormErrors(error: Pick<ApiError, "code" | "message">): For
   return { form: error.message };
 }
 
-function parseApiError(value: unknown): ApiError {
-  return parseSharedApiError(value, {
-    fallbackError,
-    mapFormErrors: mapApiErrorToFormErrors,
-  });
-}
+const bookmarksApi = createApiResultAdapter({
+  mapFormErrors: mapApiErrorToFormErrors,
+});
 
 export function parseApiPayload<T>(payload: unknown): Result<T, ApiError> {
-  return parseSharedApiPayload<T, ApiError>(payload, {
-    fallbackError,
-    parseError: parseApiError,
-  });
+  return bookmarksApi.parsePayload<T>(payload);
 }
 
 export type BookmarkListApiQuery = {
@@ -53,13 +40,15 @@ export function bookmarkListQuery(query: BookmarkListApiQuery): {
   $query: { q?: string; tag?: string[]; domain?: string; url?: string; page?: string };
 } {
   const payload: { q?: string; tag?: string[]; domain?: string; url?: string; page?: string } = {};
+  const filter = normalizeBookmarkFilterInput({
+    q: query.url ? null : query.q,
+    tags: query.url ? [] : query.tag,
+    domain: query.url ? null : query.domain,
+    url: query.url,
+  });
 
-  if (query.url) {
-    payload.url = query.url;
-  } else {
-    if (query.q) payload.q = query.q;
-    if (query.tag && query.tag.length > 0) payload.tag = query.tag;
-    if (query.domain) payload.domain = query.domain;
+  if (filter.isOk) {
+    Object.assign(payload, bookmarkFilterToQueryParams(filter.value));
   }
 
   if (Number.isInteger(query.page) && (query.page ?? 1) > 1) {
@@ -72,15 +61,7 @@ export function bookmarkListQuery(query: BookmarkListApiQuery): {
 export async function listBookmarks(
   query: BookmarkListApiQuery = {},
 ): Promise<Result<BookmarkListResponse, ApiError>> {
-  try {
-    return parseEdenResponse<BookmarkListResponse, ApiError>(
-      await apiClient.api.bookmarks.get(bookmarkListQuery(query)),
-      {
-        fallbackError,
-        parseError: parseApiError,
-      },
-    );
-  } catch {
-    return Err(fallbackError);
-  }
+  return bookmarksApi.call<BookmarkListResponse>(() =>
+    apiClient.api.bookmarks.get(bookmarkListQuery(query)),
+  );
 }

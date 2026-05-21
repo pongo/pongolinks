@@ -8,8 +8,8 @@ This directory owns backend behavior around Bookmarks, including Bookmark HTTP r
 
 ## Boundaries
 
-This slice owns Bookmark list, create, read-by-id, and update behavior. It also owns the Bookmark-side rules for synchronizing Tags from submitted Tag text and Related Links from Bookmark descriptions.
+This slice owns Bookmark list, create, read-by-id, update, and delete behavior. It owns Bookmark mutation transaction orchestration and delegates Tag lifecycle rules to the backend Tag feature. It owns the Bookmark-side rules for synchronizing Related Links from Bookmark descriptions.
 
-Keep database schema changes in `packages/db`. Keep Tag summary/read behavior in the backend Tag feature. Keep browser UI and Vue route behavior in the frontend Bookmark feature.
+Keep database schema changes in `packages/db`. Keep Tag lifecycle behavior in the backend Tag feature. Keep browser UI and Vue route behavior in the frontend Bookmark feature.
 
 Backend API behavior is covered by `bookmarks-api.test.ts`, which runs the Bun/Elysia smoke suites for create, list/get, and update behavior.

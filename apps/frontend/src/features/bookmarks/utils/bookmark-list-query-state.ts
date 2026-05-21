@@ -1,4 +1,8 @@
 import type { LocationQuery, LocationQueryRaw } from "vue-router";
+import {
+  bookmarkFilterToQueryParams,
+  normalizeBookmarkFilterInput,
+} from "@pongolinks/shared/bookmark-filter";
 
 export type BookmarkListRouteState = {
   q: string | null;
@@ -54,6 +58,16 @@ export function parseBookmarkListRouteQuery(query: LocationQuery): BookmarkListR
   const domain = pickFirstString(query.domain)?.trim() ?? "";
   const url = pickFirstString(query.url)?.trim() ?? "";
   const tags = dedupeTags(pickStringList(query.tag));
+
+  if (url !== "") {
+    return {
+      q: null,
+      tags: [],
+      domain: null,
+      url,
+      page: normalizeBookmarkListPageQuery(query.page),
+    };
+  }
 
   return {
     q: q === "" ? null : q,
@@ -138,14 +152,19 @@ export function parseMiniQueryToState(input: string): Omit<BookmarkListRouteStat
 
 export function toBookmarkListRouteQuery(state: BookmarkListRouteState): LocationQueryRaw {
   const query: LocationQueryRaw = {};
+  const filter = normalizeBookmarkFilterInput({
+    q: state.url ? null : state.q,
+    tags: state.url ? [] : state.tags,
+    domain: state.url ? null : state.domain,
+    url: state.url,
+  });
 
-  if (state.url) {
-    query.url = state.url;
-  } else {
-    if (state.q) query.q = state.q;
-    if (state.tags.length === 1) query.tag = state.tags[0]!;
-    if (state.tags.length > 1) query.tag = state.tags;
-    if (state.domain) query.domain = state.domain;
+  if (filter.isOk) {
+    Object.assign(query, bookmarkFilterToQueryParams(filter.value));
+  }
+
+  if (Array.isArray(query.tag) && query.tag.length === 1) {
+    query.tag = query.tag[0]!;
   }
 
   if (state.page > 1) {

@@ -1,19 +1,36 @@
-import { desc, eq, inArray } from "drizzle-orm";
+import { asc, desc, eq, inArray } from "drizzle-orm";
 import type { Result } from "@pongolinks/shared/result";
 import { Err, Ok } from "@pongolinks/shared/result";
 
-import { bookmarks, relatedLinks } from "@pongolinks/db/schema";
+import { bookmarks, relatedLinks, tags } from "@pongolinks/db/schema";
 
 import type { AppDb } from "#/db/app-db.ts";
 import type { ApiError } from "#/http/result-response.ts";
 import { unexpectedError } from "#/http/result-response.ts";
 import type { ValidUrl } from "@pongolinks/shared/brands";
 
+type BookmarkRow = typeof bookmarks.$inferSelect;
+type TagRow = typeof tags.$inferSelect;
+type RelatedLinkRow = typeof relatedLinks.$inferSelect;
+
+export type BookmarkUrlLookupBookmark = BookmarkRow & {
+  bookmarkTags: { bookmarkId: number; tagId: number; tag: TagRow }[];
+  relatedLinks: RelatedLinkRow[];
+};
+
 export type BookmarkUrlLookupMatch =
-  | { status: "exact-bookmark"; bookmarkIds: [number] }
-  | { status: "alternate-protocol-bookmark"; bookmarkIds: [number] }
-  | { status: "related-link"; bookmarkIds: number[] }
-  | { status: "not-found"; bookmarkIds: [] };
+  | {
+      status: "exact-bookmark";
+      bookmark: BookmarkUrlLookupBookmark;
+      bookmarks: [BookmarkUrlLookupBookmark];
+    }
+  | {
+      status: "alternate-protocol-bookmark";
+      bookmark: BookmarkUrlLookupBookmark;
+      bookmarks: [BookmarkUrlLookupBookmark];
+    }
+  | { status: "related-link"; bookmarks: BookmarkUrlLookupBookmark[] }
+  | { status: "not-found"; bookmarks: [] };
 
 export function flipBookmarkUrlProtocol(url: ValidUrl): ValidUrl {
   if (url.startsWith("https:")) {
@@ -39,7 +56,16 @@ async function findFirstBookmarkByUrl(db: AppDb, urls: ValidUrl[]) {
   for (const url of urls) {
     const bookmark = await db.query.bookmarks.findFirst({
       where: eq(bookmarks.url, url),
-      columns: { id: true },
+      with: {
+        bookmarkTags: {
+          with: {
+            tag: true,
+          },
+        },
+        relatedLinks: {
+          orderBy: asc(relatedLinks.id),
+        },
+      },
     });
 
     if (bookmark) return bookmark;
@@ -54,7 +80,8 @@ async function searchExact(db: AppDb, urls: ValidUrl[]): Promise<Result<Bookmark
   if (exactBookmark) {
     return Ok({
       status: "exact-bookmark",
-      bookmarkIds: [exactBookmark.id],
+      bookmark: exactBookmark,
+      bookmarks: [exactBookmark],
     });
   }
 
@@ -70,11 +97,39 @@ async function searchAlternateProtocol(
   if (alternateProtocolBookmark) {
     return Ok({
       status: "alternate-protocol-bookmark",
-      bookmarkIds: [alternateProtocolBookmark.id],
+      bookmark: alternateProtocolBookmark,
+      bookmarks: [alternateProtocolBookmark],
     });
   }
 
   return Err("Alternate protocol bookmark not found");
+}
+
+async function findBookmarksByIdsInOrder(
+  db: AppDb,
+  bookmarkIds: number[],
+): Promise<BookmarkUrlLookupBookmark[]> {
+  if (bookmarkIds.length === 0) return [];
+
+  const rows = await db.query.bookmarks.findMany({
+    where: inArray(bookmarks.id, bookmarkIds),
+    with: {
+      bookmarkTags: {
+        with: {
+          tag: true,
+        },
+      },
+      relatedLinks: {
+        orderBy: asc(relatedLinks.id),
+      },
+    },
+  });
+  const rowsById = new Map(rows.map((row) => [row.id, row] as const));
+
+  return bookmarkIds.flatMap((id) => {
+    const row = rowsById.get(id);
+    return row ? [row] : [];
+  });
 }
 
 async function searchRelated(
@@ -95,10 +150,11 @@ async function searchRelated(
   }
 
   const bookmarkIds = Array.from(uniqueBookmarkIds);
-  if (bookmarkIds.length > 0) {
+  const matchedBookmarks = await findBookmarksByIdsInOrder(db, bookmarkIds);
+  if (matchedBookmarks.length > 0) {
     return Ok({
       status: "related-link",
-      bookmarkIds,
+      bookmarks: matchedBookmarks,
     });
   }
 
@@ -121,7 +177,7 @@ export async function lookupBookmarksByUrl(
     const relatedLinkResult = await searchRelated(db, urls, alternateProtocolUrls);
     if (relatedLinkResult.isOk) return relatedLinkResult;
 
-    return Ok({ status: "not-found", bookmarkIds: [] });
+    return Ok({ status: "not-found", bookmarks: [] });
   } catch (error) {
     return Err(unexpectedError(error));
   }

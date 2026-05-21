@@ -1,4 +1,4 @@
-import { Err, Ok, type Result } from "@pongolinks/shared/result";
+import { Err } from "@pongolinks/shared/result";
 import { Elysia } from "elysia";
 import { z } from "zod";
 
@@ -6,7 +6,8 @@ import type { AppDb } from "#/db/app-db.ts";
 import { privateApiRevalidationCache } from "#/http/cache.ts";
 import { getRouteLogger, logApiError } from "#/http/route-logging.ts";
 import { ApiError, resultResponse, type ApiErrorCode } from "#/http/result-response.ts";
-import { TagsRepository } from "./tags-repository";
+import { TagLifecycle } from "./tag-lifecycle.ts";
+import { parseSubmittedTagName } from "./tag-name.ts";
 
 export type TagRoutesOptions = {
   db: AppDb;
@@ -74,23 +75,8 @@ function tagValidationErrorResponse(error: unknown, set: { status?: number | str
   return Err(apiError);
 }
 
-function parseTagName(name: string): Result<{ trimmed: string; lowered: string }, ApiError> {
-  const trimmed = name.trim();
-  if (trimmed === "" || /\s/u.test(trimmed)) {
-    return Err(
-      new ApiError(
-        "Tag name must be a non-empty token without whitespace",
-        "tag.name_invalid",
-        400,
-      ),
-    );
-  }
-
-  return Ok({ trimmed, lowered: trimmed.toLocaleLowerCase("und") });
-}
-
 export function createTagRoutes({ db }: TagRoutesOptions) {
-  const repository = new TagsRepository(db);
+  const tags = new TagLifecycle(db);
 
   return new Elysia({ name: "tag-routes" })
     .onError(({ code, error, set }) => {
@@ -102,7 +88,7 @@ export function createTagRoutes({ db }: TagRoutesOptions) {
       const { set } = context;
       const log = getRouteLogger(context);
 
-      const result = await repository.listUntaggedBookmarks();
+      const result = await tags.listUntaggedBookmarks();
       if (result.isErr) {
         logApiError(log, result.error);
       } else {
@@ -120,7 +106,7 @@ export function createTagRoutes({ db }: TagRoutesOptions) {
         const { body, params, set } = context;
         const log = getRouteLogger(context);
 
-        const tagNameResult = parseTagName(body.name);
+        const tagNameResult = parseSubmittedTagName(body.name);
         if (tagNameResult.isErr) {
           logApiError(log, tagNameResult.error);
           return resultResponse(tagNameResult, set);
@@ -128,10 +114,10 @@ export function createTagRoutes({ db }: TagRoutesOptions) {
 
         const tagName = tagNameResult.value;
         log.set({
-          tag: { id: params.id, name: tagName.trimmed, nameLower: tagName.lowered },
+          tag: { id: params.id, name: tagName.name(), nameLower: tagName.nameLower() },
         });
 
-        const result = await repository.update(params.id, tagName.trimmed, tagName.lowered);
+        const result = await tags.renameTag(params.id, tagName);
         if (result.isErr) {
           logApiError(log, result.error);
         } else {
@@ -159,7 +145,7 @@ export function createTagRoutes({ db }: TagRoutesOptions) {
 
         log.set({ tag: { id: params.id } });
 
-        const result = await repository.delete(params.id);
+        const result = await tags.deleteTag(params.id);
         if (result.isErr) {
           logApiError(log, result.error);
         } else {
@@ -179,7 +165,7 @@ export function createTagRoutes({ db }: TagRoutesOptions) {
           const { set } = context;
           const log = getRouteLogger(context);
 
-          const result = await repository.list();
+          const result = await tags.listTags();
           if (result.isErr) {
             logApiError(log, result.error);
           } else {
