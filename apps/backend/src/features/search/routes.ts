@@ -2,7 +2,7 @@ import { Elysia } from "elysia";
 import { z } from "zod";
 
 import type { AppDb } from "#/db/app-db.ts";
-import { BookmarkUrl } from "#/domain/bookmark-url.ts";
+import { parseBookmarkUrl } from "#/http/bookmark-url-api-error.ts";
 import { getRouteLogger, logApiError } from "#/http/route-logging.ts";
 import { resultResponse } from "#/http/result-response.ts";
 import { SearchRepository } from "./search-repository.ts";
@@ -20,7 +20,7 @@ export function createSearchRoutes({ db }: SearchRoutesOptions) {
       const { query, set } = context;
       const log = getRouteLogger(context);
 
-      const urlResult = BookmarkUrl.from(query.url);
+      const urlResult = parseBookmarkUrl(query.url);
       if (urlResult.isErr) {
         logApiError(log, urlResult.error);
         return resultResponse(urlResult, set);

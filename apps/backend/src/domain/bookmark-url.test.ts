@@ -40,8 +40,7 @@ describe("BookmarkUrl", () => {
       expect(result.isErr).toBe(true);
       if (result.isErr) {
         expect(result.error.message).toBe("Bookmark URL is required");
-        expect(result.error.code).toBe("bookmark.url_required");
-        expect(result.error.status).toBe(400);
+        expect(result.error.kind).toBe("required");
       }
     },
   );
@@ -54,8 +53,7 @@ describe("BookmarkUrl", () => {
       expect(result.isErr).toBe(true);
       if (result.isErr) {
         expect(result.error.message).toBe("Bookmark URL must be an absolute URL");
-        expect(result.error.code).toBe("bookmark.url_invalid");
-        expect(result.error.status).toBe(400);
+        expect(result.error.kind).toBe("invalid");
       }
     },
   );
@@ -68,8 +66,7 @@ describe("BookmarkUrl", () => {
       expect(result.isErr).toBe(true);
       if (result.isErr) {
         expect(result.error.message).toBe("Bookmark URL must use http or https");
-        expect(result.error.code).toBe("bookmark.url_invalid");
-        expect(result.error.status).toBe(400);
+        expect(result.error.kind).toBe("invalid");
       }
     },
   );
@@ -80,8 +77,7 @@ describe("BookmarkUrl", () => {
     expect(result.isErr).toBe(true);
     if (result.isErr) {
       expect(result.error.message).toBe("Bookmark URL must use http or https");
-      expect(result.error.code).toBe("bookmark.url_invalid");
-      expect(result.error.status).toBe(400);
+      expect(result.error.kind).toBe("invalid");
     }
   });
 });

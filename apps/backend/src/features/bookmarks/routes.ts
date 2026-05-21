@@ -3,7 +3,7 @@ import { Elysia } from "elysia";
 import { z } from "zod";
 
 import type { AppDb } from "#/db/app-db.ts";
-import { BookmarkUrl } from "#/domain/bookmark-url.ts";
+import { parseBookmarkUrl } from "#/http/bookmark-url-api-error.ts";
 import { privateApiRevalidationCache } from "#/http/cache.ts";
 import { getRouteLogger, logApiError } from "#/http/route-logging.ts";
 import { ApiError, resultResponse, type ApiErrorCode } from "#/http/result-response.ts";
@@ -105,7 +105,7 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
         const { body, set } = context;
         const log = getRouteLogger(context);
 
-        const parseResults = combine([BookmarkUrl.from(body.url), parseTagNames(body.tagsText)]);
+        const parseResults = combine([parseBookmarkUrl(body.url), parseTagNames(body.tagsText)]);
         if (parseResults.isErr) {
           logApiError(log, parseResults.error);
           return resultResponse(parseResults, set);
@@ -170,7 +170,7 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
 
         const parseResults = combine([
           BookmarkId.from(params.id),
-          BookmarkUrl.from(body.url),
+          parseBookmarkUrl(body.url),
           parseTagNames(body.tagsText),
         ]);
         if (parseResults.isErr) {
