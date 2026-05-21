@@ -92,7 +92,7 @@ await withApp(async ({ app }) => {
 
     assert(response.status === 502, "malformed wayback payload should return 502");
     assert(
-      body.error.code === "bookmark.unexpected",
+      body.error.code === "wayback.unexpected",
       "malformed wayback payload should return error",
     );
     assert(fetchCalls === 1, "malformed wayback payload should call wayback once");
@@ -115,7 +115,7 @@ await withApp(async ({ app }) => {
     const body = await response.json();
 
     assert(response.status === 502, "429 wayback response should return 502");
-    assert(body.error.code === "bookmark.unexpected", "429 wayback response should return error");
+    assert(body.error.code === "wayback.unexpected", "429 wayback response should return error");
     assert(fetchCalls === 1, "429 wayback response should not retry");
   } finally {
     restoreFetch();
@@ -137,7 +137,7 @@ await withApp(async ({ app }) => {
 
     assert(response.status === 502, "wayback network failure should return 502");
     assert(
-      body.error.code === "bookmark.unexpected",
+      body.error.code === "wayback.unexpected",
       "wayback network failure should return error",
     );
     assert(fetchCalls === 1, "wayback network failure should not retry");

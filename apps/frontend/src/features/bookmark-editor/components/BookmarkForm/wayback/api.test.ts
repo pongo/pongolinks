@@ -58,13 +58,13 @@ describe("wayback API payload parsing", () => {
 
   it("parses backend error payload", () => {
     const result = parseApiPayload<WaybackAvailabilityDTO>(
-      apiErrorPayload("Wayback availability response is not OK", "bookmark.unexpected"),
+      apiErrorPayload("Wayback availability response is not OK", "wayback.unexpected"),
     );
 
     expect(result).toMatchObject({
       isErr: true,
       error: {
-        code: "bookmark.unexpected",
+        code: "wayback.unexpected",
         message: "Wayback availability response is not OK",
         formErrors: {
           form: "Wayback availability response is not OK",
@@ -85,7 +85,7 @@ describe("wayback API payload parsing", () => {
     expect(result).toMatchObject({
       isErr: true,
       error: {
-        code: "bookmark.unexpected",
+        code: "wayback.unexpected",
         message: "Something went wrong. Please try again.",
       },
     });

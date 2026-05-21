@@ -31,7 +31,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function malformedPayloadError(payload: unknown) {
-  return new ApiError("Wayback availability payload is malformed", "bookmark.unexpected", 502, {
+  return new ApiError("Wayback availability payload is malformed", "wayback.unexpected", 502, {
     payload,
   });
 }
@@ -64,13 +64,13 @@ export class WaybackAvailabilityService {
       response = await fetchFn(endpoint);
     } catch (error) {
       return Err(
-        new ApiError("Wayback availability request failed", "bookmark.unexpected", 502, { error }),
+        new ApiError("Wayback availability request failed", "wayback.unexpected", 502, { error }),
       );
     }
 
     if (!response.ok) {
       return Err(
-        new ApiError("Wayback availability response is not OK", "bookmark.unexpected", 502, {
+        new ApiError("Wayback availability response is not OK", "wayback.unexpected", 502, {
           status: response.status,
         }),
       );
@@ -83,7 +83,7 @@ export class WaybackAvailabilityService {
       return Err(
         new ApiError(
           "Wayback availability response body is invalid JSON",
-          "bookmark.unexpected",
+          "wayback.unexpected",
           502,
           {
             error,

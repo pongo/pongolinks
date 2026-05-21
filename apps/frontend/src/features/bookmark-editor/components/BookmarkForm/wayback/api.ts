@@ -15,7 +15,7 @@ import type { WaybackAvailabilityDTO } from "./types.ts";
 
 const fallbackError = new ApiError(
   "Something went wrong. Please try again.",
-  "bookmark.unexpected",
+  "wayback.unexpected",
 );
 
 type WaybackAvailabilityEndpoint = {
