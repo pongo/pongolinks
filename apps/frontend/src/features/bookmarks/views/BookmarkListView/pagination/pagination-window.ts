@@ -10,14 +10,6 @@ export type PaginationWindowItem =
 
 const PAGINATION_WINDOW_SIZE = 5;
 
-export function normalizeBookmarkListPageQuery(value: unknown): number {
-  const candidate = Array.isArray(value) ? value[0] : value;
-  const parsed =
-    typeof candidate === "string" && candidate.trim() !== "" ? Number(candidate) : Number.NaN;
-
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
-}
-
 export function createPaginationWindow({
   page,
   totalPages,

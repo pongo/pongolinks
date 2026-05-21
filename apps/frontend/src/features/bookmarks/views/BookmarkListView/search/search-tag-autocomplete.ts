@@ -2,7 +2,7 @@ import type { TagSummaryDTO } from "#/features/tags/types.ts";
 import {
   currentToken,
   replaceCurrentToken,
-} from "../../../components/autocomplete/tag-token-autocomplete.ts";
+} from "#/shared/components/autocomplete/tag-token-autocomplete.ts";
 
 export function suggestSearchFieldTags(
   tags: TagSummaryDTO[],

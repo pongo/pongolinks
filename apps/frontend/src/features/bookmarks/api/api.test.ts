@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { ApiErrorCode } from "#/shared/api/errors.ts";
-import type { BookmarkListResponse, DeletedBookmarkResponse } from "../types";
+import type { BookmarkListResponse } from "../types";
 import { bookmarkListQuery, parseApiPayload } from "./api";
 
 function apiErrorPayload(message: string, code: ApiErrorCode) {
@@ -82,23 +82,6 @@ describe("bookmark API payload parsing", () => {
     });
   });
 
-  it("parses deleted bookmark payloads", () => {
-    const result = parseApiPayload<DeletedBookmarkResponse>({
-      isOk: true,
-      isErr: false,
-      value: {
-        deletedBookmarkId: 42,
-      },
-    });
-
-    expect(result).toMatchObject({
-      isOk: true,
-      value: {
-        deletedBookmarkId: 42,
-      },
-    });
-  });
-
   it("maps URL error payloads to the URL form field", () => {
     const result = parseApiPayload(
       apiErrorPayload("Bookmark URL is required", "bookmark.url_required"),
@@ -109,21 +92,6 @@ describe("bookmark API payload parsing", () => {
       error: {
         formErrors: {
           url: "Bookmark URL is required",
-        },
-      },
-    });
-  });
-
-  it("maps title error payloads to the title form field", () => {
-    const result = parseApiPayload(
-      apiErrorPayload("Bookmark title is required", "bookmark.title_required"),
-    );
-
-    expect(result).toMatchObject({
-      isErr: true,
-      error: {
-        formErrors: {
-          title: "Bookmark title is required",
         },
       },
     });

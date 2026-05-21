@@ -5,7 +5,7 @@ import { parseApiPayload, parseEdenResponse } from "./client";
 
 const fallbackError = new ApiError(
   "Something went wrong. Please try again.",
-  "bookmark.unexpected",
+  "internal.unexpected",
 );
 
 describe("shared API Result parsing", () => {

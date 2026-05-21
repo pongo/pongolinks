@@ -1,14 +1,25 @@
 import { Err, Ok, type Result } from "@pongolinks/shared/result";
 
-import { ApiError } from "#/http/result-response.ts";
 import type { ValidUrl } from "@pongolinks/shared/brands";
+import { StacklessError } from "@pongolinks/shared/errors";
+
+export type BookmarkUrlErrorKind = "required" | "invalid";
+
+export class BookmarkUrlError extends StacklessError {
+  constructor(
+    message: string,
+    readonly kind: BookmarkUrlErrorKind,
+  ) {
+    super(message);
+  }
+}
 
 export class BookmarkUrl {
   private constructor(private readonly rawValue: string) {}
 
-  static from(input: unknown): Result<BookmarkUrl, ApiError> {
+  static from(input: unknown): Result<BookmarkUrl, BookmarkUrlError> {
     if (typeof input !== "string" || input.trim() === "") {
-      return Err(new ApiError("Bookmark URL is required", "bookmark.url_required", 400));
+      return Err(new BookmarkUrlError("Bookmark URL is required", "required"));
     }
 
     const trimmed = input.trim();
@@ -17,14 +28,12 @@ export class BookmarkUrl {
       const parsed = new URL(trimmed);
 
       if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-        return Err(
-          new ApiError("Bookmark URL must use http or https", "bookmark.url_invalid", 400),
-        );
+        return Err(new BookmarkUrlError("Bookmark URL must use http or https", "invalid"));
       }
 
       return Ok(new BookmarkUrl(trimmed));
     } catch {
-      return Err(new ApiError("Bookmark URL must be an absolute URL", "bookmark.url_invalid", 400));
+      return Err(new BookmarkUrlError("Bookmark URL must be an absolute URL", "invalid"));
     }
   }
 

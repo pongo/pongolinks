@@ -1,6 +1,6 @@
 import { Err, Ok } from "@pongolinks/shared/result";
 
-import { BookmarkUrl } from "#/domain/bookmark-url.ts";
+import { parseBookmarkUrl } from "#/http/bookmark-url-api-error.ts";
 import { ApiError } from "#/http/result-response.ts";
 import type { BookmarkListFilters } from "./repository/bookmark-read-repository.ts";
 import { parseTagNames } from "./domain/tag-name.ts";
@@ -113,7 +113,7 @@ export function parseBookmarkListFiltersQuery(query: BookmarkListQuery) {
     );
   }
 
-  const url = hasUrlMode ? BookmarkUrl.from(urlValue) : null;
+  const url = hasUrlMode ? parseBookmarkUrl(urlValue) : null;
   if (url?.isErr) {
     return url;
   }

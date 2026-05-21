@@ -1,19 +1,7 @@
+import type { ApiErrorCode } from "@pongolinks/shared/api-errors";
 import { Err, Ok, type Result } from "@pongolinks/shared/result";
 
-export type ApiErrorCode =
-  | "bookmark.url_required"
-  | "bookmark.url_invalid"
-  | "bookmark.url_duplicate"
-  | "bookmark.title_required"
-  | "bookmark.id_invalid"
-  | "bookmark.not_found"
-  | "bookmark.tags_invalid"
-  | "bookmark.validation_invalid"
-  | "bookmark.unexpected"
-  | "tag.name_invalid"
-  | "tag.not_found"
-  | "tag.conflict"
-  | "tag.unexpected";
+export type { ApiErrorCode };
 
 export class ApiError extends Error {
   constructor(
@@ -34,7 +22,7 @@ export class ApiError extends Error {
 }
 
 export function unexpectedError(error: unknown) {
-  return new ApiError("Unexpected bookmark error", "bookmark.unexpected", 500, { error });
+  return new ApiError("Unexpected internal error", "internal.unexpected", 500, { error });
 }
 
 export function resultResponse<T>(result: Result<T, ApiError>, set: { status?: number | string }) {

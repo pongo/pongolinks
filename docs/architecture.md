@@ -111,6 +111,7 @@ Operational errors use the shared Rust-style Result pattern.
 - Throw exceptions for programmer errors, failed invariants, and test assertions.
 - Backend API routes should return the shared Result response shape from `@pongolinks/shared/result`.
 - Frontend feature adapters should translate Eden responses into UI-facing Results instead of exposing transport details to Vue components.
+- API error codes are wire-level backend/frontend contracts and should live in `@pongolinks/shared/api-errors`; app-local `ApiError` classes may adapt those codes to HTTP status or UI form errors.
 
 ## Domain Language
 

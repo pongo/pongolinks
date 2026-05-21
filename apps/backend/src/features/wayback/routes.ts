@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
 import { z } from "zod";
 
-import { BookmarkUrl } from "#/domain/bookmark-url.ts";
+import { parseBookmarkUrl } from "#/http/bookmark-url-api-error.ts";
 import { getRouteLogger, logApiError } from "#/http/route-logging.ts";
 import { resultResponse } from "#/http/result-response.ts";
 import { WaybackAvailabilityService } from "./wayback-availability.ts";
@@ -16,7 +16,7 @@ export function createWaybackRoutes() {
       const log = getRouteLogger(context);
 
       log.set({ wayback: { url: query.url } });
-      const urlResult = BookmarkUrl.from(query.url);
+      const urlResult = parseBookmarkUrl(query.url);
       if (urlResult.isErr) {
         logApiError(log, urlResult.error);
         return resultResponse(urlResult, set);
