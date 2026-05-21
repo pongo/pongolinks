@@ -22,7 +22,7 @@ export class ApiError extends Error {
 }
 
 export function unexpectedError(error: unknown) {
-  return new ApiError("Unexpected bookmark error", "bookmark.unexpected", 500, { error });
+  return new ApiError("Unexpected internal error", "internal.unexpected", 500, { error });
 }
 
 export function resultResponse<T>(result: Result<T, ApiError>, set: { status?: number | string }) {

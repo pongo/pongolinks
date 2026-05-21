@@ -19,7 +19,7 @@ import type {
 
 const fallbackError = new ApiError(
   "Something went wrong. Please try again.",
-  "bookmark.unexpected",
+  "internal.unexpected",
 );
 
 function mapApiErrorToFormErrors(error: Pick<ApiError, "code" | "message">): FormErrors {

@@ -7,7 +7,7 @@ export const apiErrorCodes = [
   "bookmark.not_found",
   "bookmark.tags_invalid",
   "bookmark.validation_invalid",
-  "bookmark.unexpected",
+  "internal.unexpected",
   "wayback.unexpected",
   "tag.name_invalid",
   "tag.not_found",

@@ -14,7 +14,7 @@ import type { BookmarkUrlCheckResult } from "./types.ts";
 
 const fallbackError = new ApiError(
   "Something went wrong. Please try again.",
-  "bookmark.unexpected",
+  "internal.unexpected",
 );
 
 function parseApiError(value: unknown): ApiError {
