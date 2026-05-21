@@ -1,25 +1,13 @@
-import { isApiErrorCode } from "@pongolinks/shared/api-errors";
 import { Err, type Result } from "@pongolinks/shared/result";
 
 import { apiClient, parseEdenResponse } from "#/shared/api/client.ts";
-import { ApiError, type ApiErrorCode } from "#/shared/api/errors.ts";
+import { ApiError, parseApiError } from "#/shared/api/errors.ts";
 import type { TagSummaryDTO, UntaggedBookmarkDTO } from "./types";
 
 const fallbackError = new ApiError("Something went wrong. Please try again.", "tag.unexpected");
 
 function parseTagApiError(error: unknown): ApiError {
-  if (typeof error !== "object" || error === null || !("message" in error)) {
-    return fallbackError;
-  }
-
-  const message = typeof error.message === "string" ? error.message : fallbackError.message;
-  const code = "code" in error && typeof error.code === "string" ? error.code : fallbackError.code;
-
-  return new ApiError(message, normalizeApiErrorCode(code));
-}
-
-function normalizeApiErrorCode(code: string): ApiErrorCode {
-  return isApiErrorCode(code) ? code : fallbackError.code;
+  return parseApiError(error, { fallbackError });
 }
 
 export async function listTags(): Promise<Result<{ tags: TagSummaryDTO[] }, ApiError>> {
