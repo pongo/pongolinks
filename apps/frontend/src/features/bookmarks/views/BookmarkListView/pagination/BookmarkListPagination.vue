@@ -5,7 +5,7 @@ import { RouterLink, type RouteLocationRaw } from "vue-router";
 
 import type { BookmarkListPagination } from "../../../types.ts";
 import type { BookmarkListRouteState } from "../../../utils/bookmark-list-query-state.ts";
-import { createPaginationWindow, type PaginationWindowItem } from "./pagination-window.ts";
+import { createPaginationWindow, type PaginationWindowItem } from "#/shared/pagination-window.ts";
 import { toBookmarkListRouteQuery } from "../../../utils/bookmark-list-query-state.ts";
 
 const props = defineProps<{

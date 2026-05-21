@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createPaginationWindow } from "./pagination-window.ts";
+import { createPaginationWindow } from "#/shared/pagination-window.ts";
 
 describe("Bookmark list pagination window", () => {
   it("shows all pages when total pages fit inside the window", () => {
