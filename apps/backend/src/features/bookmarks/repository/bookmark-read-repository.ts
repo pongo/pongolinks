@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import type { Result } from "@pongolinks/shared/result";
 import { Err, Ok } from "@pongolinks/shared/result";
 
@@ -94,33 +94,15 @@ export class BookmarkReadRepository {
           return urlLookup;
         }
 
-        const totalCount = urlLookup.value.bookmarkIds.length;
-        const pageIds = urlLookup.value.bookmarkIds.slice(
+        const matchedBookmarks = urlLookup.value.bookmarks;
+        const totalCount = matchedBookmarks.length;
+        const pageBookmarks = matchedBookmarks.slice(
           bookmarkListOffset(page),
           bookmarkListOffset(page) + BOOKMARK_LIST_PAGE_SIZE,
         );
-        const rows = pageIds.length
-          ? await this.db.query.bookmarks.findMany({
-              where: inArray(bookmarks.id, pageIds),
-              with: {
-                bookmarkTags: {
-                  with: {
-                    tag: true,
-                  },
-                },
-                relatedLinks: {
-                  orderBy: asc(relatedLinks.id),
-                },
-              },
-            })
-          : [];
-        const rowsById = new Map(rows.map((row) => [row.id, row] as const));
-        const orderedRows = pageIds
-          .map((id) => rowsById.get(id))
-          .filter((row): row is (typeof rows)[number] => row !== undefined);
 
         return Ok({
-          bookmarks: orderedRows.map(toBookmarkDTO),
+          bookmarks: pageBookmarks.map(toBookmarkDTO),
           pagination: createBookmarkListPagination({ page, totalCount }),
         });
       }
