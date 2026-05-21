@@ -6,7 +6,7 @@ interface EmptyStateContent {
   description: string;
 }
 
-const props = defineProps<{
+defineProps<{
   variant: Variant;
 }>();
 

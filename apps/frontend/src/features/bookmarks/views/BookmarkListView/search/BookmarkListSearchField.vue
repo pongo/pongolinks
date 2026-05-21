@@ -3,7 +3,7 @@ import { ref } from "vue";
 
 import { listTags } from "#/features/tags/api.ts";
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
-import BookmarkTagAutocompleteInput from "../../../../../shared/components/autocomplete/BookmarkTagAutocompleteInput.vue";
+import BookmarkTagAutocompleteInput from "#/shared/components/autocomplete/BookmarkTagAutocompleteInput.vue";
 import { replaceCurrentSearchTagToken, suggestSearchFieldTags } from "./search-tag-autocomplete.ts";
 
 defineProps<{

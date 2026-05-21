@@ -42,3 +42,13 @@ export function parseApiError(value: unknown, options: ParseApiErrorOptions): Ap
 
   return new ApiError(message, code, data, mapFormErrors?.({ code, message }) ?? { form: message });
 }
+
+export function mapBookmarkUrlApiErrorToFormErrors(
+  error: Pick<ApiError, "code" | "message">,
+): FormErrors {
+  if (error.code === "bookmark.url_required" || error.code === "bookmark.url_invalid") {
+    return { url: error.message };
+  }
+
+  return { form: error.message };
+}
