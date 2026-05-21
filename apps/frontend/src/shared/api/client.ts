@@ -3,6 +3,7 @@ import type { EdenTreaty } from "@elysiajs/eden/treaty";
 import type { ApiRoutes } from "@pongolinks/backend/contract";
 import { APP_BASE_PATH } from "@pongolinks/shared/app-config";
 import { Err, type Result, isResult } from "@pongolinks/shared/result";
+import { ApiError, type FormErrors, genericFallbackError, parseApiError } from "./errors";
 
 export const apiClient: EdenTreaty.Create<ApiRoutes> = edenTreaty<ApiRoutes>(APP_BASE_PATH);
 
@@ -11,37 +12,79 @@ export type EdenApiResponse = {
   error: { value?: unknown } | null;
 };
 
-type ParseApiPayloadOptions<E extends Error> = {
-  fallbackError: E;
-  parseError?: (error: unknown) => E;
+type ApiResultAdapterOptions = {
+  fallbackError?: ApiError;
+  mapFormErrors?: (error: Pick<ApiError, "code" | "message">) => FormErrors;
 };
 
-export function parseApiPayload<T, E extends Error>(
+type ParseApiPayloadOptions = Required<Pick<ApiResultAdapterOptions, "fallbackError">> &
+  Pick<ApiResultAdapterOptions, "mapFormErrors">;
+
+function parseErrorPayload(value: unknown, options: ParseApiPayloadOptions): ApiError {
+  return parseApiError(value, {
+    fallbackError: options.fallbackError,
+    mapFormErrors: options.mapFormErrors,
+  });
+}
+
+function parseApiPayload<T>(
   payload: unknown,
-  options: ParseApiPayloadOptions<E>,
-): Result<T, E> {
-  if (!isResult<T, E>(payload)) {
-    return Err(options.fallbackError);
+  options: ApiResultAdapterOptions = {},
+): Result<T, ApiError> {
+  const fallbackError = options.fallbackError ?? genericFallbackError;
+
+  if (!isResult<T, ApiError>(payload)) {
+    return Err(fallbackError);
   }
 
   if (payload.isOk) {
     return payload;
   }
 
-  return Err(options.parseError?.(payload.error) ?? options.fallbackError);
+  return Err(
+    parseErrorPayload(payload.error, {
+      fallbackError,
+      mapFormErrors: options.mapFormErrors,
+    }),
+  );
 }
 
-export function parseEdenResponse<T, E extends Error>(
+function parseEdenResponse<T>(
   response: EdenApiResponse,
-  options: ParseApiPayloadOptions<E>,
-): Result<T, E> {
+  options: ApiResultAdapterOptions = {},
+): Result<T, ApiError> {
+  const fallbackError = options.fallbackError ?? genericFallbackError;
+
   if (response.data !== undefined && response.data !== null) {
-    return parseApiPayload<T, E>(response.data, options);
+    return parseApiPayload<T>(response.data, { ...options, fallbackError });
   }
 
   if (response.error) {
-    return parseApiPayload<T, E>(response.error.value, options);
+    return parseApiPayload<T>(response.error.value, { ...options, fallbackError });
   }
 
-  return Err(options.fallbackError);
+  return Err(fallbackError);
+}
+
+export function createApiResultAdapter(options: ApiResultAdapterOptions = {}) {
+  const fallbackError = options.fallbackError ?? genericFallbackError;
+  const adapterOptions = { ...options, fallbackError };
+
+  return {
+    parsePayload<T>(payload: unknown): Result<T, ApiError> {
+      return parseApiPayload<T>(payload, adapterOptions);
+    },
+
+    parseResponse<T>(response: EdenApiResponse): Result<T, ApiError> {
+      return parseEdenResponse<T>(response, adapterOptions);
+    },
+
+    async call<T>(request: () => Promise<EdenApiResponse>): Promise<Result<T, ApiError>> {
+      try {
+        return parseEdenResponse<T>(await request(), adapterOptions);
+      } catch {
+        return Err(fallbackError);
+      }
+    },
+  };
 }

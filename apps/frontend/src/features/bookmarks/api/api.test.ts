@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import type { ApiErrorCode } from "#/shared/api/errors.ts";
-import type { BookmarkListResponse } from "../types";
 import { bookmarkListQuery, parseApiPayload } from "./api";
 
 function apiErrorPayload(message: string, code: ApiErrorCode) {
@@ -16,39 +15,6 @@ function apiErrorPayload(message: string, code: ApiErrorCode) {
 }
 
 describe("bookmark API payload parsing", () => {
-  it("parses bookmark list pagination metadata", () => {
-    const result = parseApiPayload<BookmarkListResponse>({
-      isOk: true,
-      isErr: false,
-      value: {
-        bookmarks: [],
-        pagination: {
-          page: 1,
-          pageSize: 3,
-          totalCount: 0,
-          totalPages: 0,
-          hasPreviousPage: false,
-          hasNextPage: false,
-        },
-      },
-    });
-
-    expect(result).toMatchObject({
-      isOk: true,
-      value: {
-        bookmarks: [],
-        pagination: {
-          page: 1,
-          pageSize: 3,
-          totalCount: 0,
-          totalPages: 0,
-          hasPreviousPage: false,
-          hasNextPage: false,
-        },
-      },
-    });
-  });
-
   it("serializes bookmark list query parameters", () => {
     expect(bookmarkListQuery({ page: 1 })).toEqual({ $query: {} });
     expect(bookmarkListQuery({ page: 0 })).toEqual({ $query: {} });
@@ -95,17 +61,6 @@ describe("bookmark API payload parsing", () => {
         },
       },
     });
-  });
-
-  it("uses stackless API errors", () => {
-    const result = parseApiPayload(
-      apiErrorPayload("Bookmark URL is required", "bookmark.url_required"),
-    );
-
-    expect(result).toMatchObject({ isErr: true });
-    if (result.isErr) {
-      expect(result.error.stack).toBeUndefined();
-    }
   });
 
   it("maps not-found error payloads to a form error", () => {

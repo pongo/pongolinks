@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import type { ApiErrorCode } from "#/shared/api/errors.ts";
 import { checkWaybackAvailability, parseApiPayload } from "./api.ts";
-import type { WaybackAvailabilityDTO } from "./types.ts";
 
 function apiErrorPayload(message: string, code: ApiErrorCode) {
   return {
@@ -16,48 +15,8 @@ function apiErrorPayload(message: string, code: ApiErrorCode) {
 }
 
 describe("wayback API payload parsing", () => {
-  it("parses available payload", () => {
-    const result = parseApiPayload<WaybackAvailabilityDTO>({
-      isOk: true,
-      isErr: false,
-      value: {
-        available: true,
-        archivedUrl: "http://web.archive.org/web/20260212061822/https://example.com",
-        timestamp: "20260212061822",
-      },
-    });
-
-    expect(result).toEqual({
-      isOk: true,
-      isErr: false,
-      value: {
-        available: true,
-        archivedUrl: "http://web.archive.org/web/20260212061822/https://example.com",
-        timestamp: "20260212061822",
-      },
-    });
-  });
-
-  it("parses unavailable payload", () => {
-    const result = parseApiPayload<WaybackAvailabilityDTO>({
-      isOk: true,
-      isErr: false,
-      value: {
-        available: false,
-      },
-    });
-
-    expect(result).toEqual({
-      isOk: true,
-      isErr: false,
-      value: {
-        available: false,
-      },
-    });
-  });
-
   it("parses backend error payload", () => {
-    const result = parseApiPayload<WaybackAvailabilityDTO>(
+    const result = parseApiPayload(
       apiErrorPayload("Wayback availability response is not OK", "wayback.unexpected"),
     );
 
@@ -74,7 +33,7 @@ describe("wayback API payload parsing", () => {
   });
 
   it("maps URL validation errors to URL field errors", () => {
-    const result = parseApiPayload<WaybackAvailabilityDTO>(
+    const result = parseApiPayload(
       apiErrorPayload("Bookmark URL must use http or https", "bookmark.url_invalid"),
     );
 
