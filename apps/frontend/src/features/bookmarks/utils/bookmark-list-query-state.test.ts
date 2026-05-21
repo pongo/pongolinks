@@ -126,6 +126,22 @@ describe("toBookmarkListRouteQuery()", () => {
       page: "3",
     });
   });
+
+  it("normalizes route query filters through Bookmark Filter rules", () => {
+    expect(
+      toBookmarkListRouteQuery({
+        q: " sqlite   vue ",
+        tags: ["Vue", "-Old"],
+        domain: "Example.COM",
+        url: null,
+        page: 1,
+      }),
+    ).toEqual({
+      q: "sqlite vue",
+      tag: ["vue", "-old"],
+      domain: "example.com",
+    });
+  });
 });
 
 describe("parseBookmarkListRouteQuery()", () => {
@@ -142,6 +158,24 @@ describe("parseBookmarkListRouteQuery()", () => {
       tags: ["vue", "-old"],
       domain: "example.com",
       url: null,
+      page: 2,
+    });
+  });
+
+  it("treats URL lookup mode as exclusive when parsing route query", () => {
+    expect(
+      parseBookmarkListRouteQuery({
+        q: "ignored",
+        tag: "vue",
+        domain: "example.com",
+        url: "https://example.com",
+        page: "2",
+      }),
+    ).toEqual({
+      q: null,
+      tags: [],
+      domain: null,
+      url: "https://example.com",
       page: 2,
     });
   });

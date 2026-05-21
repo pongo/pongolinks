@@ -25,6 +25,10 @@ _Avoid_: weight, rank, score
 
 **Bookmark Filter**:
 A strict condition that includes or excludes Bookmarks from a Bookmark list.
+A Bookmark Filter can include Tags, exclude Tags, match Bookmark URL host text, and combine with a Bookmark Search Query.
+A Bookmark Filter cannot be combined with Bookmark URL lookup mode.
+Including and excluding the same Tag in one Bookmark Filter is invalid.
+Pagination is not part of a Bookmark Filter; changing a Bookmark Filter resets list pagination as route workflow behavior.
 _Avoid_: search term, query term
 
 **Bookmark Search Query**:

@@ -1,4 +1,8 @@
 import { Err, type Result } from "@pongolinks/shared/result";
+import {
+  bookmarkFilterToQueryParams,
+  normalizeBookmarkFilterInput,
+} from "@pongolinks/shared/bookmark-filter";
 
 import {
   apiClient,
@@ -53,13 +57,15 @@ export function bookmarkListQuery(query: BookmarkListApiQuery): {
   $query: { q?: string; tag?: string[]; domain?: string; url?: string; page?: string };
 } {
   const payload: { q?: string; tag?: string[]; domain?: string; url?: string; page?: string } = {};
+  const filter = normalizeBookmarkFilterInput({
+    q: query.url ? null : query.q,
+    tags: query.url ? [] : query.tag,
+    domain: query.url ? null : query.domain,
+    url: query.url,
+  });
 
-  if (query.url) {
-    payload.url = query.url;
-  } else {
-    if (query.q) payload.q = query.q;
-    if (query.tag && query.tag.length > 0) payload.tag = query.tag;
-    if (query.domain) payload.domain = query.domain;
+  if (filter.isOk) {
+    Object.assign(payload, bookmarkFilterToQueryParams(filter.value));
   }
 
   if (Number.isInteger(query.page) && (query.page ?? 1) > 1) {
