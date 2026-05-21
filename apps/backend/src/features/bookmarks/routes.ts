@@ -11,7 +11,7 @@ import { BookmarkId } from "./domain/bookmark-id.ts";
 import { BookmarkEditor } from "./repository/bookmark-editor.ts";
 import { BookmarkReadRepository } from "./repository/bookmark-read-repository.ts";
 import { parseBookmarkListFiltersQuery } from "./bookmark-list-filters-query.ts";
-import { parseTagNames } from "./domain/tag-name.ts";
+import { parseTagNames } from "#/features/tags/tag-name.ts";
 
 export type BookmarkRoutesOptions = {
   db: AppDb;

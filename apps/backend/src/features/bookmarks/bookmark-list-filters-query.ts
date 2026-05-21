@@ -3,7 +3,7 @@ import { Err, Ok } from "@pongolinks/shared/result";
 import { parseBookmarkUrl } from "#/http/bookmark-url-api-error.ts";
 import { ApiError } from "#/http/result-response.ts";
 import type { BookmarkListFilters } from "./repository/bookmark-read-repository.ts";
-import { parseTagNames } from "./domain/tag-name.ts";
+import { parseTagNames } from "#/features/tags/tag-name.ts";
 import { normalizeBookmarkListPage } from "./pagination.ts";
 
 export type BookmarkListQuery = {

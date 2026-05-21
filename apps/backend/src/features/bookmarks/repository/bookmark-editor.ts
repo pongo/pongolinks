@@ -3,37 +3,22 @@ import { extractRelatedLinkUrls } from "@pongolinks/shared/bookmark-description"
 import type { Result } from "@pongolinks/shared/result";
 import { Err, Ok } from "@pongolinks/shared/result";
 
-import { bookmarks, bookmarkTags, relatedLinks, tags } from "@pongolinks/db/schema";
+import { bookmarks, relatedLinks } from "@pongolinks/db/schema";
 
 import type { AppDb } from "#/db/app-db.ts";
 import { ApiError, unexpectedError } from "#/http/result-response.ts";
 import type { BookmarkId } from "../domain/bookmark-id.ts";
 import type { BookmarkDTO, EditableBookmarkData } from "../domain/contracts.ts";
-import type { TagName } from "../domain/tag-name.ts";
 import { toBookmarkDTO } from "./bookmark-dto.ts";
 import type { ValidUrl } from "@pongolinks/shared/brands";
+import { TagLifecycle, type TagAttachmentDiff } from "#/features/tags/tag-lifecycle.ts";
 
 export type BookmarkEditorLogger = {
   set: (context: Record<string, unknown>) => void;
 };
 
-type TagRow = typeof tags.$inferSelect;
-type BookmarkTagWithTagRow = {
-  bookmarkId: number;
-  tagId: number;
-  tag: TagRow;
-};
 export type DeletedBookmarkDTO = {
   deletedBookmarkId: number;
-};
-type TagDiffCounts = {
-  submittedCount: number;
-  attachedCount: number;
-  detachedCount: number;
-  retainedCount: number;
-  attachedNames: string[];
-  detachedNames: string[];
-  deletedOrphanNames: string[];
 };
 
 type EditorDb = Pick<AppDb, "delete" | "insert" | "query" | "update">;
@@ -45,15 +30,6 @@ function isUniqueUrlError(error: unknown) {
       message.includes("bookmarks.url"),
   );
 }
-
-function isUniqueTagNameLowerError(error: unknown) {
-  return errorMessageChain(error).some(
-    (message) =>
-      message.includes("UNIQUE constraint failed: tags.name_lower") ||
-      message.includes("tags.name_lower"),
-  );
-}
-
 function errorMessageChain(error: unknown): string[] {
   const messages: string[] = [];
   let current = error;
@@ -67,7 +43,11 @@ function errorMessageChain(error: unknown): string[] {
 }
 
 export class BookmarkEditor {
-  constructor(private readonly db: AppDb) {}
+  private readonly tagLifecycle: TagLifecycle;
+
+  constructor(private readonly db: AppDb) {
+    this.tagLifecycle = new TagLifecycle(db);
+  }
 
   async create(
     input: EditableBookmarkData,
@@ -99,7 +79,7 @@ export class BookmarkEditor {
           .returning({ id: bookmarks.id })
           .get();
 
-        await this.syncBookmarkTags(tx, bookmark.id, input.tags);
+        await this.tagLifecycle.replaceBookmarkTags(tx, bookmark.id, input.tags);
         await this.insertRelatedLinks(tx, bookmark.id, extractedRelatedLinks);
 
         return this.findBookmarkById(tx, bookmark.id);
@@ -151,7 +131,7 @@ export class BookmarkEditor {
       });
 
       let relatedLinkCounts = { insertedCount: 0, deletedCount: 0, retainedCount: 0 };
-      let tagDiffCounts: TagDiffCounts = {
+      let tagDiffCounts: TagAttachmentDiff = {
         submittedCount: input.tags.length,
         attachedCount: 0,
         detachedCount: 0,
@@ -174,7 +154,7 @@ export class BookmarkEditor {
           .returning()
           .get();
 
-        tagDiffCounts = await this.syncBookmarkTags(tx, id.value(), input.tags);
+        tagDiffCounts = await this.tagLifecycle.replaceBookmarkTags(tx, id.value(), input.tags);
         relatedLinkCounts = await this.syncRelatedLinks(tx, id.value(), extractedRelatedLinks);
 
         return this.findBookmarkById(tx, id.value());
@@ -213,15 +193,14 @@ export class BookmarkEditor {
           return undefined;
         }
 
-        const attachedTags = await this.findBookmarkTagsWithTags(tx, id.value());
+        const tagDiffCounts = await this.tagLifecycle.removeBookmarkTagAttachments(tx, id.value());
 
         await tx.delete(bookmarks).where(eq(bookmarks.id, id.value())).run();
 
-        const deletedOrphanTags = await this.deleteOrphanTags(tx, attachedTags);
         log?.set({
           tags: {
-            detachedCount: attachedTags.length,
-            deletedOrphanNames: deletedOrphanTags.map((tag) => tag.name),
+            detachedCount: tagDiffCounts.detachedCount,
+            deletedOrphanNames: tagDiffCounts.deletedOrphanNames,
           },
         });
 
@@ -291,124 +270,5 @@ export class BookmarkEditor {
       urlsToInsert,
       urlsToDelete,
     };
-  }
-
-  private async syncBookmarkTags(
-    db: EditorDb,
-    bookmarkId: number,
-    tagNames: TagName[],
-  ): Promise<TagDiffCounts> {
-    const existingRows = await this.findBookmarkTagsWithTags(db, bookmarkId);
-    const submittedTags: TagRow[] = [];
-
-    for (const tagName of tagNames) {
-      submittedTags.push(await this.findOrCreateTag(db, tagName));
-    }
-
-    const submittedNameLowerSet = new Set(submittedTags.map((tag) => tag.nameLower));
-    const existingByNameLower = new Map(existingRows.map((row) => [row.tag.nameLower, row]));
-    const tagsToAttach = submittedTags.filter((tag) => !existingByNameLower.has(tag.nameLower));
-    const rowsToDetach = existingRows.filter(
-      (row) => !submittedNameLowerSet.has(row.tag.nameLower),
-    );
-    const retainedCount = existingRows.length - rowsToDetach.length;
-
-    for (const tag of tagsToAttach) {
-      await db
-        .insert(bookmarkTags)
-        .values({
-          bookmarkId,
-          tagId: tag.id,
-        })
-        .run();
-    }
-
-    for (const row of rowsToDetach) {
-      await db
-        .delete(bookmarkTags)
-        .where(and(eq(bookmarkTags.bookmarkId, bookmarkId), eq(bookmarkTags.tagId, row.tagId)))
-        .run();
-    }
-
-    const deletedOrphanTags = await this.deleteOrphanTags(db, rowsToDetach);
-
-    return {
-      submittedCount: submittedTags.length,
-      attachedCount: tagsToAttach.length,
-      detachedCount: rowsToDetach.length,
-      retainedCount,
-      attachedNames: tagsToAttach.map((tag) => tag.name),
-      detachedNames: rowsToDetach.map((row) => row.tag.name),
-      deletedOrphanNames: deletedOrphanTags.map((tag) => tag.name),
-    };
-  }
-
-  private async findBookmarkTagsWithTags(
-    db: EditorDb,
-    bookmarkId: number,
-  ): Promise<BookmarkTagWithTagRow[]> {
-    return db.query.bookmarkTags.findMany({
-      where: eq(bookmarkTags.bookmarkId, bookmarkId),
-      with: {
-        tag: true,
-      },
-    });
-  }
-
-  private async deleteOrphanTags(
-    db: EditorDb,
-    detachedRows: BookmarkTagWithTagRow[],
-  ): Promise<TagRow[]> {
-    const deletedTags: TagRow[] = [];
-
-    for (const row of detachedRows) {
-      const remainingLink = await db.query.bookmarkTags.findFirst({
-        where: eq(bookmarkTags.tagId, row.tagId),
-      });
-
-      if (remainingLink) {
-        continue;
-      }
-
-      await db.delete(tags).where(eq(tags.id, row.tagId)).run();
-      deletedTags.push(row.tag);
-    }
-
-    return deletedTags;
-  }
-
-  private async findOrCreateTag(db: EditorDb, tagName: TagName): Promise<TagRow> {
-    const existing = await db.query.tags.findFirst({
-      where: eq(tags.nameLower, tagName.nameLower()),
-    });
-
-    if (existing) {
-      return existing;
-    }
-
-    try {
-      return await db
-        .insert(tags)
-        .values({
-          name: tagName.name(),
-          nameLower: tagName.nameLower(),
-        })
-        .returning()
-        .get();
-    } catch (error) {
-      if (!isUniqueTagNameLowerError(error)) {
-        throw error;
-      }
-
-      const tag = await db.query.tags.findFirst({
-        where: eq(tags.nameLower, tagName.nameLower()),
-      });
-
-      if (!tag) {
-        throw error;
-      }
-
-      return tag;
-    }
   }
 }

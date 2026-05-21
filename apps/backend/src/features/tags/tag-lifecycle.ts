@@ -7,12 +7,30 @@ import { bookmarks, bookmarkTags, tags } from "@pongolinks/db/schema";
 import type { AppDb } from "#/db/app-db.ts";
 import { ApiError } from "#/http/result-response.ts";
 import type { TagSummaryDTO, UntaggedBookmarkDTO } from "./contracts";
+import type { TagName } from "./tag-name.ts";
 
-type TagEditorDb = Pick<AppDb, "delete" | "insert" | "query" | "select" | "update">;
+type TagRow = typeof tags.$inferSelect;
+type BookmarkTagWithTagRow = {
+  bookmarkId: number;
+  tagId: number;
+  tag: TagRow;
+};
+
+export type TagAttachmentDiff = {
+  submittedCount: number;
+  attachedCount: number;
+  detachedCount: number;
+  retainedCount: number;
+  attachedNames: string[];
+  detachedNames: string[];
+  deletedOrphanNames: string[];
+};
 
 type DeletedTagDTO = {
   deletedTagId: number;
 };
+
+type TagLifecycleDb = Pick<AppDb, "delete" | "insert" | "query" | "select" | "update">;
 
 function errorMessageChain(error: unknown): string[] {
   const messages: string[] = [];
@@ -38,7 +56,7 @@ function tagUnexpectedError(error: unknown) {
   return new ApiError("Unexpected tag error", "tag.unexpected", 500, { error });
 }
 
-export class TagsRepository {
+export class TagLifecycle {
   private readonly listQuery;
 
   constructor(private readonly db: AppDb) {
@@ -54,7 +72,7 @@ export class TagsRepository {
       .prepare();
   }
 
-  async list(): Promise<Result<{ tags: TagSummaryDTO[] }, ApiError>> {
+  async listTags(): Promise<Result<{ tags: TagSummaryDTO[] }, ApiError>> {
     try {
       const rows = await this.listQuery.all();
       return Ok({ tags: rows });
@@ -63,11 +81,7 @@ export class TagsRepository {
     }
   }
 
-  async update(
-    id: number,
-    name: string,
-    nameLower: string,
-  ): Promise<Result<TagSummaryDTO, ApiError>> {
+  async renameTag(id: number, name: TagName): Promise<Result<TagSummaryDTO, ApiError>> {
     try {
       const result = await this.db.transaction(async (tx) => {
         const source = await tx.query.tags.findFirst({
@@ -77,10 +91,10 @@ export class TagsRepository {
           return Err(new ApiError("Tag was not found", "tag.not_found", 404));
         }
 
-        if (nameLower === source.nameLower) {
+        if (name.nameLower() === source.nameLower) {
           const updated = await tx
             .update(tags)
-            .set({ name })
+            .set({ name: name.name() })
             .where(eq(tags.id, id))
             .returning()
             .get();
@@ -89,13 +103,13 @@ export class TagsRepository {
         }
 
         const replacement = await tx.query.tags.findFirst({
-          where: eq(tags.nameLower, nameLower),
+          where: eq(tags.nameLower, name.nameLower()),
         });
 
         if (!replacement) {
           const updated = await tx
             .update(tags)
-            .set({ name, nameLower })
+            .set({ name: name.name(), nameLower: name.nameLower() })
             .where(eq(tags.id, id))
             .returning()
             .get();
@@ -125,7 +139,7 @@ export class TagsRepository {
     }
   }
 
-  async delete(id: number): Promise<Result<DeletedTagDTO, ApiError>> {
+  async deleteTag(id: number): Promise<Result<DeletedTagDTO, ApiError>> {
     try {
       const existing = await this.db.query.tags.findFirst({
         where: eq(tags.id, id),
@@ -178,8 +192,134 @@ export class TagsRepository {
     }
   }
 
+  async replaceBookmarkTags(
+    db: TagLifecycleDb,
+    bookmarkId: number,
+    tagNames: TagName[],
+  ): Promise<TagAttachmentDiff> {
+    const existingRows = await this.findBookmarkTagsWithTags(db, bookmarkId);
+    const submittedTags: TagRow[] = [];
+
+    for (const tagName of tagNames) {
+      submittedTags.push(await this.findOrCreateTag(db, tagName));
+    }
+
+    const submittedNameLowerSet = new Set(submittedTags.map((tag) => tag.nameLower));
+    const existingByNameLower = new Map(existingRows.map((row) => [row.tag.nameLower, row]));
+    const tagsToAttach = submittedTags.filter((tag) => !existingByNameLower.has(tag.nameLower));
+    const rowsToDetach = existingRows.filter(
+      (row) => !submittedNameLowerSet.has(row.tag.nameLower),
+    );
+    const retainedCount = existingRows.length - rowsToDetach.length;
+
+    for (const tag of tagsToAttach) {
+      await db
+        .insert(bookmarkTags)
+        .values({
+          bookmarkId,
+          tagId: tag.id,
+        })
+        .run();
+    }
+
+    for (const row of rowsToDetach) {
+      await db
+        .delete(bookmarkTags)
+        .where(and(eq(bookmarkTags.bookmarkId, bookmarkId), eq(bookmarkTags.tagId, row.tagId)))
+        .run();
+    }
+
+    const deletedOrphanTags = await this.deleteOrphanTags(db, rowsToDetach);
+
+    return {
+      submittedCount: submittedTags.length,
+      attachedCount: tagsToAttach.length,
+      detachedCount: rowsToDetach.length,
+      retainedCount,
+      attachedNames: tagsToAttach.map((tag) => tag.name),
+      detachedNames: rowsToDetach.map((row) => row.tag.name),
+      deletedOrphanNames: deletedOrphanTags.map((tag) => tag.name),
+    };
+  }
+
+  async removeBookmarkTagAttachments(
+    db: TagLifecycleDb,
+    bookmarkId: number,
+  ): Promise<TagAttachmentDiff> {
+    return this.replaceBookmarkTags(db, bookmarkId, []);
+  }
+
+  private async findBookmarkTagsWithTags(
+    db: TagLifecycleDb,
+    bookmarkId: number,
+  ): Promise<BookmarkTagWithTagRow[]> {
+    return db.query.bookmarkTags.findMany({
+      where: eq(bookmarkTags.bookmarkId, bookmarkId),
+      with: {
+        tag: true,
+      },
+    });
+  }
+
+  private async deleteOrphanTags(
+    db: TagLifecycleDb,
+    detachedRows: BookmarkTagWithTagRow[],
+  ): Promise<TagRow[]> {
+    const deletedTags: TagRow[] = [];
+
+    for (const row of detachedRows) {
+      const remainingLink = await db.query.bookmarkTags.findFirst({
+        where: eq(bookmarkTags.tagId, row.tagId),
+      });
+
+      if (remainingLink) {
+        continue;
+      }
+
+      await db.delete(tags).where(eq(tags.id, row.tagId)).run();
+      deletedTags.push(row.tag);
+    }
+
+    return deletedTags;
+  }
+
+  private async findOrCreateTag(db: TagLifecycleDb, tagName: TagName): Promise<TagRow> {
+    const existing = await db.query.tags.findFirst({
+      where: eq(tags.nameLower, tagName.nameLower()),
+    });
+
+    if (existing) {
+      return existing;
+    }
+
+    try {
+      return await db
+        .insert(tags)
+        .values({
+          name: tagName.name(),
+          nameLower: tagName.nameLower(),
+        })
+        .returning()
+        .get();
+    } catch (error) {
+      if (!isTagNameConflictError(error)) {
+        throw error;
+      }
+
+      const tag = await db.query.tags.findFirst({
+        where: eq(tags.nameLower, tagName.nameLower()),
+      });
+
+      if (!tag) {
+        throw error;
+      }
+
+      return tag;
+    }
+  }
+
   private async mergeIntoReplacement(
-    db: TagEditorDb,
+    db: TagLifecycleDb,
     sourceTagId: number,
     replacementTagId: number,
   ) {

@@ -1,5 +1,5 @@
 import type { BookmarkUrl } from "#/domain/bookmark-url.ts";
-import type { TagName } from "./tag-name.ts";
+import type { TagName } from "#/features/tags/tag-name.ts";
 
 export type TagDTO = {
   id: number;

@@ -1,6 +1,13 @@
 import { Err, Ok, type Result } from "@pongolinks/shared/result";
+import { StacklessError } from "@pongolinks/shared/errors";
 
 import { ApiError } from "#/http/result-response.ts";
+
+export class TagNameError extends StacklessError {
+  constructor(message: string) {
+    super(message);
+  }
+}
 
 export class TagName {
   private constructor(
@@ -8,17 +15,11 @@ export class TagName {
     private readonly normalizedName: string,
   ) {}
 
-  static from(input: string): Result<TagName, ApiError> {
+  static from(input: string): Result<TagName, TagNameError> {
     const name = input.trim();
 
     if (name === "" || /\s/u.test(name)) {
-      return Err(
-        new ApiError(
-          "Tags must be non-empty names without whitespace",
-          "bookmark.tags_invalid",
-          400,
-        ),
-      );
+      return Err(new TagNameError("Tag name must be a non-empty token without whitespace"));
     }
 
     return Ok(new TagName(name, name.toLocaleLowerCase("und")));
@@ -33,6 +34,10 @@ export class TagName {
   }
 }
 
+function tagNameApiError(error: TagNameError, code: "bookmark.tags_invalid" | "tag.name_invalid") {
+  return new ApiError(error.message, code, 400);
+}
+
 export function parseTagNames(tagsText: string): Result<TagName[], ApiError> {
   const unique = new Map<string, TagName>();
 
@@ -43,7 +48,7 @@ export function parseTagNames(tagsText: string): Result<TagName[], ApiError> {
 
     const tagName = TagName.from(token);
     if (tagName.isErr) {
-      return tagName;
+      return Err(tagNameApiError(tagName.error, "bookmark.tags_invalid"));
     }
 
     if (!unique.has(tagName.value.nameLower())) {
@@ -54,4 +59,14 @@ export function parseTagNames(tagsText: string): Result<TagName[], ApiError> {
   return Ok(
     [...unique.values()].sort((left, right) => left.nameLower().localeCompare(right.nameLower())),
   );
+}
+
+export function parseSubmittedTagName(name: string): Result<TagName, ApiError> {
+  const tagName = TagName.from(name);
+
+  if (tagName.isErr) {
+    return Err(tagNameApiError(tagName.error, "tag.name_invalid"));
+  }
+
+  return tagName;
 }
