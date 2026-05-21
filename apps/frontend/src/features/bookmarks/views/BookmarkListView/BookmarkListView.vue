@@ -15,16 +15,6 @@ import { useBookmarkQuery } from "./composables/useBookmarkQuery.ts";
 import BookmarkListHeader from "./ui/BookmarkListHeader.vue";
 import BookmarkListFooter from "./ui/BookmarkListFooter.vue";
 
-const {
-  queryState,
-  searchText,
-  isSearchActive,
-  submitSearch,
-  clearSearch,
-  onTagClick,
-  onDomainClick,
-} = useBookmarkQuery();
-
 const bookmarks = ref<BookmarkDTO[]>([]);
 const pagination = ref<BookmarkListPaginationState>({
   page: 1,
@@ -37,23 +27,33 @@ const pagination = ref<BookmarkListPaginationState>({
 const isLoading = ref(true);
 const error = ref("");
 
+const {
+  queryState,
+  searchText,
+  isSearchActive,
+  submitSearch,
+  clearSearch,
+  onTagClick,
+  onDomainClick,
+} = useBookmarkQuery();
+
 const { isDelayed, start: startLoadingDelay, stop: stopLoadingDelay } = useDelayedFlag(500);
 
 const shouldShowLoadingMessage = computed(
   () => isLoading.value && isDelayed.value && bookmarks.value.length === 0,
 );
 const shouldShowBookmarkContent = computed(() => !isLoading.value || bookmarks.value.length > 0);
-const isNoMatchingBookmarks = computed(
-  () => bookmarks.value.length === 0 && pagination.value.totalCount === 0 && isSearchActive.value,
-);
-const isNoBookmarksYet = computed(
-  () => bookmarks.value.length === 0 && pagination.value.totalCount === 0 && !isSearchActive.value,
-);
 
 type BookmarksEmptyVariant = "no-match" | "no-bookmarks" | "no-page";
 const emptyStateVariant = computed<BookmarksEmptyVariant>(() => {
-  if (isNoMatchingBookmarks.value) return "no-match";
-  if (isNoBookmarksYet.value) return "no-bookmarks";
+  const isNoMatchingBookmarks =
+    bookmarks.value.length === 0 && pagination.value.totalCount === 0 && isSearchActive.value;
+  if (isNoMatchingBookmarks) return "no-match";
+
+  const isNoBookmarksYet =
+    bookmarks.value.length === 0 && pagination.value.totalCount === 0 && !isSearchActive.value;
+  if (isNoBookmarksYet) return "no-bookmarks";
+
   return "no-page";
 });
 
@@ -117,7 +117,7 @@ watch(
         >
           <BookmarksEmptyState :variant="emptyStateVariant" />
           <RouterLink
-            v-if="isNoBookmarksYet"
+            v-if="emptyStateVariant === 'no-bookmarks'"
             class="ui-action mt-5 inline-flex min-h-10 items-center justify-center px-4 text-sm font-semibold transition"
             to="/bookmarks/new"
           >
