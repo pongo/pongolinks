@@ -1,19 +1,7 @@
+import type { ApiErrorCode } from "@pongolinks/shared/api-errors";
 import { StacklessError } from "@pongolinks/shared/errors";
 
-export type ApiErrorCode =
-  | "bookmark.url_required"
-  | "bookmark.url_invalid"
-  | "bookmark.url_duplicate"
-  | "bookmark.title_required"
-  | "bookmark.id_invalid"
-  | "bookmark.not_found"
-  | "bookmark.tags_invalid"
-  | "bookmark.validation_invalid"
-  | "bookmark.unexpected"
-  | "tag.name_invalid"
-  | "tag.not_found"
-  | "tag.conflict"
-  | "tag.unexpected";
+export type { ApiErrorCode };
 
 export type FormErrors = {
   url?: string;

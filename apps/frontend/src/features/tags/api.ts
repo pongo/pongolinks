@@ -1,3 +1,4 @@
+import { isApiErrorCode } from "@pongolinks/shared/api-errors";
 import { Err, type Result } from "@pongolinks/shared/result";
 
 import { apiClient, parseEdenResponse } from "#/shared/api/client.ts";
@@ -18,23 +19,7 @@ function parseTagApiError(error: unknown): ApiError {
 }
 
 function normalizeApiErrorCode(code: string): ApiErrorCode {
-  const knownCodes: ApiErrorCode[] = [
-    "bookmark.url_required",
-    "bookmark.url_invalid",
-    "bookmark.url_duplicate",
-    "bookmark.title_required",
-    "bookmark.id_invalid",
-    "bookmark.not_found",
-    "bookmark.tags_invalid",
-    "bookmark.validation_invalid",
-    "bookmark.unexpected",
-    "tag.name_invalid",
-    "tag.not_found",
-    "tag.conflict",
-    "tag.unexpected",
-  ];
-
-  return knownCodes.includes(code as ApiErrorCode) ? (code as ApiErrorCode) : fallbackError.code;
+  return isApiErrorCode(code) ? code : fallbackError.code;
 }
 
 export async function listTags(): Promise<Result<{ tags: TagSummaryDTO[] }, ApiError>> {
