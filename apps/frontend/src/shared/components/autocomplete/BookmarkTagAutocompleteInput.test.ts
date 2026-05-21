@@ -60,10 +60,12 @@ function mountInput({
   autocomplete,
   modelValue = "",
   showClearButton = false,
+  enterKeyBehavior,
 }: {
   autocomplete: TagAutocomplete;
   modelValue?: string;
   showClearButton?: boolean;
+  enterKeyBehavior?: "select-suggestion" | "submit";
 }) {
   return mount(BookmarkTagAutocompleteInput, {
     props: {
@@ -73,6 +75,7 @@ function mountInput({
       inputClass: "test-input",
       tagListboxId: "bookmark-tag-listbox",
       showClearButton,
+      enterKeyBehavior,
     },
     attachTo: document.body,
   });
@@ -176,6 +179,59 @@ describe.each(contexts)("BookmarkTagAutocompleteInput ($name)", (context) => {
     expect(wrapper.find('[role="listbox"]').exists()).toBe(true);
 
     await input.trigger("blur");
+    expect(wrapper.find('[role="listbox"]').exists()).toBe(false);
+    wrapper.unmount();
+  });
+});
+
+describe("BookmarkTagAutocompleteInput submit-on-enter behavior", () => {
+  const autocomplete: TagAutocomplete = {
+    replaceCurrentTagToken: replaceCurrentSearchTagToken,
+    suggestTags: suggestSearchFieldTags,
+  };
+
+  it("selects the active suggestion and submits when Enter is pressed", async () => {
+    const wrapper = mountInput({
+      autocomplete,
+      modelValue: "#ar",
+      enterKeyBehavior: "submit",
+    });
+    const input = wrapper.get("input");
+    const element = input.element as HTMLInputElement;
+
+    element.focus();
+    element.setSelectionRange(element.value.length, element.value.length);
+
+    await input.trigger("keydown", { key: "ArrowDown" });
+    expect(wrapper.find('[role="listbox"]').exists()).toBe(true);
+
+    await input.trigger("keydown", { key: "Enter" });
+
+    const expected = replaceCurrentSearchTagToken("#ar", "#ar".length, "Article");
+    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual([expected.value]);
+    expect(wrapper.emitted("submit")).toHaveLength(1);
+    expect(wrapper.find('[role="listbox"]').exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it("still selects the active suggestion with Tab in submit-on-enter mode", async () => {
+    const wrapper = mountInput({
+      autocomplete,
+      modelValue: "#ar",
+      enterKeyBehavior: "submit",
+    });
+    const input = wrapper.get("input");
+    const element = input.element as HTMLInputElement;
+
+    element.focus();
+    element.setSelectionRange(element.value.length, element.value.length);
+
+    await input.trigger("keydown", { key: "ArrowDown" });
+    await input.trigger("keydown", { key: "Tab" });
+
+    const expected = replaceCurrentSearchTagToken("#ar", "#ar".length, "Article");
+    expect(wrapper.emitted("update:modelValue")?.at(-1)).toEqual([expected.value]);
+    expect(wrapper.emitted("submit")).toBeUndefined();
     expect(wrapper.find('[role="listbox"]').exists()).toBe(false);
     wrapper.unmount();
   });

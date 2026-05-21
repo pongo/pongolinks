@@ -40,8 +40,10 @@ void (async () => {
       placeholder="Search: sqlite #vue -#old @example.com"
       aria-label="Search bookmarks"
       tag-listbox-id="bookmark-list-search-tag-suggestions"
+      enter-key-behavior="submit"
       show-clear-button
       @update:model-value="emit('update:modelValue', $event)"
+      @submit="emit('submit')"
       @clear="emit('clear')"
     />
     <button class="ui-action min-h-10 px-4 text-sm font-semibold" type="submit">Search</button>

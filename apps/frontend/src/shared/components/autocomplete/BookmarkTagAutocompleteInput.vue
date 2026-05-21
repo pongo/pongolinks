@@ -19,6 +19,8 @@ type TagAutocomplete = {
   suggestTags: (tags: TagSummaryDTO[], value: string, cursor: number) => TagSummaryDTO[];
 };
 
+type EnterKeyBehavior = "select-suggestion" | "submit";
+
 const props = withDefaults(
   defineProps<{
     modelValue: string;
@@ -29,11 +31,13 @@ const props = withDefaults(
     placeholder?: string;
     tagListboxId: string;
     showClearButton?: boolean;
+    enterKeyBehavior?: EnterKeyBehavior;
   }>(),
   {
     ariaLabel: undefined,
     placeholder: "",
     showClearButton: false,
+    enterKeyBehavior: "select-suggestion",
   },
 );
 
@@ -119,28 +123,31 @@ function handleKeydown(event: KeyboardEvent) {
   updateCursor(event);
 
   if (event.key === "ArrowDown") {
-    if (visibleTagSuggestions.value.length === 0) {
-      return;
-    }
-
-    event.preventDefault();
-    moveActiveTagSuggestion(1);
+    if (visibleTagSuggestions.value.length === 0) return;
+    preventAndMove(1);
     return;
   }
 
   if (event.key === "ArrowUp" && tagSuggestionsOpen.value) {
-    event.preventDefault();
-    moveActiveTagSuggestion(-1);
+    preventAndMove(-1);
     return;
   }
 
-  if ((event.key === "Enter" || event.key === "Tab") && tagSuggestionsOpen.value) {
-    event.preventDefault();
-    void selectTagSuggestion(selectableTagSuggestionIndex.value);
+  const isTab = event.key === "Tab";
+  const isEnterSelectingSuggestion =
+    event.key === "Enter" && props.enterKeyBehavior === "select-suggestion";
+
+  if (tagSuggestionsOpen.value && (isTab || isEnterSelectingSuggestion)) {
+    preventAndSelect();
     return;
   }
 
   if (event.key === "Enter") {
+    if (tagSuggestionsOpen.value) {
+      preventAndSelect();
+    } else {
+      closeTagSuggestions();
+    }
     emit("submit");
     return;
   }
@@ -153,6 +160,16 @@ function handleKeydown(event: KeyboardEvent) {
 
   if (event.key === " ") {
     closeTagSuggestions();
+  }
+
+  function preventAndMove(offset: number) {
+    event.preventDefault();
+    moveActiveTagSuggestion(offset);
+  }
+
+  function preventAndSelect() {
+    event.preventDefault();
+    void selectTagSuggestion(selectableTagSuggestionIndex.value);
   }
 }
 
