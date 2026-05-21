@@ -1,11 +1,12 @@
 import { YYYYMMDDHHMM } from "#/shared/utils/YYYYMMDD.ts";
-import type { WaybackAvailabilityDTO } from "./types.ts";
+import type { WaybackAvailabilityDTO, WaybackTimestamp } from "./types.ts";
+import type { ValidUrl } from "@pongolinks/shared/brands";
 
 export type WaybackStatusViewModel =
   | { kind: "idle" }
   | { kind: "checking" }
   | { kind: "unavailable" }
-  | { kind: "available"; archivedUrl: string; timestamp: string }
+  | { kind: "available"; archivedUrl: ValidUrl; timestamp: WaybackTimestamp }
   | { kind: "error"; message: string };
 
 const waybackTimestampPattern = /^\d{14}$/;
@@ -22,7 +23,7 @@ export function toWaybackStatusViewModel(dto: WaybackAvailabilityDTO): WaybackSt
   };
 }
 
-export function parseWaybackTimestamp(timestamp: string): Date | null {
+export function parseWaybackTimestamp(timestamp: WaybackTimestamp): Date | null {
   if (!waybackTimestampPattern.test(timestamp)) {
     return null;
   }
@@ -38,7 +39,7 @@ export function parseWaybackTimestamp(timestamp: string): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-export function formatWaybackTimestamp(timestamp: string): string {
+export function formatWaybackTimestamp(timestamp: WaybackTimestamp): string {
   const date = parseWaybackTimestamp(timestamp);
   if (date === null) {
     return timestamp;

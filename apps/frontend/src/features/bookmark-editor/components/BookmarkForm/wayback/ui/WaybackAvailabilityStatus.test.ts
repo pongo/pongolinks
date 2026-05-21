@@ -3,6 +3,7 @@ import { nextTick } from "vue";
 import { describe, expect, it, vi } from "vitest";
 
 import WaybackAvailabilityStatus from "./WaybackAvailabilityStatus.vue";
+import type { ValidUrl } from "@pongolinks/shared/brands";
 
 describe("WaybackAvailabilityStatus", () => {
   it("renders checking state without running an injected check", async () => {
@@ -25,7 +26,7 @@ describe("WaybackAvailabilityStatus", () => {
       props: {
         status: {
           kind: "available",
-          archivedUrl: "http://web.archive.org/web/20260212061822/https://example.com",
+          archivedUrl: "http://web.archive.org/web/20260212061822/https://example.com" as ValidUrl,
           timestamp: "20260212061822",
         },
       },
