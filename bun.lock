@@ -17,6 +17,7 @@
       "name": "@pongolinks/backend",
       "dependencies": {
         "@eelkevdbos/elysia-basic-auth": "^2.0.1",
+        "@elysia/openapi": "^1.4.15",
         "@elysia/opentelemetry": "^1.4.12",
         "@opentelemetry/exporter-trace-otlp-proto": "^0.218.0",
         "@opentelemetry/sdk-trace-node": "^2.7.1",
@@ -83,6 +84,8 @@
     "@drizzle-team/brocli": ["@drizzle-team/brocli@0.10.2", "", {}, "sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w=="],
 
     "@eelkevdbos/elysia-basic-auth": ["@eelkevdbos/elysia-basic-auth@2.0.1", "", { "peerDependencies": { "elysia": "^1.0.15", "typescript": "^5.0.0" } }, "sha512-k2XOnq+0wg3RhLRhweADtiM9xLGNERV1iToMDJAT6naJfCviufRwlCDgOUiHaQDRR82u4F6c7XAtTFAMBVIATw=="],
+
+    "@elysia/openapi": ["@elysia/openapi@1.4.15", "", { "peerDependencies": { "elysia": ">= 1.4.0" } }, "sha512-MrVGCPo5hnRF4/yWGOyH5ddjt4DlSIbeC5rrkupQtHY8TEQe+XdJa2YM9aUOrtgtRcy4UNGyiVlLl/jllPkPQA=="],
 
     "@elysia/opentelemetry": ["@elysia/opentelemetry@1.4.12", "", { "dependencies": { "@opentelemetry/api": "^1.9.0", "@opentelemetry/instrumentation": "^0.200.0", "@opentelemetry/sdk-node": "^0.200.0" }, "peerDependencies": { "elysia": ">= 1.4.0" } }, "sha512-Tec3w5C3V+VCHlyPyLHZXuoIwQ7SK3eX1iFz+WFUrxZN2eQCarX6NYHl/UeUoqhQNTcogBo7KKcRE79YS2Yiog=="],
 

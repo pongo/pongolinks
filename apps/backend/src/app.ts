@@ -12,6 +12,8 @@ import { createSearchRoutes } from "./features/search/routes";
 import { createWaybackRoutes } from "./features/wayback/routes";
 import { createFrontendStaticPlugin } from "./http/frontend-static";
 import { createRequestLoggingOptions, createTracingPlugin } from "./observability";
+import openapi, { fromTypes } from "@elysia/openapi";
+import z from "zod";
 
 export type CreateAppOptions = {
   db?: AppDb;
@@ -63,6 +65,16 @@ function createBasicAuthPlugin() {
 export function createApp(options: CreateAppOptions = {}) {
   const frontendDistPath = options.frontendDistPath ?? config.frontendDistPath;
   const app = new Elysia()
+    .use(
+      // http://localhost:3000/openapi
+      openapi({
+        enabled: readEnv("NODE_ENV") !== "production",
+        references: fromTypes(),
+        mapJsonSchema: {
+          zod: z.toJSONSchema,
+        },
+      }),
+    )
     .use(createTracingPlugin())
     .use(createBasicAuthPlugin())
     .use(
