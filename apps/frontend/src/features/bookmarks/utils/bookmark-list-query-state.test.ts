@@ -11,6 +11,7 @@ import {
   toggleDomainFilter,
   toggleIncludedTagFilter,
   toBookmarkListRouteQuery,
+  normalizeBookmarkListPageQuery,
 } from "./bookmark-list-query-state.ts";
 
 describe("bookmark list query state", () => {
@@ -233,5 +234,16 @@ describe("bookmark list query state", () => {
     expect(buildTagShortcutReplaceTarget("   + /  ")).toEqual({
       path: "/",
     });
+  });
+});
+
+describe("normalizeBookmarkListPageQuery()", () => {
+  it("normalizes invalid page query values to page 1", () => {
+    expect(normalizeBookmarkListPageQuery(undefined)).toBe(1);
+    expect(normalizeBookmarkListPageQuery("not-a-number")).toBe(1);
+    expect(normalizeBookmarkListPageQuery("0")).toBe(1);
+    expect(normalizeBookmarkListPageQuery("-1")).toBe(1);
+    expect(normalizeBookmarkListPageQuery("1.5")).toBe(1);
+    expect(normalizeBookmarkListPageQuery(["3", "4"])).toBe(3);
   });
 });

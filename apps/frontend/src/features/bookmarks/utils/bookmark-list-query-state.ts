@@ -1,7 +1,5 @@
 import type { LocationQuery, LocationQueryRaw } from "vue-router";
 
-import { normalizeBookmarkListPageQuery } from "../views/BookmarkListView/pagination/pagination-window.ts";
-
 export type BookmarkListRouteState = {
   q: string | null;
   tags: string[];
@@ -234,4 +232,12 @@ export function buildTagShortcutReplaceTarget(rawInput: string) {
       page: 1,
     }),
   };
+}
+
+export function normalizeBookmarkListPageQuery(value: unknown): number {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  const parsed =
+    typeof candidate === "string" && candidate.trim() !== "" ? Number(candidate) : Number.NaN;
+
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
 }
