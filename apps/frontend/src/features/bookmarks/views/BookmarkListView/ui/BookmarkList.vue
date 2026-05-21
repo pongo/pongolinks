@@ -14,7 +14,7 @@ const props = defineProps<{
   queryState: BookmarkListRouteState;
 }>();
 const emit = defineEmits<{
-  tagClick: [tagName: string];
+  tagClick: [tagName: string, isExcluded: boolean];
   domainClick: [domain: string];
 }>();
 
@@ -114,7 +114,8 @@ function isDomainActive(domain: string) {
               class="ui-tag inline-flex max-w-full items-center border px-1.5 py-0.5 text-xs"
               :class="{ 'ui-tag-active': isIncludedTagActive(tag.name) }"
               :href="getTagHref(tag.nameLower)"
-              @click.left.exact.prevent="emit('tagClick', tag.name)"
+              @click.left.exact.prevent="emit('tagClick', tag.name, false)"
+              @click.left.alt.exact.prevent="emit('tagClick', tag.name, true)"
             >
               {{ tag.name }}
             </a>

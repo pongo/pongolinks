@@ -195,7 +195,44 @@ export function toggleIncludedTagFilter(
   const nextTags =
     existingIndex >= 0
       ? state.tags.filter((_tag, index) => index !== existingIndex)
-      : dedupeTags([...state.tags, normalized]);
+      : dedupeTags([
+          ...state.tags.filter(
+            (tag) => !(tag.startsWith("-") && tag.slice(1).toLocaleLowerCase("und") === lower),
+          ),
+          normalized,
+        ]);
+
+  return {
+    ...state,
+    tags: nextTags,
+    url: null,
+    page: 1,
+  };
+}
+
+export function toggleExcludedTagFilter(
+  state: BookmarkListRouteState,
+  tagName: string,
+): BookmarkListRouteState {
+  const normalized = tagName.trim();
+  if (!normalized) {
+    return state;
+  }
+
+  const lower = normalized.toLocaleLowerCase("und");
+  const existingIndex = state.tags.findIndex(
+    (tag) => tag.startsWith("-") && tag.slice(1).toLocaleLowerCase("und") === lower,
+  );
+
+  const nextTags =
+    existingIndex >= 0
+      ? state.tags.filter((_tag, index) => index !== existingIndex)
+      : dedupeTags([
+          ...state.tags.filter(
+            (tag) => tag.startsWith("-") || tag.toLocaleLowerCase("und") !== lower,
+          ),
+          `-${normalized}`,
+        ]);
 
   return {
     ...state,

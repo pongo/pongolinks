@@ -6,6 +6,7 @@ import {
   parseMiniQueryToState,
   renderMiniQueryForContinuedInput,
   toggleDomainFilter,
+  toggleExcludedTagFilter,
   toggleIncludedTagFilter,
   toBookmarkListRouteQuery,
   type BookmarkListRouteState,
@@ -65,8 +66,12 @@ export function useBookmarkQuery() {
   }
 
   // Toggle a specific tag filter
-  async function onTagClick(tagName: string) {
-    await applyQueryState(toggleIncludedTagFilter(queryState.value, tagName));
+  async function onTagClick(tagName: string, isExcluded = false) {
+    const nextState = isExcluded
+      ? toggleExcludedTagFilter(queryState.value, tagName)
+      : toggleIncludedTagFilter(queryState.value, tagName);
+
+    await applyQueryState(nextState);
   }
 
   // Toggle a specific domain filter

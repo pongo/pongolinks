@@ -9,6 +9,7 @@ import {
   renderMiniQueryForContinuedInput,
   renderMiniQueryFromState,
   toggleDomainFilter,
+  toggleExcludedTagFilter,
   toggleIncludedTagFilter,
   toBookmarkListRouteQuery,
   normalizeBookmarkListPageQuery,
@@ -226,6 +227,33 @@ describe("bookmark list query state filters", () => {
     expect(removed.tags).toEqual(["vue"]);
     expect(removed.page).toBe(1);
     expect(removed.url).toBeNull();
+  });
+
+  it("switches between included and excluded tag filters without contradictory tags", () => {
+    const excluded = toggleExcludedTagFilter(
+      {
+        q: "sqlite",
+        tags: ["vue", "react"],
+        domain: null,
+        url: null,
+        page: 3,
+      },
+      "vue",
+    );
+
+    expect(excluded).toEqual({
+      q: "sqlite",
+      tags: ["react", "-vue"],
+      domain: null,
+      url: null,
+      page: 1,
+    });
+
+    const included = toggleIncludedTagFilter(excluded, "vue");
+    expect(included.tags).toEqual(["react", "vue"]);
+
+    const removed = toggleExcludedTagFilter(excluded, "vue");
+    expect(removed.tags).toEqual(["react"]);
   });
 
   it("toggles domain filter and resets page while preserving q/tags", () => {
