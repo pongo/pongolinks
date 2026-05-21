@@ -52,3 +52,8 @@ export function mapBookmarkUrlApiErrorToFormErrors(
 
   return { form: error.message };
 }
+
+export const genericFallbackError = new ApiError(
+  "Something went wrong. Please try again.",
+  "internal.unexpected",
+);

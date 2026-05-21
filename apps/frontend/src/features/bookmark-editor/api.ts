@@ -9,14 +9,12 @@ import {
   ApiError,
   parseApiError as parseSharedApiError,
   type FormErrors,
+  genericFallbackError,
 } from "#/shared/api/errors.ts";
 import type { BookmarkDTO } from "#/features/bookmarks/types.ts";
 import type { DeletedBookmarkResponse, EditableBookmarkPayload } from "./types.ts";
 
-const fallbackError = new ApiError(
-  "Something went wrong. Please try again.",
-  "internal.unexpected",
-);
+const fallbackError = genericFallbackError;
 
 function mapApiErrorToFormErrors(error: Pick<ApiError, "code" | "message">): FormErrors {
   if (

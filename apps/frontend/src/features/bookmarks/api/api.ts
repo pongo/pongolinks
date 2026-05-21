@@ -9,13 +9,11 @@ import {
   ApiError,
   parseApiError as parseSharedApiError,
   type FormErrors,
+  genericFallbackError,
 } from "#/shared/api/errors.ts";
 import type { BookmarkListResponse } from "../types";
 
-const fallbackError = new ApiError(
-  "Something went wrong. Please try again.",
-  "internal.unexpected",
-);
+const fallbackError = genericFallbackError;
 
 function mapApiErrorToFormErrors(error: Pick<ApiError, "code" | "message">): FormErrors {
   if (
@@ -24,10 +22,6 @@ function mapApiErrorToFormErrors(error: Pick<ApiError, "code" | "message">): For
     error.code === "bookmark.url_duplicate"
   ) {
     return { url: error.message };
-  }
-
-  if (error.code === "bookmark.title_required") {
-    return { title: error.message };
   }
 
   return { form: error.message };

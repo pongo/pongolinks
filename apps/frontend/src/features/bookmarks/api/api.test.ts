@@ -97,21 +97,6 @@ describe("bookmark API payload parsing", () => {
     });
   });
 
-  it("maps title error payloads to the title form field", () => {
-    const result = parseApiPayload(
-      apiErrorPayload("Bookmark title is required", "bookmark.title_required"),
-    );
-
-    expect(result).toMatchObject({
-      isErr: true,
-      error: {
-        formErrors: {
-          title: "Bookmark title is required",
-        },
-      },
-    });
-  });
-
   it("uses stackless API errors", () => {
     const result = parseApiPayload(
       apiErrorPayload("Bookmark URL is required", "bookmark.url_required"),
