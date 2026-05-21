@@ -1,16 +1,16 @@
 import { Err, Ok, type Result } from "@pongolinks/shared/result";
 
 import type { ValidUrl } from "@pongolinks/shared/brands";
+import { StacklessError } from "@pongolinks/shared/errors";
 
 export type BookmarkUrlErrorKind = "required" | "invalid";
 
-export class BookmarkUrlError extends Error {
+export class BookmarkUrlError extends StacklessError {
   constructor(
     message: string,
     readonly kind: BookmarkUrlErrorKind,
   ) {
     super(message);
-    this.name = "BookmarkUrlError";
   }
 }
 
