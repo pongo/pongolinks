@@ -14,7 +14,7 @@ import {
   normalizeBookmarkListPageQuery,
 } from "./bookmark-list-query-state.ts";
 
-describe("bookmark list query state", () => {
+describe("parseMiniQueryToState()", () => {
   it("parses mini-query tokens into structured state", () => {
     expect(parseMiniQueryToState("sqlite #vue -#old @example.com")).toEqual({
       q: "sqlite",
@@ -41,7 +41,9 @@ describe("bookmark list query state", () => {
       url: null,
     });
   });
+});
 
+describe("renderMiniQueryFromState()", () => {
   it("renders mini-query text from structured route state", () => {
     expect(
       renderMiniQueryFromState({
@@ -65,7 +67,9 @@ describe("bookmark list query state", () => {
       }),
     ).toBe("https://example.com");
   });
+});
 
+describe("renderMiniQueryForContinuedInput()", () => {
   it("renders non-empty route filters with one trailing space for continued input", () => {
     expect(
       renderMiniQueryForContinuedInput({
@@ -89,7 +93,9 @@ describe("bookmark list query state", () => {
       }),
     ).toBe("");
   });
+});
 
+describe("toBookmarkListRouteQuery()", () => {
   it("serializes route query and omits page 1", () => {
     expect(
       toBookmarkListRouteQuery({
@@ -120,7 +126,9 @@ describe("bookmark list query state", () => {
       page: "3",
     });
   });
+});
 
+describe("parseBookmarkListRouteQuery()", () => {
   it("parses existing route query into state", () => {
     expect(
       parseBookmarkListRouteQuery({
@@ -137,7 +145,9 @@ describe("bookmark list query state", () => {
       page: 2,
     });
   });
+});
 
+describe("bookmark list query state filters", () => {
   it("detects active filters", () => {
     expect(
       isFilterActive({
@@ -210,7 +220,9 @@ describe("bookmark list query state", () => {
     expect(unset.q).toBe("sqlite");
     expect(unset.page).toBe(1);
   });
+});
 
+describe("parseTagShortcutInput()", () => {
   it("parses tag shortcut input with whitespace, plus and slash separators", () => {
     expect(parseTagShortcutInput("sqlite vue -old")).toEqual(["sqlite", "vue", "-old"]);
     expect(parseTagShortcutInput("sqlite+vue+-old")).toEqual(["sqlite", "vue", "-old"]);
@@ -220,7 +232,9 @@ describe("bookmark list query state", () => {
   it("ignores empty shortcut tokens and keeps include/exclude prefixes", () => {
     expect(parseTagShortcutInput("  sqlite  +  / -old  ")).toEqual(["sqlite", "-old"]);
   });
+});
 
+describe("buildTagShortcutReplaceTarget()", () => {
   it("builds replace target for non-empty shortcut input", () => {
     expect(buildTagShortcutReplaceTarget("sqlite+vue+-old")).toEqual({
       path: "/",
