@@ -46,7 +46,7 @@ async function showExistsBadge(tabId) {
 }
 
 function bookmarkExistsFromResult(result) {
-  return result?.ok === true && result.value?.status !== "not-found";
+  return result?.isOk === true && result.value?.status !== "not-found";
 }
 
 async function fetchBookmarkExists(url) {
