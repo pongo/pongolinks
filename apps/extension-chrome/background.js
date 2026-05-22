@@ -150,5 +150,13 @@ chrome.action.onClicked.addListener(async (tab) => {
   }
 
   urlCheckCache.delete(tab.url);
-  await chrome.tabs.create({ url: createBookmarkUrl(tab) });
+  await openTabToTheRight(createBookmarkUrl(tab));
 });
+
+async function openTabToTheRight(targetUrl) {
+  const [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  await chrome.tabs.create({
+    url: targetUrl,
+    index: currentTab.index + 1,
+  });
+}
