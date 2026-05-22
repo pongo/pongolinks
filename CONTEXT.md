@@ -47,6 +47,10 @@ _Avoid_: secret link, hidden item
 A browser bookmark tool that starts saving the current page as a Bookmark.
 _Avoid_: extension, browser plugin, capture link
 
+**Browser Extension**:
+A browser-installed tool that detects whether the current tab URL already exists in the bookmark library and starts saving the current tab as a Bookmark.
+_Avoid_: bookmarklet, browser plugin, capture link
+
 ## Relationships
 
 - A **Bookmark** can have zero or more **Tags**
@@ -58,6 +62,7 @@ _Avoid_: extension, browser plugin, capture link
 - A **Related Link** belongs to exactly one **Bookmark**
 - A **Private Bookmark** is a specialization of **Bookmark**
 - A **Bookmarklet** can start creating one **Bookmark**
+- A **Browser Extension** can start creating one **Bookmark**
 - A **Bookmark URL** can identify at most one **Bookmark**
 
 ## Rules
