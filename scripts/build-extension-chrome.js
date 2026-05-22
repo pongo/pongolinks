@@ -1,9 +1,10 @@
 import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
-import { dirname, extname, join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SOURCE_APP_BASE_URL = "http://localhost:3000/pl/";
-const TEXT_FILE_EXTENSIONS = new Set([".css", ".html", ".js", ".json"]);
+const IGNORED_EXTENSION_PATHS = new Set(["dist", "README.md"]);
+const APP_BASE_URL_REPLACEMENT_PATHS = new Set(["background.js", "manifest.json"]);
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(scriptDir, "..");
@@ -33,13 +34,16 @@ function parseTargetAppBaseUrl(value) {
   return url.toString();
 }
 
-function isTextFile(filePath) {
-  return TEXT_FILE_EXTENSIONS.has(extname(filePath));
+function toExtensionRelativePath(sourcePath) {
+  return relative(extensionDir, sourcePath).replaceAll("\\", "/");
+}
+
+function shouldIgnoreExtensionPath(sourcePath) {
+  return IGNORED_EXTENSION_PATHS.has(toExtensionRelativePath(sourcePath));
 }
 
 function shouldReplaceAppBaseUrl(sourcePath) {
-  const relativePath = relative(extensionDir, sourcePath).replaceAll("\\", "/");
-  return relativePath !== "lib/quick-lru.js" && isTextFile(sourcePath);
+  return APP_BASE_URL_REPLACEMENT_PATHS.has(toExtensionRelativePath(sourcePath));
 }
 
 async function copyExtensionFile(sourcePath, targetPath, targetAppBaseUrl) {
@@ -58,12 +62,12 @@ async function copyExtensionDirectory(sourceDir, targetDir, targetAppBaseUrl) {
   const entries = await readdir(sourceDir, { withFileTypes: true });
 
   for (const entry of entries) {
-    if (entry.name === "dist") {
-      continue;
-    }
-
     const sourcePath = join(sourceDir, entry.name);
     const targetPath = join(targetDir, entry.name);
+
+    if (shouldIgnoreExtensionPath(sourcePath)) {
+      continue;
+    }
 
     if (entry.isDirectory()) {
       await copyExtensionDirectory(sourcePath, targetPath, targetAppBaseUrl);
