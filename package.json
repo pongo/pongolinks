@@ -14,6 +14,7 @@
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "agent:test": "vitest run --no-color --reporter=agent",
+    "extension:build": "bun run scripts/build-extension-chrome.js",
     "format": "oxfmt package.json turbo.json tsconfig.base.json scripts apps packages",
     "db:migrate": "bun run --filter @pongolinks/db db:migrate"
   },

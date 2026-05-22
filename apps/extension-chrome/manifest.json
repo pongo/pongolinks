@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "pongolinks",
+  "version": "0.1.0",
+  "description": "Detects saved bookmarks and opens pongolinks bookmark creation for the current tab.",
+  "homepage_url": "http://localhost:3000/pl/",
+  "action": {
+    "default_title": "Save to pongolinks",
+    "default_icon": {
+      "32": "images/icon-32.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "icons": {
+    "32": "images/icon-32.png"
+  },
+  "permissions": ["tabs"],
+  "host_permissions": ["http://*/*", "https://*/*"]
+}
