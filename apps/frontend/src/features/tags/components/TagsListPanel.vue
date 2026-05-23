@@ -189,6 +189,9 @@ async function onDelete(tag: TagSummaryDTO) {
       spellcheck="false"
       autocorrect="off"
       autocapitalize="off"
+      data-1p-ignore
+      data-lpignore
+      data-bwignore
     />
 
     <p v-if="isLoading" class="ui-text-muted mt-4 text-sm">Loading tags...</p>
