@@ -2,12 +2,16 @@ import QuickLRU from "./lib/quick-lru.js";
 
 const APP_BASE_URL = "http://localhost:3000/pl/";
 const BADGE_COLOR = "#4CAF50";
+
 const CACHE_MAX_SIZE = 1000;
-const CACHE_MAX_AGE_MS = 60 * 60 * 1000;
+const HOUR_MS = 60 * 60 * 1000;
+const GLOBAL_CACHE_MAX_AGE_MS = HOUR_MS;
+const EXISTS_CACHE_MAX_AGE_MS = 24 * HOUR_MS;
+const NOT_EXISTS_CACHE_MAX_AGE_MS = HOUR_MS;
 
 const urlCheckCache = new QuickLRU({
   maxSize: CACHE_MAX_SIZE,
-  maxAge: CACHE_MAX_AGE_MS,
+  maxAge: GLOBAL_CACHE_MAX_AGE_MS,
 });
 
 function isCheckableUrl(url) {
@@ -101,7 +105,7 @@ async function checkTab(tab) {
 
   try {
     const exists = await fetchBookmarkExists(url);
-    urlCheckCache.set(url, exists);
+    urlCheckCache.set(url, exists, exists ? EXISTS_CACHE_MAX_AGE_MS : NOT_EXISTS_CACHE_MAX_AGE_MS);
     await applyCheckResult(tabId, url, exists);
   } catch {
     await clearBadge(tabId);
