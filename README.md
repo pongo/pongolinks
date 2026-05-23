@@ -32,8 +32,8 @@ The project uses vertical slices. Feature behavior lives near the feature that o
 
 Read these documents before changing architecture or domain language:
 
-- [`docs/architecture.md`](docs/architecture.md) for workspace responsibilities, import boundaries, error handling, ADRs, and verification commands.
-- [`CONTEXT.md`](CONTEXT.md) for domain vocabulary such as Bookmark, Tag, Related Link, Bookmarklet, and Browser Extension.
+- [`docs/architecture.md`](docs/architecture.md)
+- [`CONTEXT.md`](CONTEXT.md) for ubiquitous language
 
 Operational errors use the shared Rust-style `Result<T, E>` pattern. Exceptions are reserved for programmer errors, failed invariants, and test assertions.
 
