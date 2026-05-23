@@ -43,3 +43,4 @@ dist/
 /.turbo/cache/
 /tmp/
 /.vscode/settings.json
+/.scratch/
