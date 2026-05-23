@@ -92,6 +92,9 @@ describe("TagsListPanel", () => {
     expect(wrapper.text()).toContain("Showing 1001-1001 of 1001 tags");
 
     await wrapper.get("button[aria-label='Delete tag tag-1001']").trigger("click");
+
+    expect(wrapper.text()).not.toContain("Loading tags...");
+
     await flushPromises();
 
     expect(wrapper.text()).toContain("Showing 501-900 of 900 tags");
@@ -99,6 +102,8 @@ describe("TagsListPanel", () => {
   });
 
   it("saves inline edits and reloads tags", async () => {
+    const scrollTo = vi.fn();
+    vi.stubGlobal("scrollTo", scrollTo);
     vi.mocked(listTags)
       .mockResolvedValueOnce(Ok({ tags: createTags(1) }))
       .mockResolvedValueOnce(
@@ -128,10 +133,14 @@ describe("TagsListPanel", () => {
     await wrapper.get("button[aria-label='Edit tag tag-0001']").trigger("click");
     await wrapper.get("table input.ui-field").setValue("renamed");
     await wrapper.get("table input.ui-field").trigger("keydown", { key: "Enter" });
+
+    expect(wrapper.text()).not.toContain("Loading tags...");
+
     await flushPromises();
 
     expect(updateTag).toHaveBeenCalledWith(1, "renamed");
     expect(listTags).toHaveBeenCalledTimes(2);
+    expect(scrollTo).not.toHaveBeenCalled();
     expect(wrapper.text()).toContain("renamed");
   });
 });

@@ -52,8 +52,11 @@ onMounted(async () => {
   await loadTags();
 });
 
-async function loadTags() {
-  isLoading.value = true;
+async function loadTags({ showLoading = true } = {}) {
+  if (showLoading) {
+    isLoading.value = true;
+  }
+
   error.value = "";
 
   const result = await listTags();
@@ -64,7 +67,9 @@ async function loadTags() {
     tags.value = result.value.tags;
   }
 
-  isLoading.value = false;
+  if (showLoading) {
+    isLoading.value = false;
+  }
 }
 
 function goToPage(page: number) {
@@ -101,7 +106,7 @@ async function saveEditInline() {
   }
 
   closeEditInline();
-  await loadTags();
+  await loadTags({ showLoading: false });
 }
 
 async function onDelete(tag: TagSummaryDTO) {
@@ -115,7 +120,7 @@ async function onDelete(tag: TagSummaryDTO) {
     return;
   }
 
-  await loadTags();
+  await loadTags({ showLoading: false });
 }
 </script>
 
