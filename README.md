@@ -1,7 +1,7 @@
 # pongolinks
 
 <p align="center">
-  <img width="250" height="250" alt="pongolinks" src="https://github.com/user-attachments/assets/d4a2971a-84ae-42ea-a7e5-94b8c06e83a4" />
+  <img width="250" alt="pongolinks" src="https://github.com/user-attachments/assets/d4a2971a-84ae-42ea-a7e5-94b8c06e83a4" />
 </p>
 
 pongolinks is a single-user self-hosted bookmark library for saving, organizing, and rediscovering links.
