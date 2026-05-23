@@ -40,7 +40,6 @@ Operational errors use the shared Rust-style `Result<T, E>` pattern. Exceptions 
 ## Repository Structure
 
 ```text
-/
 ├── apps/
 │   ├── backend/            Bun/Elysia server, API, Eden contract, production entrypoint
 │   ├── frontend/           Vue SPA and browser UI
