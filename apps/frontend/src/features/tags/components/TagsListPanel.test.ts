@@ -1,9 +1,9 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import { Ok } from "@pongolinks/shared/result";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import TagsListPanel from "./TagsListPanel.vue";
-import { deleteTag, listTags } from "../api";
+import { deleteTag, listTags, updateTag } from "../api";
 import type { TagSummaryDTO } from "../types";
 
 vi.mock("../api", () => ({
@@ -40,6 +40,10 @@ function mountPanel() {
 }
 
 describe("TagsListPanel", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
@@ -92,5 +96,42 @@ describe("TagsListPanel", () => {
 
     expect(wrapper.text()).toContain("Showing 501-900 of 900 tags");
     expect(wrapper.text()).not.toContain("tag-1001");
+  });
+
+  it("saves inline edits and reloads tags", async () => {
+    vi.mocked(listTags)
+      .mockResolvedValueOnce(Ok({ tags: createTags(1) }))
+      .mockResolvedValueOnce(
+        Ok({
+          tags: [
+            {
+              id: 1,
+              name: "renamed",
+              nameLower: "renamed",
+              usageCount: 1,
+            },
+          ],
+        }),
+      );
+    vi.mocked(updateTag).mockResolvedValue(
+      Ok({
+        id: 1,
+        name: "renamed",
+        nameLower: "renamed",
+        usageCount: 1,
+      }),
+    );
+
+    const wrapper = mountPanel();
+    await flushPromises();
+
+    await wrapper.get("button[aria-label='Edit tag tag-0001']").trigger("click");
+    await wrapper.get("table input.ui-field").setValue("renamed");
+    await wrapper.get("table input.ui-field").trigger("keydown", { key: "Enter" });
+    await flushPromises();
+
+    expect(updateTag).toHaveBeenCalledWith(1, "renamed");
+    expect(listTags).toHaveBeenCalledTimes(2);
+    expect(wrapper.text()).toContain("renamed");
   });
 });

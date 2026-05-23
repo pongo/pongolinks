@@ -1,34 +1,22 @@
 <script setup lang="ts">
-import { ChevronLeftIcon, ChevronRightIcon, PencilIcon, Trash2Icon } from "@lucide/vue";
-import { computed, nextTick, onMounted, ref, watch } from "vue";
-import type { ComponentPublicInstance } from "vue";
-import { RouterLink } from "vue-router";
+import { computed, onMounted, ref, watch } from "vue";
 
-import { createPaginationWindow, type PaginationWindowItem } from "#/shared/pagination-window.ts";
 import { deleteTag, listTags, updateTag } from "../api";
 import type { TagSummaryDTO } from "../types";
+import TagsPagination from "./TagsPagination.vue";
+import TagsTable from "./TagsTable.vue";
+import { useLocalTagsPagination } from "./useLocalTagsPagination";
 
 const TAGS_PAGE_SIZE = 500;
 
 const tags = ref<TagSummaryDTO[]>([]);
 const filterText = ref("");
-const currentPage = ref(1);
 const isLoading = ref(true);
 const error = ref("");
 const isSaving = ref(false);
 const editingTag = ref<TagSummaryDTO | null>(null);
 const editingName = ref("");
 const editingError = ref("");
-const editingNameInput = ref<HTMLInputElement | null>(null);
-
-function setEditingNameInputRef(element: Element | ComponentPublicInstance | null) {
-  if (element instanceof HTMLInputElement) {
-    editingNameInput.value = element;
-    return;
-  }
-
-  editingNameInput.value = null;
-}
 
 const filteredTags = computed(() => {
   const token = filterText.value.trim().toLocaleLowerCase("und");
@@ -39,41 +27,20 @@ const filteredTags = computed(() => {
   return tags.value.filter((tag) => tag.nameLower.includes(token));
 });
 
-const totalPages = computed(() =>
-  Math.max(1, Math.ceil(filteredTags.value.length / TAGS_PAGE_SIZE)),
-);
-const visiblePage = computed(() => Math.min(currentPage.value, totalPages.value));
-const paginatedTags = computed(() => {
-  const start = (visiblePage.value - 1) * TAGS_PAGE_SIZE;
-  return filteredTags.value.slice(start, start + TAGS_PAGE_SIZE);
-});
-const paginationItems = computed(() =>
-  createPaginationWindow({
-    page: visiblePage.value,
-    totalPages: totalPages.value,
-  }),
-);
-const pageRangeStart = computed(() => {
-  if (filteredTags.value.length === 0) {
-    return 0;
-  }
-
-  return (visiblePage.value - 1) * TAGS_PAGE_SIZE + 1;
-});
-const pageRangeEnd = computed(() =>
-  Math.min(visiblePage.value * TAGS_PAGE_SIZE, filteredTags.value.length),
-);
-const hasPreviousPage = computed(() => visiblePage.value > 1);
-const hasNextPage = computed(() => visiblePage.value < totalPages.value);
+const {
+  visiblePage,
+  totalPages,
+  paginatedItems: paginatedTags,
+  pageRangeStart,
+  pageRangeEnd,
+  hasPreviousPage,
+  hasNextPage,
+  goToPage: goToPaginationPage,
+  resetPage,
+} = useLocalTagsPagination(filteredTags, TAGS_PAGE_SIZE);
 
 watch(filterText, () => {
-  currentPage.value = 1;
-});
-
-watch(totalPages, (nextTotalPages) => {
-  if (currentPage.value > nextTotalPages) {
-    currentPage.value = nextTotalPages;
-  }
+  resetPage();
 });
 
 const isEmptyState = computed(() => !isLoading.value && tags.value.length === 0);
@@ -101,20 +68,14 @@ async function loadTags() {
 }
 
 function goToPage(page: number) {
-  currentPage.value = Math.max(1, Math.min(page, totalPages.value));
+  goToPaginationPage(page);
   window.scrollTo({ top: 0, behavior: "instant" });
 }
 
-function paginationItemKey(item: PaginationWindowItem) {
-  return item.type === "page" ? `page-${item.page}` : `ellipsis-${item.key}`;
-}
-
-async function openEditDialog(tag: TagSummaryDTO) {
+function openEditInline(tag: TagSummaryDTO) {
   editingTag.value = tag;
   editingName.value = tag.name;
   editingError.value = "";
-  await nextTick();
-  editingNameInput.value?.focus();
 }
 
 function closeEditInline() {
@@ -141,19 +102,6 @@ async function saveEditInline() {
 
   closeEditInline();
   await loadTags();
-}
-
-function onEditInputKeydown(event: KeyboardEvent) {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    void saveEditInline();
-    return;
-  }
-
-  if (event.key === "Escape") {
-    event.preventDefault();
-    closeEditInline();
-  }
 }
 
 async function onDelete(tag: TagSummaryDTO) {
@@ -200,134 +148,28 @@ async function onDelete(tag: TagSummaryDTO) {
       No tags match this filter.
     </p>
     <div v-else class="mt-4">
-      <table class="ui-border-subtle w-full border-collapse text-left">
-        <tbody>
-          <tr v-for="tag in paginatedTags" :key="tag.id" class="group border-b border-transparent">
-            <!-- Column 1: Action buttons (Edit & Delete) -->
-            <td class="w-20 pr-4 align-middle">
-              <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100">
-                <button
-                  class="inline-flex min-h-8 min-w-8 items-center justify-center border border-(--ui-border-subtle) text-(--ui-text-muted) hover:border-(--ui-link) hover:text-(--ui-link) focus-visible:border-(--ui-link) focus-visible:text-(--ui-link) focus-visible:outline-none"
-                  type="button"
-                  :aria-label="`Edit tag ${tag.name}`"
-                  :title="`Edit tag ${tag.name}`"
-                  :disabled="isSaving"
-                  @click="openEditDialog(tag)"
-                >
-                  <PencilIcon class="size-4" aria-hidden="true" />
-                </button>
-                <button
-                  class="inline-flex min-h-8 min-w-8 items-center justify-center border border-(--ui-border-subtle) text-(--ui-text-muted) hover:border-(--ui-danger-border) hover:text-(--ui-danger-text-readable) focus-visible:border-(--ui-danger-border) focus-visible:text-(--ui-danger-text-readable) focus-visible:outline-none"
-                  type="button"
-                  :aria-label="`Delete tag ${tag.name}`"
-                  :title="`Delete tag ${tag.name}`"
-                  :disabled="isSaving || editingTag?.id === tag.id"
-                  @click="onDelete(tag)"
-                >
-                  <Trash2Icon class="size-4" aria-hidden="true" />
-                </button>
-              </div>
-            </td>
+      <TagsTable
+        :tags="paginatedTags"
+        :is-saving="isSaving"
+        :editing-tag="editingTag"
+        v-model:editing-name="editingName"
+        :editing-error="editingError"
+        @edit-request="openEditInline"
+        @delete-request="onDelete"
+        @save-edit="saveEditInline"
+        @cancel-edit="closeEditInline"
+      />
 
-            <!-- Column 2: Usage count -->
-            <td class="w-16 pr-4 align-middle">
-              <span class="ui-text-muted text-xs">{{ tag.usageCount }}</span>
-            </td>
-
-            <!-- Column 3: Tag name OR Inline editor -->
-            <td class="w-full min-w-0 align-middle">
-              <!-- Inline editor view -->
-              <div v-if="editingTag?.id === tag.id" class="w-full min-w-0 flex-1">
-                <div class="flex flex-wrap items-center gap-2">
-                  <input
-                    :ref="setEditingNameInputRef"
-                    v-model="editingName"
-                    class="ui-field min-h-10 w-full min-w-48 flex-1 border px-3 text-sm"
-                    type="text"
-                    :disabled="isSaving"
-                    @keydown="onEditInputKeydown"
-                  />
-                  <button
-                    class="ui-action inline-flex min-h-10 shrink-0 items-center justify-center px-3 text-sm font-semibold transition"
-                    type="button"
-                    :disabled="isSaving"
-                    @click="saveEditInline"
-                  >
-                    Save
-                  </button>
-                  <button
-                    class="ui-border ui-text-emphasis inline-flex min-h-10 shrink-0 items-center justify-center border px-3 text-sm font-semibold transition hover:bg-slate-50"
-                    type="button"
-                    :disabled="isSaving"
-                    @click="closeEditInline"
-                  >
-                    Cancel
-                  </button>
-                </div>
-                <p v-if="editingError" class="ui-danger-text mt-1 text-sm">{{ editingError }}</p>
-              </div>
-
-              <!-- Default link view -->
-              <RouterLink
-                v-else
-                class="min-w-0 text-sm font-semibold text-(--ui-text-emphasis) underline decoration-(--ui-border-subtle) underline-offset-[3px] hover:text-(--ui-link)"
-                :to="{ name: 'bookmark-tag-shortcut', params: { tags: tag.nameLower } }"
-              >
-                {{ tag.name }}
-              </RouterLink>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <p class="ui-text-muted text-sm">
-          Showing {{ pageRangeStart }}-{{ pageRangeEnd }} of {{ filteredTags.length }}
-          {{ filteredTags.length === 1 ? "tag" : "tags" }}
-        </p>
-
-        <nav
-          v-if="totalPages > 1"
-          class="flex items-center gap-1 select-none"
-          aria-label="Tag pages"
-        >
-          <button
-            v-if="hasPreviousPage"
-            class="ui-muted-link ui-border-subtle inline-flex size-9 items-center justify-center border text-sm font-semibold"
-            type="button"
-            aria-label="Previous page"
-            @click="goToPage(visiblePage - 1)"
-          >
-            <ChevronLeftIcon class="size-4" aria-hidden="true" />
-          </button>
-
-          <template v-for="item in paginationItems" :key="paginationItemKey(item)">
-            <button
-              v-if="item.type === 'page'"
-              class="inline-flex size-9 items-center justify-center border text-sm font-semibold transition"
-              :class="item.page === visiblePage ? 'ui-action' : 'ui-muted-link ui-border-subtle'"
-              type="button"
-              :aria-current="item.page === visiblePage ? 'page' : undefined"
-              @click="goToPage(item.page)"
-            >
-              {{ item.page }}
-            </button>
-            <span v-else class="ui-text-muted inline-flex size-9 items-center justify-center">
-              &hellip;
-            </span>
-          </template>
-
-          <button
-            v-if="hasNextPage"
-            class="ui-muted-link ui-border-subtle inline-flex size-9 items-center justify-center border text-sm font-semibold"
-            type="button"
-            aria-label="Next page"
-            @click="goToPage(visiblePage + 1)"
-          >
-            <ChevronRightIcon class="size-4" aria-hidden="true" />
-          </button>
-        </nav>
-      </div>
+      <TagsPagination
+        :page="visiblePage"
+        :total-pages="totalPages"
+        :total-count="filteredTags.length"
+        :range-start="pageRangeStart"
+        :range-end="pageRangeEnd"
+        :has-previous-page="hasPreviousPage"
+        :has-next-page="hasNextPage"
+        @page-change="goToPage"
+      />
     </div>
   </section>
 </template>
