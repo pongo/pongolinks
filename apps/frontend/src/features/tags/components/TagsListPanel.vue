@@ -207,7 +207,7 @@ async function onDelete(tag: TagSummaryDTO) {
             <td class="w-20 pr-4 align-middle">
               <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100">
                 <button
-                  class="tag-icon-button"
+                  class="inline-flex min-h-8 min-w-8 items-center justify-center border border-(--ui-border-subtle) text-(--ui-text-muted) hover:border-(--ui-link) hover:text-(--ui-link) focus-visible:border-(--ui-link) focus-visible:text-(--ui-link) focus-visible:outline-none"
                   type="button"
                   :aria-label="`Edit tag ${tag.name}`"
                   :title="`Edit tag ${tag.name}`"
@@ -217,7 +217,7 @@ async function onDelete(tag: TagSummaryDTO) {
                   <PencilIcon class="size-4" aria-hidden="true" />
                 </button>
                 <button
-                  class="tag-icon-button tag-icon-button-danger"
+                  class="inline-flex min-h-8 min-w-8 items-center justify-center border border-(--ui-border-subtle) text-(--ui-text-muted) hover:border-(--ui-danger-border) hover:text-(--ui-danger-text-readable) focus-visible:border-(--ui-danger-border) focus-visible:text-(--ui-danger-text-readable) focus-visible:outline-none"
                   type="button"
                   :aria-label="`Delete tag ${tag.name}`"
                   :title="`Delete tag ${tag.name}`"
@@ -237,12 +237,12 @@ async function onDelete(tag: TagSummaryDTO) {
             <!-- Column 3: Tag name OR Inline editor -->
             <td class="w-full min-w-0 align-middle">
               <!-- Inline editor view -->
-              <div v-if="editingTag?.id === tag.id" class="tag-inline-editor w-full min-w-0">
-                <div class="tag-inline-editor-controls flex gap-2">
+              <div v-if="editingTag?.id === tag.id" class="w-full min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
                   <input
                     :ref="setEditingNameInputRef"
                     v-model="editingName"
-                    class="ui-field tag-inline-editor-input min-h-10 w-full border px-3 text-sm"
+                    class="ui-field min-h-10 w-full min-w-48 flex-1 border px-3 text-sm"
                     type="text"
                     :disabled="isSaving"
                     @keydown="onEditInputKeydown"
@@ -270,7 +270,7 @@ async function onDelete(tag: TagSummaryDTO) {
               <!-- Default link view -->
               <RouterLink
                 v-else
-                class="tag-row-link min-w-0 text-sm font-semibold"
+                class="min-w-0 text-sm font-semibold text-(--ui-text-emphasis) underline decoration-(--ui-border-subtle) underline-offset-[3px] hover:text-(--ui-link)"
                 :to="{ name: 'bookmark-tag-shortcut', params: { tags: tag.nameLower } }"
               >
                 {{ tag.name }}
@@ -331,55 +331,3 @@ async function onDelete(tag: TagSummaryDTO) {
     </div>
   </section>
 </template>
-
-<style scoped>
-.tag-row-link {
-  color: var(--ui-text-emphasis);
-  text-decoration: underline;
-  text-decoration-color: var(--ui-border-subtle);
-  text-underline-offset: 3px;
-}
-
-.tag-row-link:hover {
-  color: var(--ui-link);
-}
-
-.tag-icon-button {
-  display: inline-flex;
-  min-height: 2rem;
-  min-width: 2rem;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--ui-border-subtle);
-  color: var(--ui-text-muted);
-}
-
-.tag-icon-button:hover,
-.tag-icon-button:focus-visible {
-  border-color: var(--ui-link);
-  color: var(--ui-link);
-  outline: none;
-}
-
-.tag-icon-button-danger:hover,
-.tag-icon-button-danger:focus-visible {
-  border-color: var(--ui-danger-border);
-  color: var(--ui-danger-text-readable);
-}
-
-.tag-inline-editor {
-  flex: 1;
-}
-
-.tag-inline-editor-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.tag-inline-editor-input {
-  flex: 1;
-  min-width: 12rem;
-}
-</style>
