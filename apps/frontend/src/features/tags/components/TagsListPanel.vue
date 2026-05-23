@@ -180,11 +180,15 @@ async function onDelete(tag: TagSummaryDTO) {
     <label class="ui-text-emphasis text-sm font-semibold" for="tags-filter">Filter tags</label>
     <input
       id="tags-filter"
+      name="tags-filter"
       v-model="filterText"
       class="ui-field mt-2 block min-h-10 w-full border px-3 text-sm"
       placeholder="Filter by tag name"
       type="text"
       autocomplete="off"
+      spellcheck="false"
+      autocorrect="off"
+      autocapitalize="off"
     />
 
     <p v-if="isLoading" class="ui-text-muted mt-4 text-sm">Loading tags...</p>

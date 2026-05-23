@@ -189,6 +189,7 @@ defineExpose({
       v-model="text"
       :class="inputClass"
       type="text"
+      id="search-and-tags"
       autocomplete="off"
       spellcheck="false"
       autocorrect="off"
