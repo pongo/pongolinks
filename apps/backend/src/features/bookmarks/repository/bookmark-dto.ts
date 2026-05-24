@@ -1,15 +1,5 @@
-import { bookmarks, relatedLinks, tags } from "@pongolinks/db/schema";
-
 import type { BookmarkDTO } from "../domain/contracts.ts";
-
-type BookmarkRow = typeof bookmarks.$inferSelect;
-type TagRow = typeof tags.$inferSelect;
-type RelatedLinkRow = typeof relatedLinks.$inferSelect;
-
-export type BookmarkWithTagsRow = BookmarkRow & {
-  bookmarkTags: { tag: TagRow }[];
-  relatedLinks: RelatedLinkRow[];
-};
+import type { BookmarkWithTagsRow } from "./bookmark-loader.ts";
 
 export function toBookmarkDTO(row: BookmarkWithTagsRow): BookmarkDTO {
   return {

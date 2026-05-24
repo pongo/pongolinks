@@ -1,4 +1,4 @@
-import { asc, desc, eq, sql } from "drizzle-orm";
+import { asc, desc, sql } from "drizzle-orm";
 import type { BookmarkFilterMode } from "@pongolinks/shared/bookmark-filter";
 import type { Result } from "@pongolinks/shared/result";
 import { Err, Ok } from "@pongolinks/shared/result";
@@ -11,6 +11,7 @@ import { ApiError, unexpectedError } from "#/http/result-response.ts";
 import type { BookmarkId } from "../domain/bookmark-id.ts";
 import type { BookmarkDTO } from "../domain/contracts.ts";
 import { toBookmarkDTO } from "./bookmark-dto.ts";
+import { findBookmarkById } from "./bookmark-loader.ts";
 import {
   BOOKMARK_LIST_PAGE_SIZE,
   bookmarkListOffset,
@@ -18,8 +19,6 @@ import {
   type PaginatedBookmarkList,
 } from "../pagination.ts";
 import { buildBookmarkFilterCondition } from "../bookmark-filter-persistence.ts";
-
-type RepositoryDb = Pick<AppDb, "query">;
 
 export class BookmarkReadRepository {
   constructor(private readonly db: AppDb) {}
@@ -82,7 +81,7 @@ export class BookmarkReadRepository {
 
   async findById(id: BookmarkId): Promise<Result<BookmarkDTO, ApiError>> {
     try {
-      const row = await this.findBookmarkById(this.db, id.value());
+      const row = await findBookmarkById(this.db, id.value());
 
       if (!row) {
         return Err(new ApiError("Bookmark was not found", "bookmark.not_found", 404));
@@ -92,21 +91,5 @@ export class BookmarkReadRepository {
     } catch (error) {
       return Err(unexpectedError(error));
     }
-  }
-
-  private async findBookmarkById(db: RepositoryDb, id: number) {
-    return db.query.bookmarks.findFirst({
-      where: eq(bookmarks.id, id),
-      with: {
-        bookmarkTags: {
-          with: {
-            tag: true,
-          },
-        },
-        relatedLinks: {
-          orderBy: asc(relatedLinks.id),
-        },
-      },
-    });
   }
 }

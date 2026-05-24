@@ -1,17 +1,21 @@
-import { and, asc, eq, ne } from "drizzle-orm";
-import { extractRelatedLinkUrls } from "@pongolinks/shared/bookmark-description";
+import { and, eq, ne } from "drizzle-orm";
 import type { Result } from "@pongolinks/shared/result";
 import { Err, Ok } from "@pongolinks/shared/result";
 
-import { bookmarks, relatedLinks } from "@pongolinks/db/schema";
+import { bookmarks } from "@pongolinks/db/schema";
 
 import type { AppDb } from "#/db/app-db.ts";
 import { ApiError, unexpectedError } from "#/http/result-response.ts";
 import type { BookmarkId } from "../domain/bookmark-id.ts";
 import type { BookmarkDTO, EditableBookmarkData } from "../domain/contracts.ts";
 import { toBookmarkDTO } from "./bookmark-dto.ts";
-import type { ValidUrl } from "@pongolinks/shared/brands";
-import { TagLifecycle } from "#/features/tags/tag-lifecycle.ts";
+import { BookmarkTagAttachments } from "#/features/tags/bookmark-tag-attachments.ts";
+import {
+  extractBookmarkRelatedLinkUrls,
+  insertBookmarkRelatedLinks,
+  syncBookmarkRelatedLinks,
+} from "./bookmark-related-links.ts";
+import { findBookmarkById } from "./bookmark-loader.ts";
 
 export type BookmarkEditorLogger = {
   set: (context: Record<string, unknown>) => void;
@@ -20,8 +24,6 @@ export type BookmarkEditorLogger = {
 export type DeletedBookmarkDTO = {
   deletedBookmarkId: number;
 };
-
-type EditorDb = Pick<AppDb, "delete" | "insert" | "query" | "update">;
 
 function isUniqueUrlError(error: unknown) {
   return errorMessageChain(error).some(
@@ -43,10 +45,10 @@ function errorMessageChain(error: unknown): string[] {
 }
 
 export class BookmarkEditor {
-  private readonly tagLifecycle: TagLifecycle;
+  private readonly tagAttachments: BookmarkTagAttachments;
 
   constructor(private readonly db: AppDb) {
-    this.tagLifecycle = new TagLifecycle(db);
+    this.tagAttachments = new BookmarkTagAttachments();
   }
 
   async create(
@@ -62,7 +64,7 @@ export class BookmarkEditor {
         return Err(new ApiError("Bookmark URL already exists", "bookmark.url_duplicate", 409));
       }
 
-      const extractedRelatedLinks = extractRelatedLinkUrls(input.description);
+      const extractedRelatedLinks = extractBookmarkRelatedLinkUrls(input.description);
       log?.set({
         relatedLinks: { extractedCount: extractedRelatedLinks.length },
       });
@@ -79,10 +81,10 @@ export class BookmarkEditor {
           .returning({ id: bookmarks.id })
           .get();
 
-        await this.tagLifecycle.replaceBookmarkTags(tx, bookmark.id, input.tags);
-        await this.insertRelatedLinks(tx, bookmark.id, extractedRelatedLinks);
+        await this.tagAttachments.replaceBookmarkTags(tx, bookmark.id, input.tags);
+        await insertBookmarkRelatedLinks(tx, bookmark.id, extractedRelatedLinks);
 
-        return this.findBookmarkById(tx, bookmark.id);
+        return findBookmarkById(tx, bookmark.id);
       });
 
       if (!row) {
@@ -125,7 +127,7 @@ export class BookmarkEditor {
         return Err(new ApiError("Bookmark URL already exists", "bookmark.url_duplicate", 409));
       }
 
-      const extractedRelatedLinks = extractRelatedLinkUrls(input.description);
+      const extractedRelatedLinks = extractBookmarkRelatedLinkUrls(input.description);
       log?.set({
         relatedLinks: { extractedCount: extractedRelatedLinks.length },
       });
@@ -143,17 +145,17 @@ export class BookmarkEditor {
           .returning()
           .get();
 
-        const tagDiffCounts = await this.tagLifecycle.replaceBookmarkTags(
+        const tagDiffCounts = await this.tagAttachments.replaceBookmarkTags(
           tx,
           id.value(),
           input.tags,
         );
-        const relatedLinkCounts = await this.syncRelatedLinks(
+        const relatedLinkCounts = await syncBookmarkRelatedLinks(
           tx,
           id.value(),
           extractedRelatedLinks,
         );
-        const row = await this.findBookmarkById(tx, id.value());
+        const row = await findBookmarkById(tx, id.value());
 
         return { row, tagDiffCounts, relatedLinkCounts };
       });
@@ -191,7 +193,10 @@ export class BookmarkEditor {
           return undefined;
         }
 
-        const tagDiffCounts = await this.tagLifecycle.removeBookmarkTagAttachments(tx, id.value());
+        const tagDiffCounts = await this.tagAttachments.removeBookmarkTagAttachments(
+          tx,
+          id.value(),
+        );
 
         await tx.delete(bookmarks).where(eq(bookmarks.id, id.value())).run();
 
@@ -215,58 +220,5 @@ export class BookmarkEditor {
     } catch (error) {
       return Err(unexpectedError(error));
     }
-  }
-
-  private async findBookmarkById(db: EditorDb, id: number) {
-    return db.query.bookmarks.findFirst({
-      where: eq(bookmarks.id, id),
-      with: {
-        bookmarkTags: {
-          with: {
-            tag: true,
-          },
-        },
-        relatedLinks: {
-          orderBy: asc(relatedLinks.id),
-        },
-      },
-    });
-  }
-
-  private async insertRelatedLinks(db: EditorDb, bookmarkId: number, urls: ValidUrl[]) {
-    if (urls.length === 0) {
-      return;
-    }
-
-    await db
-      .insert(relatedLinks)
-      .values(urls.map((url) => ({ bookmarkId, url })))
-      .run();
-  }
-
-  private async syncRelatedLinks(db: EditorDb, bookmarkId: number, nextUrls: ValidUrl[]) {
-    const existingRows = await db.query.relatedLinks.findMany({
-      where: eq(relatedLinks.bookmarkId, bookmarkId),
-      orderBy: asc(relatedLinks.id),
-    });
-    const nextUrlSet = new Set(nextUrls);
-    const existingUrlSet = new Set(existingRows.map((row) => row.url as ValidUrl));
-    const urlsToInsert = nextUrls.filter((url) => !existingUrlSet.has(url));
-    const rowsToDelete = existingRows.filter((row) => !nextUrlSet.has(row.url as ValidUrl));
-    const urlsToDelete = rowsToDelete.map((row) => row.url as ValidUrl);
-
-    for (const row of rowsToDelete) {
-      await db.delete(relatedLinks).where(eq(relatedLinks.id, row.id)).run();
-    }
-
-    await this.insertRelatedLinks(db, bookmarkId, urlsToInsert);
-
-    return {
-      insertedCount: urlsToInsert.length,
-      deletedCount: rowsToDelete.length,
-      retainedCount: existingRows.length - rowsToDelete.length,
-      urlsToInsert,
-      urlsToDelete,
-    };
   }
 }
