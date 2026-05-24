@@ -17,8 +17,8 @@ import {
   bookmarkListOffset,
   createBookmarkListPagination,
   type PaginatedBookmarkList,
-} from "../pagination.ts";
-import { buildBookmarkFilterCondition } from "../bookmark-filter-persistence.ts";
+} from "../filter/pagination.ts";
+import { buildBookmarkFilterCondition } from "../filter/bookmark-filter-persistence.ts";
 
 export class BookmarkReadRepository {
   constructor(private readonly db: AppDb) {}

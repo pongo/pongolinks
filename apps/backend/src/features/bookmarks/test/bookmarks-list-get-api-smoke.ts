@@ -1,7 +1,7 @@
 import { bookmarks, bookmarkTags, relatedLinks, tags } from "@pongolinks/db/schema";
 
-import { assert, request, withApp } from "./bookmarks-api-smoke-support";
-import { BOOKMARK_LIST_PAGE_SIZE } from "./pagination";
+import { assert, request, withApp } from "./bookmarks-api-smoke-support.ts";
+import { BOOKMARK_LIST_PAGE_SIZE } from "../filter/pagination.ts";
 
 function assertPrivateRevalidationHeaders(response: Response) {
   const etag = response.headers.get("etag");

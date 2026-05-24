@@ -4,7 +4,7 @@ import {
   bookmarkPayload,
   request,
   withApp,
-} from "./bookmarks-api-smoke-support";
+} from "./bookmarks-api-smoke-support.ts";
 
 await withApp(async ({ app }) => {
   await app.handle(
