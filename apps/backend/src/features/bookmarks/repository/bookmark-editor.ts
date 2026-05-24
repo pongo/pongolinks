@@ -11,7 +11,7 @@ import type { BookmarkId } from "../domain/bookmark-id.ts";
 import type { BookmarkDTO, EditableBookmarkData } from "../domain/contracts.ts";
 import { toBookmarkDTO } from "./bookmark-dto.ts";
 import type { ValidUrl } from "@pongolinks/shared/brands";
-import { TagLifecycle, type TagAttachmentDiff } from "#/features/tags/tag-lifecycle.ts";
+import { TagLifecycle } from "#/features/tags/tag-lifecycle.ts";
 
 export type BookmarkEditorLogger = {
   set: (context: Record<string, unknown>) => void;
@@ -130,18 +130,7 @@ export class BookmarkEditor {
         relatedLinks: { extractedCount: extractedRelatedLinks.length },
       });
 
-      let relatedLinkCounts = { insertedCount: 0, deletedCount: 0, retainedCount: 0 };
-      let tagDiffCounts: TagAttachmentDiff = {
-        submittedCount: input.tags.length,
-        attachedCount: 0,
-        detachedCount: 0,
-        retainedCount: 0,
-        attachedNames: [],
-        detachedNames: [],
-        deletedOrphanNames: [],
-      };
-
-      const row = await this.db.transaction(async (tx) => {
+      const { row, tagDiffCounts, relatedLinkCounts } = await this.db.transaction(async (tx) => {
         await tx
           .update(bookmarks)
           .set({
@@ -154,10 +143,19 @@ export class BookmarkEditor {
           .returning()
           .get();
 
-        tagDiffCounts = await this.tagLifecycle.replaceBookmarkTags(tx, id.value(), input.tags);
-        relatedLinkCounts = await this.syncRelatedLinks(tx, id.value(), extractedRelatedLinks);
+        const tagDiffCounts = await this.tagLifecycle.replaceBookmarkTags(
+          tx,
+          id.value(),
+          input.tags,
+        );
+        const relatedLinkCounts = await this.syncRelatedLinks(
+          tx,
+          id.value(),
+          extractedRelatedLinks,
+        );
+        const row = await this.findBookmarkById(tx, id.value());
 
-        return this.findBookmarkById(tx, id.value());
+        return { row, tagDiffCounts, relatedLinkCounts };
       });
 
       if (!row) {
