@@ -8,7 +8,8 @@ import { privateApiRevalidationCache } from "#/http/cache.ts";
 import { getRouteLogger, logApiError } from "#/http/route-logging.ts";
 import { ApiError, resultResponse, type ApiErrorCode } from "#/http/result-response.ts";
 import { BookmarkId } from "./domain/bookmark-id.ts";
-import { BookmarkEditor } from "./repository/bookmark-editor.ts";
+import { BookmarkEditor } from "./application/bookmark-editor.ts";
+import { DrizzleBookmarkEditorPersistence } from "./repository/bookmark-editor-persistence.ts";
 import { BookmarkReadRepository } from "./repository/bookmark-read-repository.ts";
 import { parseBookmarkListFiltersQuery } from "./filter/bookmark-list-filters-query.ts";
 import { parseTagNames } from "#/features/tags/tag-name.ts";
@@ -90,7 +91,7 @@ function bookmarkValidationErrorResponse(error: unknown, set: { status?: number 
 }
 
 export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
-  const bookmarkEditor = new BookmarkEditor(db);
+  const bookmarkEditor = new BookmarkEditor(new DrizzleBookmarkEditorPersistence(db));
   const bookmarkReads = new BookmarkReadRepository(db);
 
   return new Elysia({ name: "bookmark-routes" })

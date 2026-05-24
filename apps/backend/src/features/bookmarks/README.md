@@ -8,7 +8,7 @@ This directory owns backend behavior around Bookmarks, including Bookmark HTTP r
 
 ## Boundaries
 
-This slice owns Bookmark list, create, read-by-id, update, and delete behavior. It owns Bookmark mutation transaction orchestration and delegates Tag lifecycle rules to the backend Tag feature. It owns the Bookmark-side rules for synchronizing Related Links from Bookmark descriptions.
+This slice owns Bookmark list, create, read-by-id, update, and delete behavior. Application modules own Bookmark workflow orchestration and depend on narrow persistence adapters instead of Drizzle query details. Repository modules own Drizzle-backed persistence adapters, read repositories, loaders, and DTO mapping. The slice delegates Tag lifecycle rules to the backend Tag feature and owns the Bookmark-side rules for synchronizing Related Links from Bookmark descriptions.
 
 Keep database schema changes in `packages/db`. Keep Tag lifecycle behavior in the backend Tag feature. Keep browser UI and Vue route behavior in the frontend Bookmark feature.
 

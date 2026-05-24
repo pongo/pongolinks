@@ -1,24 +1,12 @@
 import { asc, eq } from "drizzle-orm";
-import { extractRelatedLinkUrls } from "@pongolinks/shared/bookmark-description";
 import type { ValidUrl } from "@pongolinks/shared/brands";
 
 import { relatedLinks } from "@pongolinks/db/schema";
 
 import type { AppDb } from "#/db/app-db.ts";
+import type { RelatedLinkSyncDiff } from "../application/bookmark-editor.ts";
 
 export type RelatedLinkSyncDb = Pick<AppDb, "delete" | "insert" | "query">;
-
-export type RelatedLinkSyncDiff = {
-  insertedCount: number;
-  deletedCount: number;
-  retainedCount: number;
-  urlsToInsert: ValidUrl[];
-  urlsToDelete: ValidUrl[];
-};
-
-export function extractBookmarkRelatedLinkUrls(description: string): ValidUrl[] {
-  return extractRelatedLinkUrls(description);
-}
 
 export async function insertBookmarkRelatedLinks(
   db: RelatedLinkSyncDb,
