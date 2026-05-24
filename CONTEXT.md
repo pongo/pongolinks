@@ -8,6 +8,11 @@ pongolinks is a personal bookmark library for saving, organizing, and rediscover
 A saved primary link with title, description, visibility, timestamps, and optional organization metadata.
 _Avoid_: link, favorite, item
 
+**Bookmark Lifecycle**:
+The save/delete workflow for a Bookmark that keeps the Bookmark fields, Tags, and Related Links consistent.
+A Bookmark Lifecycle save synchronizes Tags from submitted Tag text and synchronizes Related Links from the Bookmark description.
+_Avoid_: bookmark repository, bookmark CRUD
+
 **Bookmark URL**:
 The primary HTTP(S) URL that identifies a Bookmark.
 Bookmark URL lookup treats a trailing slash at the end of the URL path as equivalent, while keeping protocol, host, path text, query, and hash strict unless an explicit lookup rule says otherwise.
@@ -56,6 +61,7 @@ _Avoid_: bookmarklet, browser plugin, capture link
 - A **Bookmark** can have zero or more **Tags**
 - A **Tag** can belong to zero or more **Bookmarks**
 - **Tag Popularity** is counted from a **Tag**'s current Bookmark attachments
+- A **Bookmark Lifecycle** keeps a **Bookmark**'s **Tags** and **Related Links** synchronized with submitted Bookmark content
 - A **Bookmark Filter** can include or exclude Bookmarks by their organization metadata or Bookmark URL host
 - A **Bookmark Search Query** can match a Bookmark's searchable content without requiring exact organization metadata
 - A **Bookmark** can have zero or more **Related Links**

@@ -1,4 +1,4 @@
-import type { BookmarkDTO } from "./domain/contracts.ts";
+import type { BookmarkDTO } from "../domain/contracts.ts";
 
 export const BOOKMARK_LIST_PAGE_SIZE = 25;
 

@@ -9,6 +9,7 @@ import { BookmarkId } from "../domain/bookmark-id.ts";
 import type { EditableBookmarkData } from "../domain/contracts.ts";
 import { parseTagNames } from "#/features/tags/tag-name.ts";
 import { BookmarkEditor } from "./bookmark-editor.ts";
+import { DrizzleBookmarkEditorPersistence } from "../repository/bookmark-editor-persistence.ts";
 
 type TestDb = Awaited<ReturnType<typeof createMigratedTestDb>>;
 
@@ -51,7 +52,7 @@ async function withRepository(
 
   try {
     await run({
-      bookmarkEditor: new BookmarkEditor(database.db),
+      bookmarkEditor: new BookmarkEditor(new DrizzleBookmarkEditorPersistence(database.db)),
       db: database.db,
     });
   } finally {

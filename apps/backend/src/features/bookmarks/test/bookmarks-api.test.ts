@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { runBackendSmokeSuite } from "#test/smoke-suite.ts";
 
 function runSmokeSuite(fileName: string, expectedOutput: string) {
-  const result = runBackendSmokeSuite(`src/features/bookmarks/${fileName}`);
+  const result = runBackendSmokeSuite(`src/features/bookmarks/test/${fileName}`);
 
   expect(result.stderr).toBe("");
   expect(result.stdout).toContain(expectedOutput);
