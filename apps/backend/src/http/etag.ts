@@ -124,16 +124,16 @@ export function etag(options: ETagOptions = {}) {
       } satisfies ETagContextApi;
     })
     .onAfterHandle(async (ctx) => {
-      const { request, set, response } = ctx;
+      const { request, set, responseValue } = ctx;
       let etag = set.headers.etag;
 
       if (!etag) {
         let toHash: ETagHashData | undefined;
 
-        if (canBeHashed(response)) {
-          toHash = response;
+        if (canBeHashed(responseValue)) {
+          toHash = responseValue;
         } else if (typeof serialize === "function") {
-          toHash = await serialize(response);
+          toHash = await serialize(responseValue);
         }
 
         if (typeof toHash === "undefined") {
@@ -155,7 +155,7 @@ export function etag(options: ETagOptions = {}) {
             break;
         }
 
-        ctx.response = null;
+        return null;
       }
     })
     .as("global");
