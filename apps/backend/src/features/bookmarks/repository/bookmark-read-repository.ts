@@ -20,6 +20,10 @@ import {
 } from "../filter/pagination.ts";
 import { buildBookmarkFilterCondition } from "../filter/bookmark-filter-persistence.ts";
 
+function assertUnreachable(value: never): never {
+  throw new Error(`Missed a case! ${value}`);
+}
+
 export class BookmarkReadRepository {
   constructor(private readonly db: AppDb) {}
 
@@ -28,55 +32,72 @@ export class BookmarkReadRepository {
     filters: BookmarkFilterMode,
   ): Promise<Result<PaginatedBookmarkList, ApiError>> {
     try {
-      if (filters.kind === "urlLookup") {
-        const urlLookup = await lookupBookmarksByUrl(this.db, filters.url);
-        if (urlLookup.isErr) {
-          return urlLookup;
-        }
-
-        const matchedBookmarks = urlLookup.value.bookmarks;
-        const totalCount = matchedBookmarks.length;
-        const pageBookmarks = matchedBookmarks.slice(
-          bookmarkListOffset(page),
-          bookmarkListOffset(page) + BOOKMARK_LIST_PAGE_SIZE,
-        );
-
-        return Ok({
-          bookmarks: pageBookmarks.map(toBookmarkDTO),
-          pagination: createBookmarkListPagination({ page, totalCount }),
-        });
+      switch (filters.kind) {
+        case "urlLookup":
+          return await this.urlLookup(filters, page);
+        case "filters":
+          return await this.filterBookmarks(filters, page);
+        default:
+          assertUnreachable(filters);
       }
-
-      const where = buildBookmarkFilterCondition(filters);
-      const totalCountRow = await this.db
-        .select({ count: sql<number>`count(*)` })
-        .from(bookmarks)
-        .where(where)
-        .get();
-      const totalCount = totalCountRow?.count ?? 0;
-      const rows = await this.db.query.bookmarks.findMany({
-        where,
-        orderBy: [desc(bookmarks.updatedAt), desc(bookmarks.id)],
-        limit: BOOKMARK_LIST_PAGE_SIZE,
-        offset: bookmarkListOffset(page),
-        with: {
-          bookmarkTags: {
-            with: {
-              tag: true,
-            },
-          },
-          relatedLinks: {
-            orderBy: asc(relatedLinks.id),
-          },
-        },
-      });
-      return Ok({
-        bookmarks: rows.map(toBookmarkDTO),
-        pagination: createBookmarkListPagination({ page, totalCount }),
-      });
     } catch (error) {
       return Err(unexpectedError(error));
     }
+  }
+
+  private async urlLookup(
+    filters: Extract<BookmarkFilterMode, { kind: "urlLookup" }>,
+    page: number,
+  ) {
+    const urlLookupResult = await lookupBookmarksByUrl(this.db, filters.url);
+    if (urlLookupResult.isErr) {
+      return urlLookupResult;
+    }
+
+    const matchedBookmarks = urlLookupResult.value.bookmarks;
+    const totalCount = matchedBookmarks.length;
+    const pageBookmarks = matchedBookmarks.slice(
+      bookmarkListOffset(page),
+      bookmarkListOffset(page) + BOOKMARK_LIST_PAGE_SIZE,
+    );
+
+    return Ok({
+      bookmarks: pageBookmarks.map(toBookmarkDTO),
+      pagination: createBookmarkListPagination({ page, totalCount }),
+    });
+  }
+
+  private async filterBookmarks(
+    filters: Extract<BookmarkFilterMode, { kind: "filters" }>,
+    page: number,
+  ) {
+    const where = buildBookmarkFilterCondition(filters);
+    const totalCountRow = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(bookmarks)
+      .where(where)
+      .get();
+    const totalCount = totalCountRow?.count ?? 0;
+    const rows = await this.db.query.bookmarks.findMany({
+      where,
+      orderBy: [desc(bookmarks.updatedAt), desc(bookmarks.id)],
+      limit: BOOKMARK_LIST_PAGE_SIZE,
+      offset: bookmarkListOffset(page),
+      with: {
+        bookmarkTags: {
+          with: {
+            tag: true,
+          },
+        },
+        relatedLinks: {
+          orderBy: asc(relatedLinks.id),
+        },
+      },
+    });
+    return Ok({
+      bookmarks: rows.map(toBookmarkDTO),
+      pagination: createBookmarkListPagination({ page, totalCount }),
+    });
   }
 
   async findById(id: BookmarkId): Promise<Result<BookmarkDTO, ApiError>> {
