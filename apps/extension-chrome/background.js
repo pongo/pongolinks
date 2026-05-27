@@ -41,12 +41,20 @@ function createCheckUrl(url) {
 }
 
 async function clearBadge(tabId) {
-  await chrome.action.setBadgeText({ tabId, text: "" });
+  try {
+    await chrome.action.setBadgeText({ tabId, text: "" });
+  } catch {
+    // Tab was closed before badge could be cleared
+  }
 }
 
 async function showExistsBadge(tabId) {
-  await chrome.action.setBadgeBackgroundColor({ tabId, color: BADGE_COLOR });
-  await chrome.action.setBadgeText({ tabId, text: " " });
+  try {
+    await chrome.action.setBadgeBackgroundColor({ tabId, color: BADGE_COLOR });
+    await chrome.action.setBadgeText({ tabId, text: " " });
+  } catch {
+    // Tab was closed before badge could be shown
+  }
 }
 
 function bookmarkExistsFromResult(result) {
@@ -105,7 +113,11 @@ async function checkTab(tab) {
 
   try {
     const exists = await fetchBookmarkExists(url);
-    urlCheckCache.set(url, exists, exists ? EXISTS_CACHE_MAX_AGE_MS : NOT_EXISTS_CACHE_MAX_AGE_MS);
+    urlCheckCache.set(
+      url,
+      exists,
+      exists ? EXISTS_CACHE_MAX_AGE_MS : NOT_EXISTS_CACHE_MAX_AGE_MS,
+    );
     await applyCheckResult(tabId, url, exists);
   } catch {
     await clearBadge(tabId);
@@ -158,7 +170,10 @@ chrome.action.onClicked.addListener(async (tab) => {
 });
 
 async function openTabToTheRight(targetUrl) {
-  const [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const [currentTab] = await chrome.tabs.query({
+    active: true,
+    currentWindow: true,
+  });
   await chrome.tabs.create({
     url: targetUrl,
     index: currentTab.index + 1,
