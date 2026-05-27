@@ -11,10 +11,13 @@ import type {
   BookmarkEditorPersistenceTransaction,
   EditableBookmarkFields,
   RelatedLinkSyncDiff,
-} from "../application/bookmark-editor.ts";
-import { toBookmarkDTO } from "./bookmark-dto.ts";
-import { findBookmarkById } from "./bookmark-loader.ts";
-import { insertBookmarkRelatedLinks, syncBookmarkRelatedLinks } from "./bookmark-related-links.ts";
+} from "./types.ts";
+import { toBookmarkDTO } from "../repository/bookmark-dto.ts";
+import { findBookmarkById } from "../repository/bookmark-loader.ts";
+import {
+  insertBookmarkRelatedLinks,
+  syncBookmarkRelatedLinks,
+} from "../repository/bookmark-related-links.ts";
 
 type BookmarkEditorDb = Pick<AppDb, "delete" | "insert" | "query" | "update">;
 

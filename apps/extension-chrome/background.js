@@ -113,11 +113,7 @@ async function checkTab(tab) {
 
   try {
     const exists = await fetchBookmarkExists(url);
-    urlCheckCache.set(
-      url,
-      exists,
-      exists ? EXISTS_CACHE_MAX_AGE_MS : NOT_EXISTS_CACHE_MAX_AGE_MS,
-    );
+    urlCheckCache.set(url, exists, exists ? EXISTS_CACHE_MAX_AGE_MS : NOT_EXISTS_CACHE_MAX_AGE_MS);
     await applyCheckResult(tabId, url, exists);
   } catch {
     await clearBadge(tabId);

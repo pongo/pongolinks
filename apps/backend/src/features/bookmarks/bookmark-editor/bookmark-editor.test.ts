@@ -9,7 +9,7 @@ import { BookmarkId } from "../domain/bookmark-id.ts";
 import type { EditableBookmarkData } from "../domain/contracts.ts";
 import { parseTagNames } from "#/features/tags/tag-name.ts";
 import { BookmarkEditor } from "./bookmark-editor.ts";
-import { DrizzleBookmarkEditorPersistence } from "../repository/bookmark-editor-persistence.ts";
+import { DrizzleBookmarkEditorPersistence } from "./bookmark-editor-persistence.ts";
 
 type TestDb = Awaited<ReturnType<typeof createMigratedTestDb>>;
 

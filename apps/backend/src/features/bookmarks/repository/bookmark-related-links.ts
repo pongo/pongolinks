@@ -4,7 +4,8 @@ import type { ValidUrl } from "@pongolinks/shared/brands";
 import { relatedLinks } from "@pongolinks/db/schema";
 
 import type { AppDb } from "#/db/app-db.ts";
-import type { RelatedLinkSyncDiff } from "../application/bookmark-editor.ts";
+
+import type { RelatedLinkSyncDiff } from "../bookmark-editor/types.ts";
 
 export type RelatedLinkSyncDb = Pick<AppDb, "delete" | "insert" | "query">;
 
