@@ -15,6 +15,7 @@ export type EdenApiResponse = {
 type ApiResultAdapterOptions = {
   fallbackError?: ApiError;
   mapFormErrors?: (error: Pick<ApiError, "code" | "message">) => FormErrors;
+  onUnauthorized?: (currentPath: string) => void;
 };
 
 type ParseApiPayloadOptions = Required<Pick<ApiResultAdapterOptions, "fallbackError">> &
@@ -49,18 +50,54 @@ function parseApiPayload<T>(
   );
 }
 
+export function getLoginRedirectPath(currentPath: string) {
+  const next =
+    currentPath.startsWith("/") && !currentPath.startsWith("//")
+      ? currentPath
+      : `${APP_BASE_PATH}/`;
+
+  return `${APP_BASE_PATH}/login?next=${encodeURIComponent(next)}`;
+}
+
+function redirectToLogin(currentPath: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.location.assign(getLoginRedirectPath(currentPath));
+}
+
+function getCurrentBrowserPath() {
+  if (typeof window === "undefined") {
+    return `${APP_BASE_PATH}/`;
+  }
+
+  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
+}
+
+function handleUnauthorized(result: Result<unknown, ApiError>, options: ApiResultAdapterOptions) {
+  if (result.isErr && result.error.code === "auth.unauthorized") {
+    (options.onUnauthorized ?? redirectToLogin)(getCurrentBrowserPath());
+  }
+}
+
 function parseEdenResponse<T>(
   response: EdenApiResponse,
   options: ApiResultAdapterOptions = {},
 ): Result<T, ApiError> {
   const fallbackError = options.fallbackError ?? genericFallbackError;
+  let result: Result<T, ApiError>;
 
   if (response.data !== undefined && response.data !== null) {
-    return parseApiPayload<T>(response.data, { ...options, fallbackError });
+    result = parseApiPayload<T>(response.data, { ...options, fallbackError });
+    handleUnauthorized(result, options);
+    return result;
   }
 
   if (response.error) {
-    return parseApiPayload<T>(response.error.value, { ...options, fallbackError });
+    result = parseApiPayload<T>(response.error.value, { ...options, fallbackError });
+    handleUnauthorized(result, options);
+    return result;
   }
 
   return Err(fallbackError);

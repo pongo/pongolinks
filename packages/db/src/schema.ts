@@ -87,3 +87,20 @@ export const relatedLinks = sqliteTable(
     index("idx_related_links_url").on(table.url),
   ],
 );
+
+export const authSessions = sqliteTable(
+  "auth_sessions",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    tokenHash: text("token_hash").notNull().unique(),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+    expiresAt: text("expires_at").notNull(),
+  },
+  (table) => [
+    check("auth_sessions_token_hash_not_empty", sql`${table.tokenHash} <> ''`),
+    check("auth_sessions_expires_at_not_empty", sql`${table.expiresAt} <> ''`),
+    index("idx_auth_sessions_expires_at").on(table.expiresAt),
+  ],
+);

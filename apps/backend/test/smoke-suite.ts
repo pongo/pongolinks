@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-import { TEST_BASIC_AUTH_CREDENTIALS } from "./api-smoke-support";
+import { TEST_AUTH_PASSWORD } from "./api-smoke-support";
 
 export function smokeSuiteEnv() {
   const {
@@ -15,7 +15,7 @@ export function smokeSuiteEnv() {
 
   return {
     ...env,
-    BASIC_AUTH_CREDENTIALS: TEST_BASIC_AUTH_CREDENTIALS,
+    AUTH_PASSWORD: TEST_AUTH_PASSWORD,
     NODE_ENV: "test",
   };
 }

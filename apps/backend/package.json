@@ -19,7 +19,6 @@
     "format": "oxfmt ."
   },
   "dependencies": {
-    "@eelkevdbos/elysia-basic-auth": "^2.0.1",
     "@elysia/openapi": "^1.4.15",
     "@elysia/opentelemetry": "^1.4.12",
     "@opentelemetry/exporter-trace-otlp-proto": "^0.218.0",

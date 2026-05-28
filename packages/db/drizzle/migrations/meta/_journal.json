@@ -43,6 +43,13 @@
       "when": 1778957682805,
       "tag": "0005_thin_starhawk",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1779967696159,
+      "tag": "0006_auth_sessions",
+      "breakpoints": true
     }
   ]
 }

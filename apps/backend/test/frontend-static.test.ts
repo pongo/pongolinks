@@ -4,14 +4,17 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { APP_BASE_PATH, createApp } from "#/app.ts";
-import { TEST_BASIC_AUTH_HEADER, useTestBasicAuthCredentials } from "#test/api-smoke-support.ts";
+import { loginTestUser, useTestAuthPassword } from "#test/api-smoke-support.ts";
+import { createMigratedTestDb } from "#test/test-db.ts";
 
 const tempDir = fileURLToPath(new URL(".tmp/frontend-dist", import.meta.url));
 
-function authenticatedRequest(url: string) {
+function authenticatedRequest(url: string, cookie: string, init?: RequestInit) {
   return new Request(url, {
+    ...init,
     headers: {
-      authorization: TEST_BASIC_AUTH_HEADER,
+      cookie,
+      ...init?.headers,
     },
   });
 }
@@ -31,50 +34,59 @@ describe("production frontend serving", () => {
     writeFileSync(join(tempDir, "assets", "index-test.js"), "console.log('asset loaded');\n");
     writeFileSync(join(tempDir, "favicon.ico"), "favicon");
 
-    useTestBasicAuthCredentials();
+    useTestAuthPassword();
+    const database = await createMigratedTestDb();
 
-    const app = createApp({
-      frontendDistPath: tempDir,
-      serveFrontend: true,
-    });
+    try {
+      const app = createApp({
+        db: database.db,
+        frontendDistPath: tempDir,
+        serveFrontend: true,
+      });
+      const cookie = await loginTestUser(app);
 
-    const healthResponse = await app.handle(
-      authenticatedRequest(`http://localhost${APP_BASE_PATH}/api/health`),
-    );
-    const fallbackResponse = await app.handle(
-      authenticatedRequest(`http://localhost${APP_BASE_PATH}/bookmarks/future`),
-    );
-    const assetResponse = await app.handle(
-      authenticatedRequest(`http://localhost${APP_BASE_PATH}/assets/index-test.js`),
-    );
-    const faviconResponse = await app.handle(
-      authenticatedRequest(`http://localhost${APP_BASE_PATH}/favicon.ico`),
-    );
-    const missingAssetResponse = await app.handle(
-      authenticatedRequest(`http://localhost${APP_BASE_PATH}/assets/missing.js`),
-    );
-    const oldApiResponse = await app.handle(new Request("http://localhost/api/health"));
-    const rootResponse = await app.handle(new Request("http://localhost/"));
+      const healthResponse = await app.handle(
+        authenticatedRequest(`http://localhost${APP_BASE_PATH}/api/health`, cookie),
+      );
+      const fallbackResponse = await app.handle(
+        authenticatedRequest(`http://localhost${APP_BASE_PATH}/bookmarks/future`, cookie),
+      );
+      const assetResponse = await app.handle(
+        authenticatedRequest(`http://localhost${APP_BASE_PATH}/assets/index-test.js`, cookie),
+      );
+      const faviconResponse = await app.handle(
+        authenticatedRequest(`http://localhost${APP_BASE_PATH}/favicon.ico`, cookie),
+      );
+      const missingAssetResponse = await app.handle(
+        authenticatedRequest(`http://localhost${APP_BASE_PATH}/assets/missing.js`, cookie),
+      );
+      const oldApiResponse = await app.handle(new Request("http://localhost/api/health"));
+      const rootResponse = await app.handle(new Request("http://localhost/"));
 
-    expect(healthResponse.status).toBe(200);
-    expect(await healthResponse.json()).toEqual({ status: "ok" });
-    expect(fallbackResponse.status).toBe(200);
-    expect(await fallbackResponse.text()).toContain('<div id="app"></div>');
-    expect(fallbackResponse.headers.get("cache-control")).toBe("no-cache");
-    expect(fallbackResponse.headers.get("last-modified")).toBeTruthy();
-    expect(assetResponse.status).toBe(200);
-    expect(assetResponse.headers.get("content-type")).toContain("text/javascript");
-    expect(assetResponse.headers.get("cache-control")).toBe("public, max-age=31536000, immutable");
-    expect(assetResponse.headers.get("last-modified")).toBeTruthy();
-    expect(await assetResponse.text()).toContain("asset loaded");
-    expect(faviconResponse.status).toBe(200);
-    expect(faviconResponse.headers.get("content-type")).toContain("image/x-icon");
-    expect(faviconResponse.headers.get("cache-control")).toBe("public, no-cache");
-    expect(faviconResponse.headers.get("last-modified")).toBeTruthy();
-    expect(missingAssetResponse.status).toBe(404);
-    expect(await missingAssetResponse.json()).toEqual({ error: "Not Found" });
-    expect(oldApiResponse.status).not.toBe(200);
-    expect(rootResponse.status).not.toBe(200);
+      expect(healthResponse.status).toBe(200);
+      expect(await healthResponse.json()).toEqual({ status: "ok" });
+      expect(fallbackResponse.status).toBe(200);
+      expect(await fallbackResponse.text()).toContain('<div id="app"></div>');
+      expect(fallbackResponse.headers.get("cache-control")).toBe("no-cache");
+      expect(fallbackResponse.headers.get("last-modified")).toBeTruthy();
+      expect(assetResponse.status).toBe(200);
+      expect(assetResponse.headers.get("content-type")).toContain("text/javascript");
+      expect(assetResponse.headers.get("cache-control")).toBe(
+        "public, max-age=31536000, immutable",
+      );
+      expect(assetResponse.headers.get("last-modified")).toBeTruthy();
+      expect(await assetResponse.text()).toContain("asset loaded");
+      expect(faviconResponse.status).toBe(200);
+      expect(faviconResponse.headers.get("content-type")).toContain("image/x-icon");
+      expect(faviconResponse.headers.get("cache-control")).toBe("public, no-cache");
+      expect(faviconResponse.headers.get("last-modified")).toBeTruthy();
+      expect(missingAssetResponse.status).toBe(404);
+      expect(await missingAssetResponse.json()).toEqual({ error: "Not Found" });
+      expect(oldApiResponse.status).not.toBe(200);
+      expect(rootResponse.status).not.toBe(200);
+    } finally {
+      database.close();
+    }
   });
 
   it("revalidates frontend static files with Last-Modified", async () => {
@@ -82,33 +94,39 @@ describe("production frontend serving", () => {
     writeFileSync(join(tempDir, "index.html"), "<!doctype html><html><body>App</body></html>");
     writeFileSync(join(tempDir, "favicon.ico"), "favicon");
 
-    useTestBasicAuthCredentials();
+    useTestAuthPassword();
+    const database = await createMigratedTestDb();
 
-    const app = createApp({
-      frontendDistPath: tempDir,
-      serveFrontend: true,
-    });
+    try {
+      const app = createApp({
+        db: database.db,
+        frontendDistPath: tempDir,
+        serveFrontend: true,
+      });
+      const cookie = await loginTestUser(app);
 
-    const firstResponse = await app.handle(
-      authenticatedRequest(`http://localhost${APP_BASE_PATH}/favicon.ico`),
-    );
-    const lastModified = firstResponse.headers.get("last-modified");
+      const firstResponse = await app.handle(
+        authenticatedRequest(`http://localhost${APP_BASE_PATH}/favicon.ico`, cookie),
+      );
+      const lastModified = firstResponse.headers.get("last-modified");
 
-    expect(firstResponse.status).toBe(200);
-    expect(lastModified).toBeTruthy();
+      expect(firstResponse.status).toBe(200);
+      expect(lastModified).toBeTruthy();
 
-    const revalidatedResponse = await app.handle(
-      new Request(`http://localhost${APP_BASE_PATH}/favicon.ico`, {
-        headers: {
-          authorization: TEST_BASIC_AUTH_HEADER,
-          "if-modified-since": lastModified!,
-        },
-      }),
-    );
+      const revalidatedResponse = await app.handle(
+        authenticatedRequest(`http://localhost${APP_BASE_PATH}/favicon.ico`, cookie, {
+          headers: {
+            "if-modified-since": lastModified!,
+          },
+        }),
+      );
 
-    expect(revalidatedResponse.status).toBe(304);
-    expect(await revalidatedResponse.text()).toBe("");
-    expect(revalidatedResponse.headers.get("cache-control")).toBe("public, no-cache");
-    expect(revalidatedResponse.headers.get("last-modified")).toBe(lastModified);
+      expect(revalidatedResponse.status).toBe(304);
+      expect(await revalidatedResponse.text()).toBe("");
+      expect(revalidatedResponse.headers.get("cache-control")).toBe("public, no-cache");
+      expect(revalidatedResponse.headers.get("last-modified")).toBe(lastModified);
+    } finally {
+      database.close();
+    }
   });
 });

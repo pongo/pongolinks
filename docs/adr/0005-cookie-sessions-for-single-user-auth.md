@@ -1,0 +1,3 @@
+# Cookie sessions for single-user auth
+
+pongolinks will replace browser-managed Basic Auth with server-issued persistent cookie sessions for the single-user service. Sessions are created by a backend-rendered password login page using `AUTH_PASSWORD`, stored durably in SQLite as hashed opaque tokens with absolute two-year expiry, and scoped to `APP_BASE_PATH` with `HttpOnly` `SameSite=Lax` cookies. This keeps the one-user setup simple while avoiding unpredictable browser Basic Auth credential lifetime; JSON session storage, JWTs, logout/session-management UI, and Basic Auth compatibility are intentionally excluded for the first version.

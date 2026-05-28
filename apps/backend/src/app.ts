@@ -1,8 +1,8 @@
-import { basicAuth } from "@eelkevdbos/elysia-basic-auth";
 import { Elysia } from "elysia";
 import { evlog } from "evlog/elysia";
 import { APP_BASE_PATH } from "@pongolinks/shared/app-config";
 
+import { createSessionAuthPlugin } from "./http/session-auth";
 import { config } from "./config";
 import type { AppDb } from "./db/app-db";
 import { createBookmarkRoutes } from "./features/bookmarks/routes";
@@ -51,17 +51,6 @@ function readEnv(name: string) {
   return typeof Bun === "undefined" ? process.env[name] : Bun.env[name];
 }
 
-function createBasicAuthPlugin() {
-  if (!readEnv("BASIC_AUTH_CREDENTIALS")?.trim()) {
-    throw new Error("BASIC_AUTH_CREDENTIALS must be set");
-  }
-
-  return basicAuth({
-    realm: "pongolinks",
-    scope: `${APP_BASE_PATH}/`,
-  });
-}
-
 export function createApp(options: CreateAppOptions = {}) {
   const frontendDistPath = options.frontendDistPath ?? config.frontendDistPath;
   const app = new Elysia()
@@ -76,7 +65,7 @@ export function createApp(options: CreateAppOptions = {}) {
       }),
     )
     .use(createTracingPlugin())
-    .use(createBasicAuthPlugin())
+    .use(createSessionAuthPlugin({ db: options.db }))
     .use(
       evlog({
         ...createRequestLoggingOptions(),

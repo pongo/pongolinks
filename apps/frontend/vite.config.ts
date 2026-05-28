@@ -9,6 +9,7 @@ export default defineConfig({
   server: {
     proxy: {
       [`${APP_BASE_PATH}/api`]: "http://localhost:3000",
+      [`${APP_BASE_PATH}/login`]: "http://localhost:3000",
     },
   },
 });

@@ -4,7 +4,7 @@ import { migrate } from "drizzle-orm/libsql/migrator";
 import { describe, expect, it } from "vitest";
 
 import { createDb } from "../src";
-import { bookmarks, bookmarkTags, relatedLinks, tags } from "../src/schema";
+import { authSessions, bookmarks, bookmarkTags, relatedLinks, tags } from "../src/schema";
 
 const migrationsFolder = fileURLToPath(new URL("../drizzle/migrations", import.meta.url));
 
@@ -26,6 +26,7 @@ describe("database migrations", () => {
           "tags",
           "bookmark_tags",
           "related_links",
+          "auth_sessions",
           "bookmarks_fts",
         ]),
       );
@@ -88,6 +89,15 @@ describe("database migrations", () => {
         { name: "usage_count", desc: 1 },
         { name: "name_lower", desc: 0 },
       ]);
+
+      const authSessionIndexesResult = await client.execute("PRAGMA index_list('auth_sessions')");
+      const authSessionIndexNames = authSessionIndexesResult.rows.map((index) =>
+        String(index.name),
+      );
+
+      expect(authSessionIndexNames).toEqual(
+        expect.arrayContaining(["auth_sessions_token_hash_unique", "idx_auth_sessions_expires_at"]),
+      );
 
       const initialUpdatedAt = "2000-01-01 00:00:00";
       const { id: firstBookmarkId } = await db
@@ -196,6 +206,10 @@ describe("database migrations", () => {
       ).rejects.toThrow(
         /related_links\.bookmark_id, related_links\.url|related_links.*bookmark_id.*url/,
       );
+
+      await expect(
+        db.insert(authSessions).values({ tokenHash: "", expiresAt: "2030-01-01 00:00:00" }).run(),
+      ).rejects.toThrow();
     } finally {
       close();
     }
