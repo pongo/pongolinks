@@ -1,6 +1,6 @@
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { count, eq } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 import { authSessions } from "@pongolinks/db/schema";
@@ -9,7 +9,7 @@ import { APP_BASE_PATH, createApp } from "#/app.ts";
 import { TEST_AUTH_PASSWORD, loginTestUser, useTestAuthPassword } from "#test/api-smoke-support.ts";
 import { createMigratedTestDb } from "#test/test-db.ts";
 
-const tempFrontendDistPath = fileURLToPath(new URL(".tmp/auth-frontend-dist", import.meta.url));
+const tempFrontendDistPath = mkdtempSync(join(tmpdir(), "pongolinks-auth-frontend-dist-"));
 
 function apiHealthRequest(cookie?: string) {
   return new Request(`http://localhost${APP_BASE_PATH}/api/health`, {

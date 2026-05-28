@@ -1,13 +1,13 @@
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { APP_BASE_PATH, createApp } from "#/app.ts";
 import { loginTestUser, useTestAuthPassword } from "#test/api-smoke-support.ts";
 import { createMigratedTestDb } from "#test/test-db.ts";
 
-const tempDir = fileURLToPath(new URL(".tmp/frontend-dist", import.meta.url));
+const tempDir = mkdtempSync(join(tmpdir(), "pongolinks-frontend-dist-"));
 
 function authenticatedRequest(url: string, cookie: string, init?: RequestInit) {
   return new Request(url, {
