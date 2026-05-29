@@ -137,6 +137,7 @@ onMounted(async () => {
         v-model="form.description"
         class="ui-field field-sizing-content min-h-28 w-full resize-y border px-3 py-2 text-sm transition outline-none focus:ring-2"
         rows="4"
+        @keydown.ctrl.enter.prevent="submitForm"
       />
     </label>
 
