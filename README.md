@@ -63,10 +63,10 @@ Install Bun, then install dependencies from the repository root:
 bun install
 ```
 
-Create local environment values. The backend requires Basic Auth credentials:
+Create local environment values. The backend requires admin password:
 
 ```bash
-BASIC_AUTH_CREDENTIALS=admin:admin
+AUTH_PASSWORD=admin123
 DATABASE_PATH=.data/pongolinks.sqlite
 ```
 
