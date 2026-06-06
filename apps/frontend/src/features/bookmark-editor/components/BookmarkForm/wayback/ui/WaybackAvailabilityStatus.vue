@@ -84,7 +84,7 @@ onBeforeUnmount(() => {
     Checking Wayback availability...
   </p>
 
-  <p v-else-if="displayStatus.kind === 'available'" class="ui-text-muted mt-2 text-sm">
+  <p v-else-if="displayStatus.kind === 'available'" class="mt-2 text-sm text-green-600">
     Archived snapshot found on
     <a
       class="ui-link font-semibold"
