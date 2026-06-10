@@ -98,34 +98,11 @@ async function onQuotePaste(event: KeyboardEvent) {
     // use execCommand for better compatibility with various input types and to ensure proper undo stack behavior
     document.execCommand("insertText", false, quoted);
 
-    // textarea.setRangeText(quoted, textarea.selectionStart, textarea.selectionEnd, "end");
-
     // update v-model
     textarea.dispatchEvent(new Event("input", { bubbles: true }));
   } catch (err) {
     console.error("Error reading clipboard:", err);
   }
-  //   try {
-  //     const textarea = event.target as HTMLTextAreaElement | null;
-  //     const text = await navigator.clipboard.readText();
-  //     if (!text || textarea == null) return;
-  //
-  //     const quoted = text
-  //       .split(/\r?\n/)
-  //       .map((line) => `> ${line}`)
-  //       .join("\n");
-  //
-  //     const start = textarea.selectionStart;
-  //     const end = textarea.selectionEnd;
-  //
-  //     form.description = form.description.slice(0, start) + quoted + form.description.slice(end);
-  //
-  //     // restore cursor position after DOM update
-  //     await nextTick();
-  //     textarea.selectionStart = textarea.selectionEnd = start + quoted.length;
-  //   } catch (err) {
-  //     console.error("Error reading clipboard:", err);
-  //   }
 }
 
 onMounted(async () => {
