@@ -84,6 +84,50 @@ async function autofocus() {
   focusByTarget[props.initialFocusTarget]();
 }
 
+async function onQuotePaste(event: KeyboardEvent) {
+  try {
+    const textarea = event.target as HTMLTextAreaElement | null;
+    const text = await navigator.clipboard.readText();
+    if (!text || textarea == null) return;
+
+    const quoted = text
+      .split(/\r?\n/)
+      .map((line) => `> ${line}`)
+      .join("\n");
+
+    // use execCommand for better compatibility with various input types and to ensure proper undo stack behavior
+    document.execCommand("insertText", false, quoted);
+
+    // textarea.setRangeText(quoted, textarea.selectionStart, textarea.selectionEnd, "end");
+
+    // update v-model
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+  } catch (err) {
+    console.error("Error reading clipboard:", err);
+  }
+  //   try {
+  //     const textarea = event.target as HTMLTextAreaElement | null;
+  //     const text = await navigator.clipboard.readText();
+  //     if (!text || textarea == null) return;
+  //
+  //     const quoted = text
+  //       .split(/\r?\n/)
+  //       .map((line) => `> ${line}`)
+  //       .join("\n");
+  //
+  //     const start = textarea.selectionStart;
+  //     const end = textarea.selectionEnd;
+  //
+  //     form.description = form.description.slice(0, start) + quoted + form.description.slice(end);
+  //
+  //     // restore cursor position after DOM update
+  //     await nextTick();
+  //     textarea.selectionStart = textarea.selectionEnd = start + quoted.length;
+  //   } catch (err) {
+  //     console.error("Error reading clipboard:", err);
+  //   }
+}
+
 onMounted(async () => {
   await autofocus();
 });
@@ -138,6 +182,7 @@ onMounted(async () => {
         class="ui-field field-sizing-content min-h-28 w-full resize-y border px-3 py-2 text-sm transition outline-none focus:ring-2"
         rows="4"
         @keydown.ctrl.enter.prevent="submitForm"
+        @keydown.ctrl.b.prevent="onQuotePaste"
       />
     </label>
 
