@@ -1,6 +1,19 @@
 <script setup lang="ts">
+import { useRouter, useRoute } from "vue-router";
 import { useAppVariants } from "#/variants.ts";
 const { variants } = useAppVariants();
+
+const router = useRouter();
+const route = useRoute();
+
+function reloadOnHome(event: MouseEvent) {
+  if (route.fullPath !== "/") return;
+  // Let native browser behavior handle ctrl+click, middle-click, etc.
+  if (event.ctrlKey || event.metaKey || event.shiftKey || event.button !== 0) return;
+
+  event.preventDefault();
+  router.go(0); // reload
+}
 </script>
 
 <template>
@@ -10,6 +23,7 @@ const { variants } = useAppVariants();
         v-if="variants.showFavIcon"
         class="ui-link flex h-4 cursor-pointer items-center gap-1.25 text-xs font-bold tracking-normal uppercase"
         to="/"
+        @click="reloadOnHome"
       >
         <img
           class="h-4 w-4 shrink-0"
@@ -23,10 +37,15 @@ const { variants } = useAppVariants();
         v-else
         class="ui-link block cursor-pointer text-xs font-bold tracking-normal uppercase"
         to="/"
+        @click="reloadOnHome"
       >
         pongolinks
       </RouterLink>
-      <RouterLink class="ui-text-strong mt-1 block cursor-pointer text-2xl font-bold" to="/">
+      <RouterLink
+        class="ui-text-strong mt-1 block cursor-pointer text-2xl font-bold"
+        to="/"
+        @click="reloadOnHome"
+      >
         Bookmarks
       </RouterLink>
     </div>
