@@ -84,6 +84,13 @@ async function autofocus() {
   focusByTarget[props.initialFocusTarget]();
 }
 
+function onKeydown(event: KeyboardEvent) {
+  if (event.ctrlKey && event.code === "KeyB") {
+    event.preventDefault();
+    onQuotePaste(event);
+  }
+}
+
 async function onQuotePaste(event: KeyboardEvent) {
   try {
     const textarea = event.target as HTMLTextAreaElement | null;
@@ -159,7 +166,7 @@ onMounted(async () => {
         class="ui-field field-sizing-content min-h-28 w-full resize-y border px-3 py-2 text-sm transition outline-none focus:ring-2"
         rows="4"
         @keydown.ctrl.enter.prevent="submitForm"
-        @keydown.ctrl.b.prevent="onQuotePaste"
+        @keydown="onKeydown"
       />
     </label>
 
