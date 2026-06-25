@@ -4,13 +4,8 @@ export type BookmarkUrlSource = Pick<BookmarkDTO, "url" | "relatedLinks">;
 
 const URL_CHECK_CACHE_INVALIDATION_MESSAGE_TYPE = "pongolinks.invalidate-url-check-cache";
 
-function isHttpUrl(url: string) {
-  try {
-    const parsedUrl = new URL(url);
-    return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
-  } catch {
-    return false;
-  }
+function isHttpUrl(url: string): boolean {
+  return url.startsWith("http://") || url.startsWith("https://");
 }
 
 export function collectBookmarkUrls(...bookmarks: BookmarkUrlSource[]) {
