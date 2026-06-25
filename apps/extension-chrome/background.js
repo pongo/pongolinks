@@ -8,6 +8,7 @@ const HOUR_MS = 60 * 60 * 1000;
 const GLOBAL_CACHE_MAX_AGE_MS = HOUR_MS;
 const EXISTS_CACHE_MAX_AGE_MS = 24 * HOUR_MS;
 const NOT_EXISTS_CACHE_MAX_AGE_MS = HOUR_MS;
+const URL_CHECK_CACHE_INVALIDATION_MESSAGE_TYPE = "pongolinks.invalidate-url-check-cache";
 
 const urlCheckCache = new QuickLRU({
   maxSize: CACHE_MAX_SIZE,
@@ -95,6 +96,32 @@ async function applyCheckResult(tabId, checkedUrl, exists) {
   }
 }
 
+async function refreshActiveTabsForUrls(urls) {
+  const urlSet = new Set(urls);
+  const tabs = await chrome.tabs.query({ active: true });
+
+  for (const tab of tabs) {
+    if (!tab.id || !tab.url || !urlSet.has(tab.url)) {
+      continue;
+    }
+
+    await checkTab(tab);
+  }
+}
+
+async function invalidateUrlCheckCache(urls) {
+  const uniqueUrls = [...new Set(urls)].filter(isCheckableUrl);
+  if (uniqueUrls.length === 0) {
+    return;
+  }
+
+  for (const url of uniqueUrls) {
+    urlCheckCache.delete(url);
+  }
+
+  await refreshActiveTabsForUrls(uniqueUrls);
+}
+
 async function checkTab(tab) {
   if (!tab.id) {
     return;
@@ -163,6 +190,14 @@ chrome.action.onClicked.addListener(async (tab) => {
 
   urlCheckCache.delete(tab.url);
   await openTabToTheRight(createBookmarkUrl(tab));
+});
+
+chrome.runtime.onMessage.addListener((message) => {
+  if (message?.type !== URL_CHECK_CACHE_INVALIDATION_MESSAGE_TYPE) {
+    return;
+  }
+
+  void invalidateUrlCheckCache(Array.isArray(message.urls) ? message.urls : []);
 });
 
 async function openTabToTheRight(targetUrl) {

@@ -6,6 +6,7 @@ import type { FormErrors, ApiError } from "#/shared/api/errors.ts";
 import type { BookmarkDTO } from "#/features/bookmarks/types.ts";
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
 import type { EditableBookmarkPayload } from "#/features/bookmark-editor/types.ts";
+import { invalidateBookmarkUrlCheckCache } from "#/features/bookmark-editor/url-check-cache.ts";
 import type { BookmarkFormInitialFocusTarget } from "../../components/BookmarkForm/bookmark-form-state.ts";
 import type {
   BookmarkUrlCheckBookmark,
@@ -56,6 +57,7 @@ type CreateBookmarkFlowOptions = {
   checkBookmarkUrl: (url: string) => Promise<Result<BookmarkUrlCheckResult, ApiError>>;
   createBookmark: (payload: EditableBookmarkPayload) => Promise<Result<BookmarkDTO, ApiError>>;
   listTags: () => Promise<Result<{ tags: TagSummaryDTO[] }, ApiError>>;
+  onBookmarkSaved?: (bookmark: BookmarkDTO) => void;
   navigateToList: () => Promise<void>;
   navigateToEdit: (bookmarkId: number) => Promise<void>;
   closeWindow: () => void;
@@ -267,6 +269,8 @@ export function useCreateBookmarkFlow(options: CreateBookmarkFlowOptions) {
     const result = await options.createBookmark(payload);
 
     if (result.isOk) {
+      options.onBookmarkSaved?.(result.value);
+
       if (state.value.kind !== "create-form") {
         await options.navigateToList();
       } else {
