@@ -20,7 +20,7 @@ pongolinks is a single-user self-hosted bookmark library for saving, organizing,
 
 - Bun
 - Monorepo: Bun workspaces and Turborepo
-- Backend: Bun, Elysia, Elysia Eden contract, Basic Auth
+- Backend: Bun, Elysia, Elysia Eden contract
 - Frontend: Vue SPA, Vue Router, Vite, Tailwind CSS
 - Database: SQLite through Drizzle ORM and `@libsql/client`
 - Testing: Vitest
