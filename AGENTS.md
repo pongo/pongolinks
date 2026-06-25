@@ -9,10 +9,13 @@
 - никогда не запускай dev сервер. никогда не делай deploy. никогда не делай git commit
 - для проверки типов: bun run typecheck
 - для тестов: bun run agent:test
-- для форматирования: bun run format
+- финальная проверка: `bun run typecheck && bun run agent:test`
 
 - пользовательский интерфейс на английском языке
-- комментарии в коде пиши на английском языке.
+
+## Code comments
+
+- Write comments for complex or non-trivial code where the intent is not immediately obvious. Explain why something is done, important assumptions, invariants, edge cases, and trade-offs. Avoid comments that simply describe what the code does when that is already clear from the code itself.
 
 ## Error handling
 
