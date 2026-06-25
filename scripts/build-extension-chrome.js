@@ -2,7 +2,7 @@ import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises"
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const SOURCE_APP_BASE_URL = "http://localhost:3000/pl/";
+const SOURCE_APP_BASE_URLS = ["http://localhost:3000/pl/", "http://localhost:5173/pl/"];
 const IGNORED_EXTENSION_PATHS = new Set(["dist", "README.md"]);
 const APP_BASE_URL_REPLACEMENT_PATHS = new Set(["background.js", "manifest.json"]);
 
@@ -55,7 +55,13 @@ async function copyExtensionFile(sourcePath, targetPath, targetAppBaseUrl) {
   }
 
   const source = await readFile(sourcePath, "utf8");
-  await writeFile(targetPath, source.replaceAll(SOURCE_APP_BASE_URL, targetAppBaseUrl));
+  let rewrittenSource = source;
+
+  for (const sourceAppBaseUrl of SOURCE_APP_BASE_URLS) {
+    rewrittenSource = rewrittenSource.replaceAll(sourceAppBaseUrl, targetAppBaseUrl);
+  }
+
+  await writeFile(targetPath, rewrittenSource);
 }
 
 async function copyExtensionDirectory(sourceDir, targetDir, targetAppBaseUrl) {
