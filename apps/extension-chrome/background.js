@@ -109,6 +109,19 @@ async function refreshActiveTabsForUrls(urls) {
   }
 }
 
+async function clearBadgesForUrls(urls) {
+  const urlSet = new Set(urls);
+  const tabs = await chrome.tabs.query({});
+
+  for (const tab of tabs) {
+    if (!tab.id || !tab.url || !urlSet.has(tab.url)) {
+      continue;
+    }
+
+    await clearBadge(tab.id);
+  }
+}
+
 async function invalidateUrlCheckCache(urls) {
   const uniqueUrls = [...new Set(urls)].filter(isCheckableUrl);
   if (uniqueUrls.length === 0) {
@@ -119,6 +132,7 @@ async function invalidateUrlCheckCache(urls) {
     urlCheckCache.delete(url);
   }
 
+  await clearBadgesForUrls(uniqueUrls);
   await refreshActiveTabsForUrls(uniqueUrls);
 }
 
