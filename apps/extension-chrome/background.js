@@ -96,9 +96,9 @@ async function applyCheckResult(tabId, checkedUrl, exists) {
   }
 }
 
-async function refreshTabsForUrls(urls) {
+async function refreshActiveTabsForUrls(urls) {
   const urlSet = new Set(urls);
-  const tabs = await chrome.tabs.query({});
+  const tabs = await chrome.tabs.query({ active: true });
 
   for (const tab of tabs) {
     if (!tab.id || !tab.url || !urlSet.has(tab.url)) {
@@ -119,7 +119,7 @@ async function invalidateUrlCheckCache(urls) {
     urlCheckCache.delete(url);
   }
 
-  await refreshTabsForUrls(uniqueUrls);
+  await refreshActiveTabsForUrls(uniqueUrls);
 }
 
 async function checkTab(tab) {
