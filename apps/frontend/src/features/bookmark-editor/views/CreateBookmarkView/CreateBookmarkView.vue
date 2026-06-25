@@ -4,6 +4,7 @@ import { RouterLink, useRoute, useRouter } from "vue-router";
 
 import { listTags } from "#/features/tags/api.ts";
 import { createBookmark } from "#/features/bookmark-editor/api.ts";
+import { invalidateBookmarkUrlCheckCache } from "#/features/bookmark-editor/url-check-cache.ts";
 import BookmarkForm from "../../components/BookmarkForm/BookmarkForm.vue";
 import { useCreateBookmarkFlow } from "./create-bookmark-flow.ts";
 import CreateBookmarkCheckingPanel from "./ui/CreateBookmarkCheckingPanel.vue";
@@ -36,6 +37,7 @@ const {
   checkBookmarkUrl,
   createBookmark,
   listTags,
+  onBookmarkSaved: invalidateBookmarkUrlCheckCache,
   navigateToList: async () => {
     await router.push("/");
   },

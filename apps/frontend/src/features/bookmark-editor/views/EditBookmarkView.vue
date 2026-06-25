@@ -7,6 +7,7 @@ import { listTags } from "#/features/tags/api.ts";
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
 import type { BookmarkDTO } from "#/features/bookmarks/types.ts";
 import { deleteBookmark, getBookmark, updateBookmark } from "#/features/bookmark-editor/api.ts";
+import { invalidateBookmarkUrlCheckCache } from "#/features/bookmark-editor/url-check-cache.ts";
 import type { EditableBookmarkPayload } from "#/features/bookmark-editor/types.ts";
 import BookmarkForm from "../components/BookmarkForm/BookmarkForm.vue";
 
@@ -47,6 +48,10 @@ async function saveBookmark(payload: EditableBookmarkPayload) {
   const result = await updateBookmark(bookmarkId, payload);
 
   if (result.isOk) {
+    if (bookmark.value) {
+      invalidateBookmarkUrlCheckCache(bookmark.value, result.value);
+    }
+
     await router.push("/");
   } else {
     errors.value = result.error.formErrors;
@@ -70,6 +75,10 @@ async function confirmDeleteBookmark() {
   const result = await deleteBookmark(bookmarkId);
 
   if (result.isOk) {
+    if (bookmark.value) {
+      invalidateBookmarkUrlCheckCache(bookmark.value);
+    }
+
     await router.push("/");
   } else {
     errors.value = result.error.formErrors;
