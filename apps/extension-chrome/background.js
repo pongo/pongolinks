@@ -123,7 +123,7 @@ async function clearBadgesForUrls(urls) {
 }
 
 async function invalidateUrlCheckCache(urls) {
-  const uniqueUrls = [...new Set(urls)].filter(isCheckableUrl);
+  const uniqueUrls = [...new Set(urls)];
   if (uniqueUrls.length === 0) {
     return;
   }
