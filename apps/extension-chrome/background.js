@@ -153,26 +153,41 @@ async function checkActiveTab(windowId) {
   }
 }
 
+async function checkNavigation({ tabId, frameId, url }) {
+  if (frameId !== 0) return;
+
+  let tab;
+  try {
+    tab = await chrome.tabs.get(tabId);
+  } catch {
+    return;
+  }
+
+  if (!tab.active) return;
+
+  await clearBadge(tabId);
+  await checkTab({ ...tab, id: tabId, url });
+}
+
 chrome.tabs.onActivated.addListener((activeInfo) => {
   void checkActiveTab(activeInfo.windowId);
 });
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (!tab.active) {
-    return;
-  }
+// onCommitted runs when Chrome commits a main-frame document navigation
+// such as a link click, typed URL, reload, or redirect
+chrome.webNavigation.onCommitted.addListener((details) => {
+  void checkNavigation(details);
+});
 
-  if (changeInfo.url) {
-    void (async () => {
-      await clearBadge(tabId);
-      await checkTab({ ...tab, id: tabId, url: changeInfo.url });
-    })();
-    return;
-  }
-
-  if (changeInfo.status === "complete") {
-    void checkTab(tab);
-  }
+// onHistoryStateUpdated runs after an already-loaded document changes URL via
+// history.pushState or history.replaceState, covering SPA route changes that
+// do not trigger onCommitted.
+//
+// Hash-only URL changes are intentionally ignored;
+// add chrome.webNavigation.onReferenceFragmentUpdated if they should affect
+// bookmark detection later.
+chrome.webNavigation.onHistoryStateUpdated.addListener((details) => {
+  void checkNavigation(details);
 });
 
 chrome.action.onClicked.addListener(async (tab) => {
