@@ -98,14 +98,10 @@ async function applyCheckResult(tabId, checkedUrl, exists) {
 
 async function refreshTabsForUrls(urlSet) {
   const tabs = await chrome.tabs.query({});
-
-  for (const tab of tabs) {
-    if (!tab.id || !tab.url || !urlSet.has(tab.url)) {
-      continue;
-    }
-
-    await checkTab(tab);
-  }
+  const promises = tabs
+    .filter((tab) => tab.id && tab.url && urlSet.has(tab.url))
+    .map((tab) => checkTab(tab));
+  await Promise.all(promises);
 }
 
 async function invalidateUrlCheckCache(urls) {
