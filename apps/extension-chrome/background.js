@@ -96,28 +96,18 @@ async function applyCheckResult(tabId, checkedUrl, exists) {
   }
 }
 
+async function forEachMatchingTab(urlSet, queryOptions, action) {
+  const tabs = await chrome.tabs.query(queryOptions);
+  const promises = tabs.filter((tab) => tab.id && tab.url && urlSet.has(tab.url)).map(action);
+  await Promise.all(promises);
+}
+
 async function refreshActiveTabsForUrls(urlSet) {
-  const tabs = await chrome.tabs.query({ active: true });
-
-  for (const tab of tabs) {
-    if (!tab.id || !tab.url || !urlSet.has(tab.url)) {
-      continue;
-    }
-
-    await checkTab(tab);
-  }
+  await forEachMatchingTab(urlSet, { active: true }, (tab) => checkTab(tab));
 }
 
 async function clearBadgesForUrls(urlSet) {
-  const tabs = await chrome.tabs.query({});
-
-  for (const tab of tabs) {
-    if (!tab.id || !tab.url || !urlSet.has(tab.url)) {
-      continue;
-    }
-
-    await clearBadge(tab.id);
-  }
+  await forEachMatchingTab(urlSet, {}, (tab) => clearBadge(tab.id));
 }
 
 async function invalidateUrlCheckCache(urls) {
