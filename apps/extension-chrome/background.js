@@ -96,8 +96,7 @@ async function applyCheckResult(tabId, checkedUrl, exists) {
   }
 }
 
-async function refreshActiveTabsForUrls(urls) {
-  const urlSet = new Set(urls);
+async function refreshActiveTabsForUrls(urlSet) {
   const tabs = await chrome.tabs.query({ active: true });
 
   for (const tab of tabs) {
@@ -109,8 +108,7 @@ async function refreshActiveTabsForUrls(urls) {
   }
 }
 
-async function clearBadgesForUrls(urls) {
-  const urlSet = new Set(urls);
+async function clearBadgesForUrls(urlSet) {
   const tabs = await chrome.tabs.query({});
 
   for (const tab of tabs) {
@@ -123,17 +121,17 @@ async function clearBadgesForUrls(urls) {
 }
 
 async function invalidateUrlCheckCache(urls) {
-  const uniqueUrls = [...new Set(urls)];
-  if (uniqueUrls.length === 0) {
+  const urlSet = new Set(urls);
+  if (urlSet.size === 0) {
     return;
   }
 
-  for (const url of uniqueUrls) {
+  for (const url of urlSet) {
     urlCheckCache.delete(url);
   }
 
-  await clearBadgesForUrls(uniqueUrls);
-  await refreshActiveTabsForUrls(uniqueUrls);
+  await clearBadgesForUrls(urlSet);
+  await refreshActiveTabsForUrls(urlSet);
 }
 
 async function checkTab(tab) {
