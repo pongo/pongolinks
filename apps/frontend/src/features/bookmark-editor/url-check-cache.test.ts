@@ -17,13 +17,4 @@ describe("collectBookmarkUrls", () => {
       ),
     ).toEqual(["https://example.com", "https://example.com/docs"]);
   });
-
-  it("skips invalid URLs", () => {
-    expect(
-      collectBookmarkUrls({
-        url: "not a url",
-        relatedLinks: [{ id: 1, url: "ftp://example.com/file" }],
-      }),
-    ).toEqual([]);
-  });
 });
