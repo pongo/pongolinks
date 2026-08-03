@@ -119,6 +119,31 @@ describe("renderBookmarkDescriptionHtml", () => {
     expect(html).toBe('<blockquote class="bookmark-description-quote">Quoted</blockquote>');
   });
 
+  it("applies the compact quote class after a quote separated only by whitespace", () => {
+    const html = renderBookmarkDescriptionHtml("> First quote\n\n> Second quote", {
+      quoteClassName: "bookmark-description-quote",
+      compactQuoteClassName: "bookmark-description-quote-compact",
+    });
+
+    expect(html).toBe(
+      '<blockquote class="bookmark-description-quote">First quote\n</blockquote>\n<blockquote class="bookmark-description-quote bookmark-description-quote-compact">Second quote</blockquote>',
+    );
+  });
+
+  it("does not apply the compact quote class when text separates quotes", () => {
+    const html = renderBookmarkDescriptionHtml(
+      "> First quote\nText between quotes\n> Second quote",
+      {
+        quoteClassName: "bookmark-description-quote",
+        compactQuoteClassName: "bookmark-description-quote-compact",
+      },
+    );
+
+    expect(html).toBe(
+      '<blockquote class="bookmark-description-quote">First quote\n</blockquote>Text between quotes\n<blockquote class="bookmark-description-quote">Second quote</blockquote>',
+    );
+  });
+
   it("escapes the provided quote class attribute", () => {
     const html = renderBookmarkDescriptionHtml("> Quoted", {
       quoteClassName: 'quote" onclick="alert(1)',

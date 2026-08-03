@@ -209,7 +209,3 @@ textarea {
 .ui-suggestion-hover:hover {
   background-color: var(--ui-suggestion-hover);
 }
-
-.bookmark-description-quote + .bookmark-description-quote {
-  margin-top: -1em;
-}

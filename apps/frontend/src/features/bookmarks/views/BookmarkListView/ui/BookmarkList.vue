@@ -23,6 +23,7 @@ const router = useRouter();
 const bookmarkDescriptionHtmlOptions = {
   linkClassName: "bookmark-description-link",
   quoteClassName: "bookmark-description-quote",
+  compactQuoteClassName: "bookmark-description-quote-compact",
 };
 
 function formatUpdatedAt(updatedAt: string) {
@@ -161,5 +162,9 @@ function isDomainActive(domain: string) {
   border-left: 3px solid var(--ui-border);
   padding-left: 0.75rem;
   color: var(--ui-text-muted);
+}
+
+.bookmark-description-quote-compact {
+  margin-top: -1em;
 }
 </style>

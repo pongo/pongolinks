@@ -4,6 +4,7 @@ import type { ValidUrl } from "../brands.ts";
 export type RenderBookmarkDescriptionHtmlOptions = {
   linkClassName?: string;
   quoteClassName?: string;
+  compactQuoteClassName?: string;
 };
 
 const bookmarkDescriptionLinkParsingOptions = {
@@ -42,12 +43,23 @@ export function renderBookmarkDescriptionHtml(
   options: RenderBookmarkDescriptionHtmlOptions = {},
 ): string {
   return renderBookmarkDescriptionBlocks(description)
-    .map((block) => {
+    .map((block, index, blocks) => {
       const html = renderBookmarkDescriptionText(block.text, options);
 
       if (block.type === "quote") {
-        const classAttribute = options.quoteClassName
-          ? ` class="${escapeHtmlAttribute(options.quoteClassName)}"`
+        const separatorBlock = blocks[index - 1];
+        const precedingBlock = blocks[index - 2];
+        const isCompactQuote =
+          options.compactQuoteClassName !== undefined &&
+          separatorBlock?.type === "text" &&
+          separatorBlock.text.trim() === "" &&
+          precedingBlock?.type === "quote";
+        const classNames = [
+          options.quoteClassName,
+          isCompactQuote ? options.compactQuoteClassName : undefined,
+        ].filter((className): className is string => className !== undefined);
+        const classAttribute = classNames.length
+          ? ` class="${escapeHtmlAttribute(classNames.join(" "))}"`
           : "";
 
         return `<blockquote${classAttribute}>${html}</blockquote>`;
