@@ -43,30 +43,7 @@ export function renderBookmarkDescriptionHtml(
   options: RenderBookmarkDescriptionHtmlOptions = {},
 ): string {
   return renderBookmarkDescriptionBlocks(description)
-    .map((block, index, blocks) => {
-      const html = renderBookmarkDescriptionText(block.text, options);
-
-      if (block.type === "quote") {
-        const separatorBlock = blocks[index - 1];
-        const precedingBlock = blocks[index - 2];
-        const isCompactQuote =
-          options.compactQuoteClassName !== undefined &&
-          separatorBlock?.type === "text" &&
-          separatorBlock.text.trim() === "" &&
-          precedingBlock?.type === "quote";
-        const classNames = [
-          options.quoteClassName,
-          isCompactQuote ? options.compactQuoteClassName : undefined,
-        ].filter((className): className is string => className !== undefined);
-        const classAttribute = classNames.length
-          ? ` class="${escapeHtmlAttribute(classNames.join(" "))}"`
-          : "";
-
-        return `<blockquote${classAttribute}>${html}</blockquote>`;
-      }
-
-      return html;
-    })
+    .map((block) => renderBookmarkDescriptionBlockHtml(block, options))
     .join("");
 }
 
@@ -78,7 +55,26 @@ type BookmarkDescriptionBlock =
   | {
       type: "quote";
       text: string;
+      followsQuoteAfterWhitespace: boolean;
     };
+
+function renderBookmarkDescriptionBlockHtml(
+  block: BookmarkDescriptionBlock,
+  options: RenderBookmarkDescriptionHtmlOptions,
+): string {
+  const html = renderBookmarkDescriptionText(block.text, options);
+
+  if (block.type === "text") {
+    return html;
+  }
+
+  const classAttribute = renderHtmlClassAttribute([
+    options.quoteClassName,
+    block.followsQuoteAfterWhitespace ? options.compactQuoteClassName : undefined,
+  ]);
+
+  return `<blockquote${classAttribute}>${html}</blockquote>`;
+}
 
 function renderBookmarkDescriptionText(
   text: string,
@@ -119,7 +115,13 @@ function renderBookmarkDescriptionBlocks(description: string): BookmarkDescripti
       if (previousBlock?.type === "quote") {
         previousBlock.text += quoteText;
       } else {
-        blocks.push({ type: "quote", text: quoteText });
+        const precedingBlock = blocks.at(-2);
+        const followsQuoteAfterWhitespace =
+          previousBlock?.type === "text" &&
+          previousBlock.text.trim() === "" &&
+          precedingBlock?.type === "quote";
+
+        blocks.push({ type: "quote", text: quoteText, followsQuoteAfterWhitespace });
       }
 
       continue;
@@ -136,6 +138,12 @@ function renderBookmarkDescriptionBlocks(description: string): BookmarkDescripti
   }
 
   return blocks;
+}
+
+function renderHtmlClassAttribute(classNames: Array<string | undefined>): string {
+  const value = classNames.filter((className): className is string => className !== undefined);
+
+  return value.length ? ` class="${escapeHtmlAttribute(value.join(" "))}"` : "";
 }
 
 function escapeHtmlAttribute(value: string): string {
