@@ -9,11 +9,53 @@ const GLOBAL_CACHE_MAX_AGE_MS = HOUR_MS;
 const EXISTS_CACHE_MAX_AGE_MS = 24 * HOUR_MS;
 const NOT_EXISTS_CACHE_MAX_AGE_MS = HOUR_MS;
 const URL_CHECK_CACHE_INVALIDATION_MESSAGE_TYPE = "pongolinks.invalidate-url-check-cache";
+const COLOR_SCHEME_CHANGED_MESSAGE_TYPE = "pongolinks.color-scheme-changed";
+const OFFSCREEN_DOCUMENT_PATH = "offscreen.html";
+const LIGHT_ICON_PATHS = {
+  16: "images/icon-16.png",
+  32: "images/icon-32.png",
+  48: "images/icon-48.png",
+};
+const DARK_ICON_PATHS = {
+  16: "images/icon-dark-16.png",
+  32: "images/icon-dark-32.png",
+  48: "images/icon-dark-48.png",
+};
+
+let creatingOffscreenDocument;
 
 const urlCheckCache = new QuickLRU({
   maxSize: CACHE_MAX_SIZE,
   maxAge: GLOBAL_CACHE_MAX_AGE_MS,
 });
+
+async function ensureThemeWatcher() {
+  if (await chrome.offscreen.hasDocument()) {
+    return;
+  }
+
+  if (!creatingOffscreenDocument) {
+    creatingOffscreenDocument = chrome.offscreen
+      .createDocument({
+        url: OFFSCREEN_DOCUMENT_PATH,
+        reasons: ["MATCH_MEDIA"],
+        justification: "Track the preferred color scheme for the toolbar icon",
+      })
+      .finally(() => {
+        creatingOffscreenDocument = undefined;
+      });
+  }
+
+  await creatingOffscreenDocument;
+}
+
+async function initializeThemeWatcher() {
+  try {
+    await ensureThemeWatcher();
+  } catch {
+    // The manifest's default icon remains the fallback if offscreen setup fails.
+  }
+}
 
 function isCheckableUrl(url) {
   if (!url) {
@@ -173,6 +215,14 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
   void checkActiveTab(activeInfo.windowId);
 });
 
+chrome.runtime.onInstalled.addListener(() => {
+  void initializeThemeWatcher();
+});
+
+chrome.runtime.onStartup.addListener(() => {
+  void initializeThemeWatcher();
+});
+
 // onCommitted runs when Chrome commits a main-frame document navigation
 // such as a link click, typed URL, reload, or redirect
 chrome.webNavigation.onCommitted.addListener((details) => {
@@ -209,6 +259,18 @@ chrome.runtime.onMessage.addListener((message) => {
 
   void invalidateUrlCheckCache(Array.isArray(message.urls) ? message.urls : []);
 });
+
+chrome.runtime.onMessage.addListener((message) => {
+  if (message?.type !== COLOR_SCHEME_CHANGED_MESSAGE_TYPE) {
+    return;
+  }
+
+  void chrome.action.setIcon({
+    path: message.isDark ? DARK_ICON_PATHS : LIGHT_ICON_PATHS,
+  });
+});
+
+void initializeThemeWatcher();
 
 async function openTabToTheRight(targetUrl) {
   const [currentTab] = await chrome.tabs.query({

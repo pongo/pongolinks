@@ -28,6 +28,6 @@
     "32": "images/icon-32.png",
     "48": "images/icon-48.png"
   },
-  "permissions": ["tabs", "webNavigation"],
+  "permissions": ["offscreen", "tabs", "webNavigation"],
   "host_permissions": ["http://*/*", "https://*/*"]
 }
