@@ -15,6 +15,7 @@
     "test:watch": "vitest --watch",
     "agent:test": "vitest run --no-color --reporter=agent",
     "extension:build": "bun run scripts/build-extension-chrome.js",
+    "extension:build:firefox": "bun run scripts/build-extension-firefox.js",
     "format": "oxfmt package.json turbo.json tsconfig.base.json scripts apps packages",
     "db:migrate": "bun run --filter @pongolinks/db db:migrate"
   },
@@ -24,7 +25,8 @@
     "oxfmt": "^0.48.0",
     "turbo": "^2.9.14",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.5",
+    "web-ext": "10.2.0"
   },
   "packageManager": "bun@1.3.13"
 }
