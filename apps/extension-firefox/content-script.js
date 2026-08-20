@@ -1,4 +1,5 @@
 const URL_CHECK_CACHE_INVALIDATION_MESSAGE_TYPE = "pongolinks.invalidate-url-check-cache";
+const URL_CHECK_CACHE_INVALIDATION_ACK_TYPE = "url-check-cache-invalidation-ack";
 
 function isInvalidateCacheMessage(message) {
   return (
@@ -10,7 +11,7 @@ function isInvalidateCacheMessage(message) {
   );
 }
 
-window.addEventListener("message", (event) => {
+window.addEventListener("message", async (event) => {
   if (event.source !== window || event.origin !== window.location.origin) {
     return;
   }
@@ -19,5 +20,9 @@ window.addEventListener("message", (event) => {
     return;
   }
 
-  void browser.runtime.sendMessage(event.data);
+  await browser.runtime.sendMessage(event.data);
+  window.postMessage(
+    { type: URL_CHECK_CACHE_INVALIDATION_ACK_TYPE, requestId: event.data.requestId },
+    window.location.origin,
+  );
 });

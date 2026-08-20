@@ -269,7 +269,9 @@ export function useCreateBookmarkFlow(options: CreateBookmarkFlowOptions) {
     const result = await options.createBookmark(payload);
 
     if (result.isOk) {
-      options.onBookmarkSaved?.(result.value);
+      if (options.onBookmarkSaved) {
+        await options.onBookmarkSaved(result.value);
+      }
 
       if (state.value.kind !== "create-form") {
         await options.navigateToList();
