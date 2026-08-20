@@ -1,6 +1,6 @@
 import QuickLRU from "./lib/quick-lru.js";
 
-const APP_BASE_URL = "http://localhost:3000/pl/";
+const APP_BASE_URL = "http://localhost:5173/pl/";
 const BADGE_COLOR = "#4CAF50";
 
 const CACHE_MAX_SIZE = 1000;

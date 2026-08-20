@@ -2,7 +2,11 @@ import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises"
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const SOURCE_APP_BASE_URLS = ["http://localhost:3000/pl/", "http://localhost:5173/pl/"];
+const SOURCE_APP_BASE_URLS = [
+  "http://localhost/pl/",
+  "http://localhost:3000/pl/",
+  "http://localhost:5173/pl/",
+];
 const IGNORED_EXTENSION_PATHS = new Set(["dist", "README.md"]);
 const APP_BASE_URL_REPLACEMENT_PATHS = new Set(["background.js", "manifest.json"]);
 
