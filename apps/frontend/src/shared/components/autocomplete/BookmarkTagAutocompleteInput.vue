@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { X } from "@lucide/vue";
 
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
@@ -48,8 +48,10 @@ const emit = defineEmits<{
 }>();
 
 const input = ref<HTMLInputElement>();
+const listbox = ref<HTMLUListElement>();
 const textValue = ref(props.modelValue);
 const cursorPosition = ref(0);
+const suggestionPlacement = ref<"above" | "below">("below");
 const shouldShowClearButton = computed(
   () => props.showClearButton && textValue.value.trim().length > 0,
 );
@@ -97,7 +99,37 @@ function updateTagSuggestions(event: Event) {
   updateCursor(event);
   resetActiveTagSuggestion();
   openTagSuggestions();
+  void updateSuggestionPlacement();
 }
+
+async function updateSuggestionPlacement() {
+  if (!tagSuggestionsOpen.value) {
+    return;
+  }
+
+  await nextTick();
+
+  const inputRect = input.value?.getBoundingClientRect();
+  const listboxRect = listbox.value?.getBoundingClientRect();
+  if (!inputRect || !listboxRect) {
+    return;
+  }
+
+  const spaceAbove = inputRect.top;
+  const spaceBelow = window.innerHeight - inputRect.bottom;
+  suggestionPlacement.value =
+    listboxRect.height > spaceBelow && spaceAbove > spaceBelow ? "above" : "below";
+}
+
+onMounted(() => {
+  window.addEventListener("resize", updateSuggestionPlacement);
+  window.addEventListener("scroll", updateSuggestionPlacement, true);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("resize", updateSuggestionPlacement);
+  window.removeEventListener("scroll", updateSuggestionPlacement, true);
+});
 
 async function selectTagSuggestion(index: number) {
   const tag = visibleTagSuggestions.value[index];
@@ -165,6 +197,7 @@ function handleKeydown(event: KeyboardEvent) {
   function preventAndMove(offset: number) {
     event.preventDefault();
     moveActiveTagSuggestion(offset);
+    void updateSuggestionPlacement();
   }
 
   function preventAndSelect() {
@@ -219,8 +252,11 @@ defineExpose({
     </button>
     <ul
       v-if="tagSuggestionsOpen"
+      ref="listbox"
       :id="tagListboxId"
-      class="ui-border-subtle ui-surface absolute z-10 mt-1 max-h-70 w-full overflow-y-auto border py-1 text-sm shadow-sm"
+      class="ui-border-subtle ui-surface absolute z-10 max-h-70 w-full overflow-y-auto border py-1 text-sm shadow-sm"
+      :class="suggestionPlacement === 'above' ? 'bottom-full mb-1' : 'top-full mt-1'"
+      :data-placement="suggestionPlacement"
       role="listbox"
     >
       <li

@@ -1,5 +1,5 @@
 import { mount } from "@vue/test-utils";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { TagSummaryDTO } from "#/features/tags/types.ts";
 import {
@@ -275,6 +275,56 @@ describe("BookmarkTagAutocompleteInput clear button", () => {
 
     await clearButton.trigger("click");
     expect(wrapper.emitted("clear")).toHaveLength(1);
+    wrapper.unmount();
+  });
+});
+
+describe("BookmarkTagAutocompleteInput suggestion placement", () => {
+  const autocomplete: TagAutocomplete = {
+    replaceCurrentTagToken,
+    suggestTags,
+  };
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("opens above when the list does not fit below and there is more space above", async () => {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function (this: HTMLElement) {
+        const isListbox = this.getAttribute("role") === "listbox";
+        return DOMRect.fromRect(
+          isListbox
+            ? { x: 0, y: 0, width: 300, height: 200 }
+            : { x: 0, y: 700, width: 300, height: 40 },
+        );
+      });
+    vi.stubGlobal("innerHeight", 800);
+    const wrapper = mountInput({ autocomplete, modelValue: "ar" });
+
+    await wrapper.get("input").trigger("input");
+
+    expect(wrapper.get('[role="listbox"]').attributes("data-placement")).toBe("above");
+    wrapper.unmount();
+  });
+
+  it("opens below when the list fits below the input", async () => {
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function (this: HTMLElement) {
+        const isListbox = this.getAttribute("role") === "listbox";
+        return DOMRect.fromRect(
+          isListbox
+            ? { x: 0, y: 0, width: 300, height: 200 }
+            : { x: 0, y: 100, width: 300, height: 40 },
+        );
+      });
+    vi.stubGlobal("innerHeight", 800);
+    const wrapper = mountInput({ autocomplete, modelValue: "ar" });
+
+    await wrapper.get("input").trigger("input");
+
+    expect(wrapper.get('[role="listbox"]').attributes("data-placement")).toBe("below");
     wrapper.unmount();
   });
 });
