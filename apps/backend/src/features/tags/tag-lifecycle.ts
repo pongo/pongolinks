@@ -8,7 +8,6 @@ import type { AppDb } from "#/db/app-db.ts";
 import { ApiError } from "#/http/result-response.ts";
 import type { TagSummaryDTO, UntaggedBookmarkDTO } from "./contracts";
 import type { TagName } from "./tag-name.ts";
-import { BookmarkTagAttachments, type TagAttachmentDiff } from "./bookmark-tag-attachments.ts";
 
 type TagRow = typeof tags.$inferSelect;
 type DeletedTagDTO = {
@@ -43,10 +42,8 @@ function tagUnexpectedError(error: unknown) {
 
 export class TagLifecycle {
   private readonly listQuery;
-  private readonly bookmarkTagAttachments: BookmarkTagAttachments;
 
   constructor(private readonly db: AppDb) {
-    this.bookmarkTagAttachments = new BookmarkTagAttachments();
     this.listQuery = this.db
       .select({
         id: tags.id,
@@ -177,21 +174,6 @@ export class TagLifecycle {
     } catch (error) {
       return Err(tagUnexpectedError(error));
     }
-  }
-
-  async replaceBookmarkTags(
-    db: TagLifecycleDb,
-    bookmarkId: number,
-    tagNames: TagName[],
-  ): Promise<TagAttachmentDiff> {
-    return this.bookmarkTagAttachments.replaceBookmarkTags(db, bookmarkId, tagNames);
-  }
-
-  async removeBookmarkTagAttachments(
-    db: TagLifecycleDb,
-    bookmarkId: number,
-  ): Promise<TagAttachmentDiff> {
-    return this.bookmarkTagAttachments.removeBookmarkTagAttachments(db, bookmarkId);
   }
 
   private async mergeIntoReplacement(

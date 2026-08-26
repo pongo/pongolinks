@@ -45,16 +45,14 @@ function isTagNameConflictError(error: unknown) {
 }
 
 export class BookmarkTagAttachments {
-  async replaceBookmarkTags(
-    db: BookmarkTagAttachmentDb,
-    bookmarkId: number,
-    tagNames: TagName[],
-  ): Promise<TagAttachmentDiff> {
-    const existingRows = await this.findBookmarkTagsWithTags(db, bookmarkId);
+  constructor(private readonly db: BookmarkTagAttachmentDb) {}
+
+  async replaceBookmarkTags(bookmarkId: number, tagNames: TagName[]): Promise<TagAttachmentDiff> {
+    const existingRows = await this.findBookmarkTagsWithTags(bookmarkId);
     const submittedTags: TagRow[] = [];
 
     for (const tagName of tagNames) {
-      submittedTags.push(await this.findOrCreateTag(db, tagName));
+      submittedTags.push(await this.findOrCreateTag(tagName));
     }
 
     const submittedNameLowerSet = new Set(submittedTags.map((tag) => tag.nameLower));
@@ -66,7 +64,7 @@ export class BookmarkTagAttachments {
     const retainedCount = existingRows.length - rowsToDetach.length;
 
     for (const tag of tagsToAttach) {
-      await db
+      await this.db
         .insert(bookmarkTags)
         .values({
           bookmarkId,
@@ -76,13 +74,13 @@ export class BookmarkTagAttachments {
     }
 
     for (const row of rowsToDetach) {
-      await db
+      await this.db
         .delete(bookmarkTags)
         .where(and(eq(bookmarkTags.bookmarkId, bookmarkId), eq(bookmarkTags.tagId, row.tagId)))
         .run();
     }
 
-    const deletedOrphanTags = await this.deleteOrphanTags(db, rowsToDetach);
+    const deletedOrphanTags = await this.deleteOrphanTags(rowsToDetach);
 
     return {
       submittedCount: submittedTags.length,
@@ -95,18 +93,12 @@ export class BookmarkTagAttachments {
     };
   }
 
-  async removeBookmarkTagAttachments(
-    db: BookmarkTagAttachmentDb,
-    bookmarkId: number,
-  ): Promise<TagAttachmentDiff> {
-    return this.replaceBookmarkTags(db, bookmarkId, []);
+  async removeBookmarkTagAttachments(bookmarkId: number): Promise<TagAttachmentDiff> {
+    return this.replaceBookmarkTags(bookmarkId, []);
   }
 
-  private async findBookmarkTagsWithTags(
-    db: BookmarkTagAttachmentDb,
-    bookmarkId: number,
-  ): Promise<BookmarkTagWithTagRow[]> {
-    return db.query.bookmarkTags.findMany({
+  private async findBookmarkTagsWithTags(bookmarkId: number): Promise<BookmarkTagWithTagRow[]> {
+    return this.db.query.bookmarkTags.findMany({
       where: eq(bookmarkTags.bookmarkId, bookmarkId),
       with: {
         tag: true,
@@ -114,14 +106,11 @@ export class BookmarkTagAttachments {
     });
   }
 
-  private async deleteOrphanTags(
-    db: BookmarkTagAttachmentDb,
-    detachedRows: BookmarkTagWithTagRow[],
-  ): Promise<TagRow[]> {
+  private async deleteOrphanTags(detachedRows: BookmarkTagWithTagRow[]): Promise<TagRow[]> {
     const deletedTags: TagRow[] = [];
 
     for (const row of detachedRows) {
-      const remainingLink = await db.query.bookmarkTags.findFirst({
+      const remainingLink = await this.db.query.bookmarkTags.findFirst({
         where: eq(bookmarkTags.tagId, row.tagId),
       });
 
@@ -129,15 +118,15 @@ export class BookmarkTagAttachments {
         continue;
       }
 
-      await db.delete(tags).where(eq(tags.id, row.tagId)).run();
+      await this.db.delete(tags).where(eq(tags.id, row.tagId)).run();
       deletedTags.push(row.tag);
     }
 
     return deletedTags;
   }
 
-  private async findOrCreateTag(db: BookmarkTagAttachmentDb, tagName: TagName): Promise<TagRow> {
-    const existing = await db.query.tags.findFirst({
+  private async findOrCreateTag(tagName: TagName): Promise<TagRow> {
+    const existing = await this.db.query.tags.findFirst({
       where: eq(tags.nameLower, tagName.nameLower()),
     });
 
@@ -146,7 +135,7 @@ export class BookmarkTagAttachments {
     }
 
     try {
-      return await db
+      return await this.db
         .insert(tags)
         .values({
           name: tagName.name(),
@@ -159,7 +148,7 @@ export class BookmarkTagAttachments {
         throw error;
       }
 
-      const tag = await db.query.tags.findFirst({
+      const tag = await this.db.query.tags.findFirst({
         where: eq(tags.nameLower, tagName.nameLower()),
       });
 

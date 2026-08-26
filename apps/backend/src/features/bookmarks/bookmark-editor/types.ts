@@ -1,7 +1,6 @@
 import type { ValidUrl } from "@pongolinks/shared/brands";
 import type { BookmarkDTO } from "#/features/bookmarks/domain/contracts.ts";
-import type { TagName } from "#/features/tags/tag-name.ts";
-import type { TagAttachmentDiff } from "#/features/tags/bookmark-tag-attachments.ts";
+import type { TagAttachmentDiff, TagName } from "#/features/tags/api.ts";
 
 export type BookmarkEditorLogger = {
   set: (context: Record<string, unknown>) => void;

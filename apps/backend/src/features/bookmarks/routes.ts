@@ -12,7 +12,7 @@ import { BookmarkEditor } from "./bookmark-editor/bookmark-editor.ts";
 import { DrizzleBookmarkEditorPersistence } from "./bookmark-editor/bookmark-editor-persistence.ts";
 import { BookmarkReadRepository } from "./repository/bookmark-read-repository.ts";
 import { parseBookmarkListFiltersQuery } from "./filter/bookmark-list-filters-query.ts";
-import { parseTagNames } from "#/features/tags/tag-name.ts";
+import { parseTagNames } from "#/features/tags/api.ts";
 
 export type BookmarkRoutesOptions = {
   db: AppDb;

@@ -4,8 +4,7 @@ import type { ValidUrl } from "@pongolinks/shared/brands";
 import { bookmarks } from "@pongolinks/db/schema";
 
 import type { AppDb } from "#/db/app-db.ts";
-import { BookmarkTagAttachments } from "#/features/tags/bookmark-tag-attachments.ts";
-import type { TagName } from "#/features/tags/tag-name.ts";
+import { BookmarkTagAttachments, type TagName } from "#/features/tags/api.ts";
 import type {
   BookmarkEditorPersistence,
   BookmarkEditorPersistenceTransaction,
@@ -42,9 +41,11 @@ function isUniqueUrlError(error: unknown) {
 }
 
 class DrizzleBookmarkEditorTransaction implements BookmarkEditorPersistenceTransaction {
-  private readonly tagAttachments = new BookmarkTagAttachments();
+  private readonly tagAttachments: BookmarkTagAttachments;
 
-  constructor(private readonly db: BookmarkEditorDb) {}
+  constructor(private readonly db: BookmarkEditorDb) {
+    this.tagAttachments = new BookmarkTagAttachments(db);
+  }
 
   async createBookmark(input: EditableBookmarkFields): Promise<number> {
     const bookmark = await this.db
@@ -86,11 +87,11 @@ class DrizzleBookmarkEditorTransaction implements BookmarkEditorPersistenceTrans
   }
 
   async replaceBookmarkTags(bookmarkId: number, tagNames: TagName[]) {
-    return this.tagAttachments.replaceBookmarkTags(this.db, bookmarkId, tagNames);
+    return this.tagAttachments.replaceBookmarkTags(bookmarkId, tagNames);
   }
 
   async removeBookmarkTagAttachments(bookmarkId: number) {
-    return this.tagAttachments.removeBookmarkTagAttachments(this.db, bookmarkId);
+    return this.tagAttachments.removeBookmarkTagAttachments(bookmarkId);
   }
 
   async insertRelatedLinks(bookmarkId: number, urls: ValidUrl[]) {

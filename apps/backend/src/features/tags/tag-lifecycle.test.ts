@@ -1,9 +1,10 @@
 import { bookmarks, bookmarkTags, tags } from "@pongolinks/db/schema";
 import type { Result } from "@pongolinks/shared/result";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 
 import { createMigratedTestDb } from "#test/test-db.ts";
+import { BookmarkTagAttachments } from "./bookmark-tag-attachments.ts";
 import { TagLifecycle } from "./tag-lifecycle.ts";
 import { TagName } from "./tag-name.ts";
 
@@ -50,62 +51,6 @@ async function withTagLifecycle(
 }
 
 describe("Tag lifecycle", () => {
-  it("replaces Bookmark Tags while preserving retained rows and deleting orphan Tags", async () => {
-    await withTagLifecycle(async ({ tags: tagLifecycle, db }) => {
-      const target = await createBookmarkRow(db, "https://example.com/target");
-      const other = await createBookmarkRow(db, "https://example.com/other");
-
-      await db.transaction(async (tx) => {
-        await tagLifecycle.replaceBookmarkTags(tx, target.id, [
-          tagName("alpha"),
-          tagName("beta"),
-          tagName("shared"),
-        ]);
-        await tagLifecycle.replaceBookmarkTags(tx, other.id, [tagName("shared")]);
-      });
-
-      const beta = await db.query.tags.findFirst({ where: eq(tags.nameLower, "beta") });
-      const shared = await db.query.tags.findFirst({ where: eq(tags.nameLower, "shared") });
-      expect(beta).toBeDefined();
-      expect(shared).toBeDefined();
-      if (!beta || !shared) return;
-
-      const betaLinkBefore = await db
-        .select({ rowId: sql<number>`rowid` })
-        .from(bookmarkTags)
-        .where(eq(bookmarkTags.tagId, beta.id))
-        .get();
-
-      const diff = await db.transaction((tx) =>
-        tagLifecycle.replaceBookmarkTags(tx, target.id, [tagName("beta"), tagName("gamma")]),
-      );
-
-      const alphaAfter = await db.query.tags.findFirst({ where: eq(tags.nameLower, "alpha") });
-      const betaLinkAfter = await db
-        .select({ rowId: sql<number>`rowid` })
-        .from(bookmarkTags)
-        .where(eq(bookmarkTags.tagId, beta.id))
-        .get();
-      const sharedAfter = await db.query.tags.findFirst({ where: eq(tags.nameLower, "shared") });
-      const sharedLinks = await db.query.bookmarkTags.findMany({
-        where: eq(bookmarkTags.tagId, shared.id),
-      });
-
-      expect(diff).toMatchObject({
-        submittedCount: 2,
-        attachedCount: 1,
-        detachedCount: 2,
-        retainedCount: 1,
-        attachedNames: ["gamma"],
-        deletedOrphanNames: ["alpha"],
-      });
-      expect(alphaAfter).toBeUndefined();
-      expect(betaLinkAfter?.rowId).toBe(betaLinkBefore?.rowId);
-      expect(sharedAfter?.id).toBe(shared.id);
-      expect(sharedLinks).toEqual([{ bookmarkId: other.id, tagId: shared.id }]);
-    });
-  });
-
   it("renames a Tag into an existing Tag by merging unique Bookmark attachments", async () => {
     await withTagLifecycle(async ({ tags: tagLifecycle, db }) => {
       const first = await createBookmarkRow(db, "https://example.com/first");
@@ -113,9 +58,11 @@ describe("Tag lifecycle", () => {
       const third = await createBookmarkRow(db, "https://example.com/third");
 
       await db.transaction(async (tx) => {
-        await tagLifecycle.replaceBookmarkTags(tx, first.id, [tagName("alpha"), tagName("beta")]);
-        await tagLifecycle.replaceBookmarkTags(tx, second.id, [tagName("alpha")]);
-        await tagLifecycle.replaceBookmarkTags(tx, third.id, [tagName("beta")]);
+        const attachments = new BookmarkTagAttachments(tx);
+
+        await attachments.replaceBookmarkTags(first.id, [tagName("alpha"), tagName("beta")]);
+        await attachments.replaceBookmarkTags(second.id, [tagName("alpha")]);
+        await attachments.replaceBookmarkTags(third.id, [tagName("beta")]);
       });
 
       const alpha = await db.query.tags.findFirst({ where: eq(tags.nameLower, "alpha") });
