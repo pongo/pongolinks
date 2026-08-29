@@ -2,6 +2,7 @@ import type { TagSummaryDTO } from "#/features/tags/types.ts";
 import {
   currentToken,
   replaceCurrentToken,
+  type TokenRange,
 } from "#/shared/components/autocomplete/tag-token-autocomplete.ts";
 
 export function suggestTags(
@@ -11,12 +12,27 @@ export function suggestTags(
   limit = 7,
 ): TagSummaryDTO[] {
   const token = currentToken(value, cursor);
-  const queryLower = token.value.toLocaleLowerCase("und");
-
-  if (!queryLower) {
+  const tokenLower = token.value.toLocaleLowerCase("und");
+  if (!tokenLower) {
     return [];
   }
 
+  const matchingTags = filterMatchingTags(value, token, tags, tokenLower);
+
+  const exactMatch = matchingTags.find((tag) => tag.nameLower === tokenLower);
+  if (exactMatch) {
+    return [exactMatch, ...matchingTags.filter((tag) => tag !== exactMatch)].slice(0, limit);
+  }
+
+  return matchingTags.slice(0, limit);
+}
+
+function filterMatchingTags(
+  value: string,
+  token: TokenRange,
+  tags: TagSummaryDTO[],
+  tokenLower: string,
+) {
   const otherTokens = value
     .slice(0, token.start)
     .concat(" ", value.slice(token.end))
@@ -25,16 +41,9 @@ export function suggestTags(
     .map((tag) => tag.toLocaleLowerCase("und"));
   const otherTokenSet = new Set(otherTokens);
 
-  const matchingTags = tags.filter(
-    (tag) => tag.nameLower.includes(queryLower) && !otherTokenSet.has(tag.nameLower),
+  return tags.filter(
+    (tag) => tag.nameLower.includes(tokenLower) && !otherTokenSet.has(tag.nameLower),
   );
-  const exactMatch = matchingTags.find((tag) => tag.nameLower === queryLower);
-
-  if (!exactMatch) {
-    return matchingTags.slice(0, limit);
-  }
-
-  return [exactMatch, ...matchingTags.filter((tag) => tag !== exactMatch)].slice(0, limit);
 }
 
 export function replaceCurrentTagToken(
