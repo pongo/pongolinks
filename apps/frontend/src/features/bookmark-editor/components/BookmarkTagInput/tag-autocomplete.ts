@@ -25,9 +25,16 @@ export function suggestTags(
     .map((tag) => tag.toLocaleLowerCase("und"));
   const otherTokenSet = new Set(otherTokens);
 
-  return tags
-    .filter((tag) => tag.nameLower.includes(queryLower) && !otherTokenSet.has(tag.nameLower))
-    .slice(0, limit);
+  const matchingTags = tags.filter(
+    (tag) => tag.nameLower.includes(queryLower) && !otherTokenSet.has(tag.nameLower),
+  );
+  const exactMatch = matchingTags.find((tag) => tag.nameLower === queryLower);
+
+  if (!exactMatch) {
+    return matchingTags.slice(0, limit);
+  }
+
+  return [exactMatch, ...matchingTags.filter((tag) => tag !== exactMatch)].slice(0, limit);
 }
 
 export function replaceCurrentTagToken(

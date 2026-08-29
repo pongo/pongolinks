@@ -14,10 +14,10 @@ const tags = [
 ];
 
 describe("tag autocomplete", () => {
-  it("finds suggestions by substring match while preserving backend order", () => {
+  it("prioritizes an exact match and preserves backend order for other suggestions", () => {
     expect(suggestTags(tags, "art", 3)).toEqual([
-      tags[0],
       tags[1],
+      tags[0],
       tags[3],
       tags[4],
       tags[5],
@@ -28,6 +28,24 @@ describe("tag autocomplete", () => {
 
   it("includes exact matches for the current token", () => {
     expect(suggestTags(tags, "article", 7)).toEqual([tags[0]]);
+  });
+
+  it("prioritizes an exact match over more popular partial matches", () => {
+    const matchingTags = [
+      { id: 1, name: "Cadence", nameLower: "cadence", usageCount: 9 },
+      { id: 2, name: "Facade", nameLower: "facade", usageCount: 8 },
+      { id: 3, name: "Decade", nameLower: "decade", usageCount: 7 },
+      { id: 4, name: "Arcade", nameLower: "arcade", usageCount: 6 },
+      { id: 5, name: "Upgrade", nameLower: "upgrade", usageCount: 5 },
+      { id: 6, name: "Trade", nameLower: "trade", usageCount: 4 },
+      { id: 7, name: "Lemonade", nameLower: "lemonade", usageCount: 3 },
+      { id: 8, name: "Ade", nameLower: "ade", usageCount: 1 },
+    ];
+
+    expect(suggestTags(matchingTags, "ade", 3)).toEqual([
+      matchingTags[7],
+      ...matchingTags.slice(0, 6),
+    ]);
   });
 
   it("limits suggestions", () => {
