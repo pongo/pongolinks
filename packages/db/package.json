@@ -17,7 +17,7 @@
     "agent:test": "vitest run --no-color --reporter=agent",
     "format": "oxfmt .",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "bun ./node_modules/drizzle-kit/bin.cjs migrate"
   },
   "dependencies": {
     "@libsql/client": "^0.17.3",
