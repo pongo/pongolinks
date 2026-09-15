@@ -33,6 +33,7 @@ The project uses vertical slices. Feature behavior lives near the feature that o
 Read these documents before changing architecture or domain language:
 
 - [`docs/architecture.md`](docs/architecture.md)
+- [`docs/auth.md`](docs/auth.md) for authentication behavior and operations
 - [`CONTEXT.md`](CONTEXT.md) for ubiquitous language
 
 Operational errors use the shared Rust-style `Result<T, E>` pattern. Exceptions are reserved for programmer errors, failed invariants, and test assertions.
@@ -72,6 +73,8 @@ DATABASE_PATH=.data/pongolinks.sqlite
 ```
 
 `DATABASE_PATH` is optional if you want the default local SQLite path.
+
+See [`docs/auth.md`](docs/auth.md) for the login flow, session behavior, browser extension usage, and session revocation notes.
 
 Run database migrations:
 

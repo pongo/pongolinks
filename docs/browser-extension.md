@@ -1,6 +1,6 @@
 # Browser extension
 
-The Chrome and Firefox extensions recognize saved bookmarks in open browser tabs and open the bookmark creation flow for the current page. They use the configured pongolinks origin, its HTTP API, and the browser profile's existing pongolinks session cookie. They do not own backend or database behavior.
+The Chrome and Firefox extensions recognize saved bookmarks in open browser tabs and open the bookmark creation flow for the current page. They use the configured pongolinks origin, its HTTP API, and the browser profile's existing pongolinks session cookie. They do not own backend or database behavior. See [Authentication docs](auth.md) for the login flow and session lifecycle.
 
 ## URL-check cache invalidation
 

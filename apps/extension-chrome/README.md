@@ -18,6 +18,6 @@ The build command creates `apps/extension-chrome/dist`, clears any previous cont
 
 Load `apps/extension-chrome/dist` as an unpacked extension in Chrome.
 
-The extension uses the browser profile's existing pongolinks session cookie for the configured origin. If the API request is unauthorized or fails, the toolbar badge is cleared and the failure is not cached.
+The extension uses the browser profile's existing pongolinks session cookie for the configured origin. If the API request is unauthorized or fails, the toolbar badge is cleared and the failure is not cached. See [Authentication docs](../../docs/auth.md) for the login flow and session lifecycle.
 
 See [Browser extension integration](../../docs/browser-extension.md) for the shared frontend-to-extension cache-invalidation contract.

@@ -46,6 +46,6 @@ The extension remains unlisted and has no public catalog page.
 
 To update the extension, increment `version` in `manifest.json`, build and sign it again, then install the new signed `.xpi` over the existing version. Keep `browser_specific_settings.gecko.id` unchanged so Firefox recognizes it as the same extension.
 
-The extension uses the browser profile's existing pongolinks session cookie for the configured origin. It sends visited page URLs to pongolinks to detect saved bookmarks and sends the current page title when opening bookmark creation.
+The extension uses the browser profile's existing pongolinks session cookie for the configured origin. It sends visited page URLs to pongolinks to detect saved bookmarks and sends the current page title when opening bookmark creation. See [Authentication docs](../../docs/auth.md) for the login flow and session lifecycle.
 
 See [Browser extension integration](../../docs/browser-extension.md) for the shared frontend-to-extension cache-invalidation contract.

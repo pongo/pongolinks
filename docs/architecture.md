@@ -82,6 +82,8 @@ The browser extensions provide Chrome and Firefox integrations for saving and re
 
 After successful bookmark mutations, the frontend sends a same-origin page message so installed browser extensions can invalidate affected URL-check cache entries. See [Browser extension docs](browser-extension.md) for the message flow and ownership boundaries.
 
+Authentication behavior, session lifecycle, and extension login requirements are documented in [Authentication docs](auth.md).
+
 Build outputs are generated under each extension app and must not be treated as source. See the extension's local `README.md` for browser-specific build, validation, and distribution instructions.
 
 ### `packages/db`
@@ -160,5 +162,6 @@ When adding behavior:
 
 - `CONTEXT.md`: domain glossary and relationships.
 - `docs/adr/`: architecture decisions and trade-offs.
+- `docs/auth.md`: authentication behavior and operational notes.
 - `docs/agents/`: agent-specific workflow documentation.
 - Local `README.md` files: detailed orientation for a specific app, package, or feature.
