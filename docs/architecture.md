@@ -13,10 +13,11 @@ The backend is the production entrypoint. It owns the HTTP API, the Elysia Eden 
 ## Monorepo Layout
 
 ```text
-/
 ├── apps/
 │   ├── backend/        Bun/Elysia server and production entrypoint
-│   └── frontend/       Vue SPA and browser UI
+│   ├── frontend/       Vue SPA and browser UI
+│   ├── extension-chrome/  Chrome browser extension
+│   └── extension-firefox/ Firefox browser extension
 ├── packages/
 │   ├── db/             Drizzle schema, relations, database client, migrations
 │   └── shared/         Stable cross-workspace TypeScript contracts and helpers
@@ -75,6 +76,14 @@ Important entry points:
 
 User-facing text must be in English.
 
+### `apps/extension-chrome` and `apps/extension-firefox`
+
+The browser extensions provide Chrome and Firefox integrations for saving and recognizing bookmarks while browsing. They use the configured pongolinks origin, its HTTP API, and the browser profile's existing pongolinks session cookie; they do not own backend or database behavior.
+
+After successful bookmark mutations, the frontend sends a same-origin page message so installed browser extensions can invalidate affected URL-check cache entries. See [ADR 0006](adr/0006-extension-url-check-cache-invalidation-through-page-messages.md) for the message flow and ownership boundaries.
+
+Build outputs are generated under each extension app and must not be treated as source. See the extension's local `README.md` for browser-specific build, validation, and distribution instructions.
+
 ### `packages/db`
 
 `@pongolinks/db` owns durable database concerns:
@@ -122,13 +131,6 @@ Do not put implementation details in `CONTEXT.md`. If a term needs clarification
 ## Architecture Decisions
 
 Use `docs/adr/` for decisions that are hard to reverse, surprising without context, and based on a real trade-off.
-
-Current decisions include:
-
-- ADR-0001: monorepo with a single backend entrypoint.
-- ADR-0002: Value Objects for validated domain primitives.
-- ADR-0003: evlog wide events for backend observability.
-- ADR-0004: local libSQL driver for SQLite.
 
 Read the relevant ADRs before changing the affected area.
 
