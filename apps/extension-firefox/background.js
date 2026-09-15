@@ -8,6 +8,7 @@ const HOUR_MS = 60 * 60 * 1000;
 const GLOBAL_CACHE_MAX_AGE_MS = HOUR_MS;
 const EXISTS_CACHE_MAX_AGE_MS = 24 * HOUR_MS;
 const NOT_EXISTS_CACHE_MAX_AGE_MS = HOUR_MS;
+// Keep this invalidation contract aligned with docs/browser-extension.md and the frontend.
 const URL_CHECK_CACHE_INVALIDATION_MESSAGE_TYPE = "pongolinks.invalidate-url-check-cache";
 
 const urlCheckCache = new QuickLRU({

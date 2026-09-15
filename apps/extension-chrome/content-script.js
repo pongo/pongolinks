@@ -1,3 +1,4 @@
+// Relay the page-message contract documented in docs/browser-extension.md to the background process.
 const URL_CHECK_CACHE_INVALIDATION_MESSAGE_TYPE = "pongolinks.invalidate-url-check-cache";
 const URL_CHECK_CACHE_INVALIDATION_ACK_TYPE = "url-check-cache-invalidation-ack";
 

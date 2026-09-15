@@ -1,3 +1,0 @@
-# Extension URL check cache invalidation through page messages
-
-pongolinks will keep the browser extensions' `urlCheckCache` instances in sync with bookmark mutations by sending an explicit same-origin page message from the frontend after a bookmark is created, updated, or deleted. Each extension's content script on the app origin relays that message to its background process, which deletes the affected cache entries and rechecks any open tabs that still match those URLs. The content script acknowledges the page message so the frontend can briefly wait for delivery without depending on an extension being installed.

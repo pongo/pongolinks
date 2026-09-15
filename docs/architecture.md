@@ -80,7 +80,7 @@ User-facing text must be in English.
 
 The browser extensions provide Chrome and Firefox integrations for saving and recognizing bookmarks while browsing. They use the configured pongolinks origin, its HTTP API, and the browser profile's existing pongolinks session cookie; they do not own backend or database behavior.
 
-After successful bookmark mutations, the frontend sends a same-origin page message so installed browser extensions can invalidate affected URL-check cache entries. See [ADR 0006](adr/0006-extension-url-check-cache-invalidation-through-page-messages.md) for the message flow and ownership boundaries.
+After successful bookmark mutations, the frontend sends a same-origin page message so installed browser extensions can invalidate affected URL-check cache entries. See [Browser extension docs](browser-extension.md) for the message flow and ownership boundaries.
 
 Build outputs are generated under each extension app and must not be treated as source. See the extension's local `README.md` for browser-specific build, validation, and distribution instructions.
 

@@ -2,6 +2,7 @@ import type { BookmarkDTO } from "#/features/bookmarks/types.ts";
 
 export type BookmarkUrlSource = Pick<BookmarkDTO, "url" | "relatedLinks">;
 
+// Keep this page-message contract aligned with docs/browser-extension.md and both extensions.
 const URL_CHECK_CACHE_INVALIDATION_MESSAGE_TYPE = "pongolinks.invalidate-url-check-cache";
 
 export function collectBookmarkUrls(...bookmarks: BookmarkUrlSource[]) {
