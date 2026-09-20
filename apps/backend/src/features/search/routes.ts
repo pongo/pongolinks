@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import type { AppDb } from "#/db/app-db.ts";
 import { parseBookmarkUrl } from "#/http/bookmark-url-api-error.ts";
+import { normalizeQueryString } from "#/http/query-string.ts";
 import { getRouteLogger, logApiError } from "#/http/route-logging.ts";
 import { resultResponse } from "#/http/result-response.ts";
 import { SearchRepository } from "./search-repository.ts";
@@ -39,11 +40,7 @@ export function createSearchRoutes({ db }: SearchRoutesOptions) {
     },
     {
       query: z.object({
-        // Elysia parses unescaped commas in query values as repeated values.
-        url: z.preprocess(
-          (value) => (Array.isArray(value) ? value.join(",") : value),
-          z.string().optional(),
-        ),
+        url: z.preprocess(normalizeQueryString, z.string().optional()),
       }),
     },
   );

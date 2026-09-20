@@ -60,6 +60,27 @@ await withApp(async ({ app }) => {
 
   try {
     const response = await app.handle(
+      request("/api/wayback/availability?url=https://example.com/a,b"),
+    );
+    const body = await response.json();
+
+    assert(response.status === 200, "comma-containing wayback URL should return 200");
+    assert(body.value.available === false, "comma-containing wayback URL should be checked");
+    assert(fetchCalls === 1, "comma-containing wayback URL should call wayback once");
+  } finally {
+    restoreFetch();
+  }
+});
+
+await withApp(async ({ app }) => {
+  let fetchCalls = 0;
+  const restoreFetch = withFetchMock(async () => {
+    fetchCalls += 1;
+    return new Response(JSON.stringify({ archived_snapshots: {} }), { status: 200 });
+  });
+
+  try {
+    const response = await app.handle(
       request("/api/wayback/availability?url=https%3A%2F%2Fexample.com%2Funavailable"),
     );
     const body = await response.json();

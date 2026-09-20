@@ -6,6 +6,7 @@ import type { AppDb } from "#/db/app-db.ts";
 import { parseBookmarkUrl } from "#/http/bookmark-url-api-error.ts";
 import { privateApiRevalidationCache } from "#/http/cache.ts";
 import { getRouteLogger, logApiError } from "#/http/route-logging.ts";
+import { normalizeQueryString } from "#/http/query-string.ts";
 import { ApiError, resultResponse, type ApiErrorCode } from "#/http/result-response.ts";
 import { BookmarkId } from "./domain/bookmark-id.ts";
 import { BookmarkEditor } from "./bookmark-editor/bookmark-editor.ts";
@@ -262,11 +263,11 @@ export function createBookmarkRoutes({ db }: BookmarkRoutesOptions) {
         },
         {
           query: z.object({
-            q: z.string().optional(),
+            q: z.preprocess(normalizeQueryString, z.string().optional()),
             tag: z.union([z.string(), z.array(z.string())]).optional(),
-            domain: z.string().optional(),
-            url: z.string().optional(),
-            page: z.string().optional(),
+            domain: z.preprocess(normalizeQueryString, z.string().optional()),
+            url: z.preprocess(normalizeQueryString, z.string().optional()),
+            page: z.preprocess(normalizeQueryString, z.string().optional()),
           }),
         },
       ),

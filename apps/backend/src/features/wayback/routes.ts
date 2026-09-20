@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { parseBookmarkUrl } from "#/http/bookmark-url-api-error.ts";
 import { getRouteLogger, logApiError } from "#/http/route-logging.ts";
+import { normalizeQueryString } from "#/http/query-string.ts";
 import { resultResponse } from "#/http/result-response.ts";
 import { WaybackAvailabilityService } from "./wayback-availability.ts";
 
@@ -38,7 +39,10 @@ export function createWaybackRoutes() {
     },
     {
       query: z.object({
-        url: z.string({ error: "bookmark.url_required" }),
+        url: z.preprocess(
+          normalizeQueryString,
+          z.string({ error: "bookmark.url_required" }),
+        ),
       }),
     },
   );

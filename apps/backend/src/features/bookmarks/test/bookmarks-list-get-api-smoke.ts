@@ -463,6 +463,9 @@ await withApp(async ({ app, db }) => {
   assert(qTagResponse.status === 200, "q tag filter should return 200");
   assert(qTagBody.value.bookmarks.length === 0, "q should not fuzzy-match unrelated token");
 
+  const qCommaResponse = await app.handle(request("/api/bookmarks?q=sqlite,guide"));
+  assert(qCommaResponse.status === 200, "q filter with a comma should return 200");
+
   const tagResponse = await app.handle(request("/api/bookmarks?tag=Vue&tag=sqlite&tag=vue"));
   const tagBody = await tagResponse.json();
   assert(tagResponse.status === 200, "include tags filter should return 200");
@@ -555,6 +558,11 @@ await withApp(async ({ app }) => {
     Array.isArray(relatedBody.value.bookmarks[0].relatedLinks),
     "url lookup should include related links",
   );
+
+  const commaResponse = await app.handle(
+    request("/api/bookmarks?url=https://example.com/exact-check?a=1,b=2"),
+  );
+  assert(commaResponse.status === 200, "URL lookup with a comma should return 200");
 });
 
 console.log("bookmark list/get api smoke passed");
