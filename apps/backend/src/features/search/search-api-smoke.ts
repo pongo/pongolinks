@@ -270,4 +270,14 @@ await withApp(async ({ app }) => {
   assertBookmarkErrorCode(body, "bookmark.url_required", "missing URL");
 });
 
+await withApp(async ({ app }) => {
+  const url =
+    "https://books.yandex.ru/search/all/%D0%96%D0%B5%D0%BD%D1%81%D0%BA%D0%B0%D1%8F%20%D0%B8%D0%B7%D0%BC%D0%B5%D0%BD%D0%B0.%20%D0%9F%D1%80%D0%B8%D0%B7%D0%BD%D0%B0%D0%BA%D0%B8%22,%22%20%D0%BF%D1%80%D0%B8%D1%87%D0%B8%D0%BD%D1%8B%20%D0%B8%20%D0%BF%D1%81%D0%B8%D1%85%D0%BE%D0%BB%D0%BE%D0%B3%D0%B8%D1%8F";
+  const response = await app.handle(request(`/api/search/check?url=${url}`));
+  const body = await response.json();
+
+  assert(response.status === 200, "URL containing a comma should not fail query validation");
+  assert(body.isOk === true, "URL containing a comma should return an Ok result");
+});
+
 console.log("search api smoke passed");

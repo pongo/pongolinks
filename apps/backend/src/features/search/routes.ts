@@ -39,7 +39,11 @@ export function createSearchRoutes({ db }: SearchRoutesOptions) {
     },
     {
       query: z.object({
-        url: z.string().optional(),
+        // Elysia parses unescaped commas in query values as repeated values.
+        url: z.preprocess(
+          (value) => (Array.isArray(value) ? value.join(",") : value),
+          z.string().optional(),
+        ),
       }),
     },
   );
