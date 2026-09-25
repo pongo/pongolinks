@@ -1,6 +1,7 @@
 import QuickLRU from "./lib/quick-lru.js";
 
 const APP_BASE_URL = "http://localhost:5173/pl/";
+const OPEN_CATALOG_MENU_ID = "open-pongolinks-catalog";
 const BADGE_COLOR = "#4CAF50";
 
 const CACHE_MAX_SIZE = 1000;
@@ -177,6 +178,14 @@ browser.tabs.onActivated.addListener((activeInfo) => {
   void checkActiveTab(activeInfo.windowId);
 });
 
+browser.runtime.onInstalled.addListener(() => {
+  browser.contextMenus.create({
+    id: OPEN_CATALOG_MENU_ID,
+    title: "Open pongolinks",
+    contexts: ["action"],
+  });
+});
+
 // onCommitted runs when Firefox commits a main-frame document navigation
 // such as a link click, typed URL, reload, or redirect
 browser.webNavigation.onCommitted.addListener((details) => {
@@ -204,6 +213,12 @@ browser.action.onClicked.addListener(async (tab) => {
 
   urlCheckCache.delete(tab.url);
   await openTabToTheRight(createBookmarkUrl(tab));
+});
+
+browser.contextMenus.onClicked.addListener((info) => {
+  if (info.menuItemId === OPEN_CATALOG_MENU_ID) {
+    void openTabToTheRight(APP_BASE_URL);
+  }
 });
 
 browser.runtime.onMessage.addListener((message) => {

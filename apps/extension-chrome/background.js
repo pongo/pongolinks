@@ -1,6 +1,7 @@
 import QuickLRU from "./lib/quick-lru.js";
 
 const APP_BASE_URL = "http://localhost:5173/pl/";
+const OPEN_CATALOG_MENU_ID = "open-pongolinks-catalog";
 const BADGE_COLOR = "#4CAF50";
 
 const CACHE_MAX_SIZE = 1000;
@@ -217,6 +218,11 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 });
 
 chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.create({
+    id: OPEN_CATALOG_MENU_ID,
+    title: "Open pongolinks",
+    contexts: ["action"],
+  });
   void initializeThemeWatcher();
 });
 
@@ -251,6 +257,12 @@ chrome.action.onClicked.addListener(async (tab) => {
 
   urlCheckCache.delete(tab.url);
   await openTabToTheRight(createBookmarkUrl(tab));
+});
+
+chrome.contextMenus.onClicked.addListener((info) => {
+  if (info.menuItemId === OPEN_CATALOG_MENU_ID) {
+    void openTabToTheRight(APP_BASE_URL);
+  }
 });
 
 chrome.runtime.onMessage.addListener((message) => {
